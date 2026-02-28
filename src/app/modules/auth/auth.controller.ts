@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from "http-status";
 import { AuthServices } from "./auth.service";
 import sendResponse from "../../utils/sendResponse";
 import catchAsync from "../../utils/catchAsync";
 import config from "../../config";
+
 
 // User Signup
 const signup = catchAsync(async (req, res) => {
@@ -12,21 +12,7 @@ const signup = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "We've send OTP to your email. Please verify.",
-    data: result,
-  });
-});
-
-// User Verify OTP
-const verifyOtp = catchAsync(async (req, res) => {
-  const { email, otp } = req.body;
-
-  const result = await AuthServices.verifyOtp(email, otp);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "OTP verified successfully.",
+    message: "Registration completed successfully. Welcome to Vedic Wisdom!",
     data: result,
   });
 });
@@ -40,12 +26,13 @@ const loginUser = catchAsync(async (req, res) => {
   res.cookie("refreshToken", refreshToken, {
     secure: config.node_env === "production",
     httpOnly: true,
+    sameSite: "strict",
   });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Logged in successfully.",
+    message: "Welcome back! You have logged in successfully.",
     data: result,
   });
 });
@@ -63,52 +50,13 @@ const refreshToken = catchAsync(async (req, res) => {
 });
 
 const forgetPassword = catchAsync(async (req, res) => {
-  const phoneNumber = req.body.phoneNumber;
-  const result = await AuthServices.forgetPassword(phoneNumber);
+  const email = req.body.email;
+  const result = await AuthServices.forgetPassword(email);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "OTP sent to your phone number.",
-    data: result,
-  });
-});
-
-const resendForgotPasswordOtp = catchAsync(async (req, res) => {
-  const { phoneNumber } = req.body;
-  const result = await AuthServices.resendForgotPasswordOtp(phoneNumber);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "OTP resent successfully.",
-    data: result,
-  });
-});
-
-// User Verify OTP
-const verifyResetOtp = catchAsync(async (req, res) => {
-  const { phoneNumber, otp } = req.body;
-
-  const result = await AuthServices.verifyResetOtp(phoneNumber, otp);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "OTP verified successfully.",
-    data: result,
-  });
-});
-
-const resendOtp = catchAsync(async (req, res) => {
-  const { email } = req.body;
-
-  const result = await AuthServices.resendOtp(email);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "OTP resent successfully",
+    message: "Reset instruction sent to your email.Please check.",
     data: result,
   });
 });
@@ -119,20 +67,8 @@ const resetPassword = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Password reset successfully. You can login now.",
+    message: "Password reset successfully.",
     data: result,
-  });
-});
-
-const changePassword = catchAsync(async (req, res) => {
-  const userId = req.user._id;
-  await AuthServices.changePassword(userId, req.body);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Password changed successfully!",
-    data: null,
   });
 });
 
@@ -148,16 +84,36 @@ const changeUserRole = catchAsync(async (req, res) => {
   });
 });
 
+const assignPagesToUser = catchAsync(async (req, res) => {
+  const result = await AuthServices.assignPagesToUser(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Pages assigned successfully.",
+    data: result,
+  });
+});
+
+// Save Push Token
+const savePushToken = catchAsync(async (req, res) => {
+  const result = await AuthServices.saveUserPushToken(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Push token saved successfully",
+    data: result,
+  });
+});
+
 export const AuthControllers = {
   signup,
-  verifyOtp,
-  resendOtp,
   loginUser,
   refreshToken,
   forgetPassword,
-  verifyResetOtp,
-  resendForgotPasswordOtp,
   resetPassword,
-  changePassword,
   changeUserRole,
+  assignPagesToUser,
+  savePushToken,
 };

@@ -1,7 +1,6 @@
 export const UserRole = {
-    user : 'user',
-    guardian : 'guardian',
-    tutor : 'tutor',
+    user: 'user',
+    moderator: 'moderator',
+    temple: 'temple',
     admin: 'admin',
-    staff: 'staff',
 } as const;

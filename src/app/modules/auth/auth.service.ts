@@ -1,103 +1,133 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from "http-status";
 import { TLoginAuth, TUser } from "./auth.interface";
 import AppError from "../../errors/AppError";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import config from "../../config";
-import { createToken } from "./auth.utils";
+// import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 import { User } from "./auth.model";
+import { sendEmail } from "../../utils/sendEmail";
 import bcrypt from "bcrypt";
-import axios from "axios";
-import { generateSequentialId } from "../../utils/customIdGenerators/generateSequentialId";
-import { io } from "../../../server";
-import Expo from "expo-server-sdk";
+import { createToken } from "./auth.utils";
+import { customUserIdGenerator } from "../../utils/customUserIdGenerator";
 
-const signup = async (payload: Partial<TUser>) => {
-  // Checking if user already exists
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // Ensures a 6-digit number
+};
+
+
+
+// const sendPushNotificationToUser = async (payload: {
+//   userId: string;
+//   title: string;
+//   message: string;
+// }) => {
+//   const { userId, title, message } = payload;
+
+//   const user = await User.findById(userId);
+//   if (!user || !user.expoPushToken) {
+//     throw new AppError(httpStatus.NOT_FOUND, "User or push token not found");
+//   }
+
+//   if (!Expo.isExpoPushToken(user.expoPushToken)) {
+//     throw new AppError(httpStatus.BAD_REQUEST, "Invalid Expo push token");
+//   }
+
+//   const messages = [
+//     {
+//       to: user.expoPushToken,
+//       sound: 'default',
+//       title,
+//       body: message,
+//       data: { userId },
+//     },
+//   ];
+
+//   const tickets: Expo.PushTicket[] = [];
+//   const chunks = expo.chunkPushNotifications(messages);
+
+//   for (const chunk of chunks) {
+//     try {
+//       const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+//       tickets.push(...ticketChunk);
+//     } catch (error) {
+//       console.error('Error sending push notification:', error);
+//       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to send push notification");
+//     }
+//   }
+
+//   return tickets;
+// };
+
+// Create user
+const signup = async (
+  payload: Partial<TUser>
+) => {
+  // Checking if user already exists by email address
   const isUserExistsByEmail = await User.findOne({ email: payload.email });
-  const isUserExistsByPhoneNumber = await User.findOne({
-    phoneNumber: payload.phoneNumber,
-  });
-
   if (isUserExistsByEmail) {
-    throw new AppError(
-      httpStatus.CONFLICT,
-      "User already exists with this email."
-    );
-  }
-  if (isUserExistsByPhoneNumber) {
-    throw new AppError(
-      httpStatus.CONFLICT,
-      "User already exists with this phone number."
-    );
-  }
+    throw new AppError(httpStatus.CONFLICT, "User already exists by this email address.");
+  };
 
-  return null;
+  // Checking if user already exists by phone number
+  const isUserExistsByPhoneNumber = await User.findOne({ phoneNumber: payload.phoneNumber });
+  if (isUserExistsByPhoneNumber) {
+    throw new AppError(httpStatus.CONFLICT, "User already exists by this phone number.");
+  };
+
+  const userId = await customUserIdGenerator();
+
+  const payloadData = {
+    ...payload,
+    role: payload.role || "user",
+    userId,
+    isDeleted: false,
+    isSuspended: false,
+    isVerified: false,
+  };
+
+  const result = await User.create(payloadData);
+  return result;
 };
 
 // Login
 const loginUser = async (payload: TLoginAuth) => {
-  // 1️⃣ Check if user exists
+  // Check if the user exists or not
   const user = await User.isUserExists(payload.email);
 
-  if (!user) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      "No account found with this email address. Please sign up first."
-    );
+  if (!(await user)) {
+    throw new AppError(httpStatus.NOT_FOUND, "Invalid email or password.");
   }
 
-  // 2️⃣ Check role mismatch
-  if (user.role !== payload.role) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      `This email is not registered as a ${payload.role}. Please select the correct account type.`
-    );
+  // Check if the user already deleted or not
+  if (user?.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Invalid email or password.");
   }
 
-  // 4️⃣ Deleted account check
-  if (user.isDeleted) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      "Your account has been deleted. Please contact our support team if you need assistance or call us at 09617785588"
-    );
+  // Check if the user suspended or not
+  if (user?.isSuspended) {
+    throw new AppError(httpStatus.FORBIDDEN, "Your account has been suspended. Please contact support for assistance.");
   }
 
-  // 5️⃣ Suspended account check
-  if (user.isSuspended) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "Your account has been deactivated. Please contact our support team for further assistance or call us at 09617785588"
-    );
+  // Check if the password is correct or not
+  if (!(await User.isPasswordMatched(payload?.password, user?.password))) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid email or password.");
   }
 
-  // 7️⃣ Password validation
-  const isPasswordMatched = await User.isPasswordMatched(
-    payload.password,
-    user.password
+  await User.updateOne(
+    { _id: user._id },
+    { $set: { lastLoggedIn: new Date() } }
   );
 
-  if (!isPasswordMatched) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "Incorrect password. Please try again."
-    );
-  }
-
-  // 8️⃣ JWT Payload
+  // Create token
   const jwtPayload = {
-    _id: user._id.toString(),
-    userId: user.userId,
+    userId: user._id.toString(),
     name: user.name,
-    email: user.email,
+    email: user.email || "",
     phoneNumber: user.phoneNumber,
     role: user.role,
-    profilePicture: user.profilePicture || "",
-    createdAt: user.createdAt,
   };
 
-  // 9️⃣ Tokens
   const accessToken = createToken(
     jwtPayload,
     config.jwt_access_secret as string,
@@ -115,19 +145,16 @@ const loginUser = async (payload: TLoginAuth) => {
     refreshToken,
     user: {
       _id: user._id,
-      userId: user.userId,
       name: user.name,
       email: user.email,
       phoneNumber: user.phoneNumber,
       role: user.role,
-      profilePicture: user.profilePicture || "",
-      createdAt: user.createdAt,
     },
   };
 };
 
 const refreshToken = async (token: string) => {
-  // Checking if there is any token sent from the client or not.
+  // Check if there is any token sent from the client or not.
   if (!token) {
     throw new AppError(
       httpStatus.UNAUTHORIZED,
@@ -135,7 +162,7 @@ const refreshToken = async (token: string) => {
     );
   }
 
-  // Checking if the token is valid or not.
+  // Check if the token is valid or not.
   const decoded = jwt.verify(
     token,
     config.jwt_refresh_secret as string
@@ -145,25 +172,22 @@ const refreshToken = async (token: string) => {
 
   const user = await User.isUserExists(email);
 
-  // Checking if the user already deleted or not
-  const isUserDeleted = user?.isDeleted;
-  if (isUserDeleted) {
-    throw new AppError(httpStatus.NOT_FOUND, "User does not exists.");
+  // Checking if the user exists or not
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found!");
   }
+
+  // Checking if the user is deleted or not
 
   // Have to check if the user is suspended or not
 
   const jwtPayload = {
-    _id: user._id.toString(),
-    userId: user.userId,
+    userId: user._id.toString(),
     name: user.name,
-    email: user.email,
+    email: user.email || "",
     phoneNumber: user.phoneNumber,
     role: user.role,
-    profilePicture: user.profilePicture || "",
-    createdAt: user.createdAt,
   };
-
   const accessToken = createToken(
     jwtPayload,
     config.jwt_access_secret as string,
@@ -175,164 +199,84 @@ const refreshToken = async (token: string) => {
   };
 };
 
-const forgetPassword = async (phoneNumber: string) => {
-  const user = await User.findOne({ phoneNumber });
+const forgetPassword = async (email: string) => {
+  const user = await User.findOne({ email });
 
-  if (!user || user?.isDeleted) {
-    throw new AppError(httpStatus.NOT_FOUND, "User not found!");
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found.");
   }
 
-  if (!user.isOtpVerified) {
-    throw new AppError(httpStatus.FORBIDDEN, "Your account is not verified.");
-  }
+  const otp = generateOTP();
 
-  if (user.isSuspended) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "Your account is suspended. Please contact support."
-    );
-  }
+  await User.updateOne(
+    { email },
+    {
+      resetPasswordToken: otp,
+      resetPasswordExpires: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+    }
+  );
 
-  // Generate OTP
-  const otp = Math.floor(1000 + Math.random() * 9000).toString();
+  const htmlBody = `
+    <p>Hello <strong>${user?.name || "User"}</strong>,</p>
+    <p>We received a request to reset your password.</p>
+    <p>👉 <strong>Your reset OTP: ${otp}</strong></p>
+    <p>Please follow these steps:</p>
+    <ol>
+      <li>Open the app.</li>
+      <li>Go to the <strong>"Reset Password"</strong> screen.</li>
+      <li>Paste the above OTP in the token input field.</li>
+      <li>Enter your new password.</li>
+      <li>Submit the form to complete the reset.</li>
+    </ol>
+    <p>If you didn’t request this, you can ignore this email.</p>
+    <p>Thanks,<br/>AKF Team</p>
+  `;
 
-  user.resetOtp = otp;
-  user.resetOtpExpireAt = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
-  await user.save();
-
-  return {};
-};
-
-const resendForgotPasswordOtp = async (phoneNumber: string) => {
-  const user = await User.findOne({ phoneNumber });
-
-  if (!user || user?.isDeleted) {
-    throw new AppError(httpStatus.NOT_FOUND, "User not found!");
-  }
-
-  if (!user.isOtpVerified) {
-    throw new AppError(httpStatus.FORBIDDEN, "Your account is not verified.");
-  }
-
-  if (user.isSuspended) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "Your account is suspended. Please contact support."
-    );
-  }
-
-  // Generate New OTP
-  const otp = Math.floor(1000 + Math.random() * 9000).toString();
-
-  user.resetOtp = otp;
-  user.resetOtpExpireAt = new Date(Date.now() + 2 * 60 * 1000); // 2 min
-  await user.save();
-
-  const message = `Your password reset OTP is ${otp}. It will expire in 2 minutes.`;
-
-
-  return {};
-};
-
-const verifyResetOtp = async (phoneNumber: string, otp: string) => {
-  const user = await User.findOne({ phoneNumber });
-
-  if (!user || user?.isDeleted) {
-    throw new AppError(httpStatus.NOT_FOUND, "User not found!");
-  }
-
-  if (!user.resetOtp || user.resetOtp !== otp) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Invalid OTP");
-  }
-
-  if (user.resetOtpExpireAt! < new Date()) {
-    throw new AppError(httpStatus.BAD_REQUEST, "OTP expired");
-  }
-
-  user.isResetOtpVerified = true;
-  user.resetOtp = null;
-  user.resetOtpExpireAt = null;
-  await user.save();
+  await sendEmail(user?.email, htmlBody);
 
   return {};
 };
 
 const resetPassword = async (payload: {
-  phoneNumber: string;
+  email: string;
+  otp: string;
   newPassword: string;
 }) => {
-  const user = await User.findOne({ phoneNumber: payload.phoneNumber });
+  const { email, otp, newPassword } = payload;
 
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, "User not found!");
+  const user = await User.findOne({ email });
+
+  if (
+    !user ||
+    !user.resetPasswordToken ||
+    !user.resetPasswordExpires ||
+    user.resetPasswordToken !== otp ||
+    new Date(user.resetPasswordExpires) < new Date()
+  ) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid or expired OTP.");
   }
 
-  if (!user.isOtpVerified) {
-    throw new AppError(httpStatus.FORBIDDEN, "Your account is not verified.");
-  }
-
-  if (user.isSuspended) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "Your account is suspended. Please contact support."
-    );
-  }
-
-  if (!user.isResetOtpVerified) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "OTP not verified. Please verify OTP before resetting password."
-    );
-  }
-
-  const newHashedPassword = await bcrypt.hash(
-    payload.newPassword,
+  const hashedPassword = await bcrypt.hash(
+    newPassword,
     Number(config.bcrypt_salt_round)
   );
 
-  await User.findOneAndUpdate(
-    { phoneNumber: payload.phoneNumber },
+  // Use updateOne to update password and clear OTP fields
+  await User.updateOne(
+    { email },
     {
-      password: newHashedPassword,
-      passwordChangedAt: new Date(),
-      isResetOtpVerified: false,
+      $set: {
+        password: hashedPassword,
+        passwordChangedAt: new Date(),
+      },
+      $unset: {
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+      },
     }
   );
 
   return {};
-};
-
-const changePassword = async (
-  userId: string,
-  payload: { currentPassword: string; newPassword: string }
-) => {
-  const user = await User.findById(userId).select("+password");
-
-  // Checking if the user exists
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, "User not found!");
-  }
-
-  // Check if the current password is correct
-  const isPasswordMatched = await bcrypt.compare(
-    payload.currentPassword,
-    user.password
-  );
-  if (!isPasswordMatched) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Current password is incorrect!"
-    );
-  }
-
-  // Hash the new password
-  const newHashedPassword = await bcrypt.hash(
-    payload.newPassword,
-    Number(config.bcrypt_salt_round)
-  );
-  await User.findByIdAndUpdate(userId, {
-    password: newHashedPassword,
-  });
 };
 
 // Change user role (For admin)
@@ -354,14 +298,51 @@ const changeUserRole = async (payload: { userId: string; role: any }) => {
   return result;
 };
 
+const assignPagesToUser = async (payload: {
+  userId: string;
+  pages: string[];
+}) => {
+  const user = await User.findById(payload.userId);
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  const result = await User.findByIdAndUpdate(
+    payload.userId,
+    { assignedPages: payload.pages },
+    { new: true, runValidators: true }
+  );
+
+  return result;
+};
+
+// Change user role (For admin)
+const saveUserPushToken = async (payload: any) => {
+  console.log(payload);
+  const user = await User.findById(payload?.userId);
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  const result = await User.findByIdAndUpdate(
+    payload.userId,
+    { expoPushToken: payload.expoPushToken },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  return result;
+};
+
 export const AuthServices = {
   signup,
   loginUser,
   refreshToken,
   forgetPassword,
-  verifyResetOtp,
-  resendForgotPasswordOtp,
   resetPassword,
-  changePassword,
   changeUserRole,
+  assignPagesToUser,
+  saveUserPushToken,
 };

@@ -2,26 +2,18 @@ import { Schema, model } from "mongoose";
 import bcrypt from "bcrypt";
 import config from "../../config";
 import { TUser, UserModel } from "./auth.interface";
-import crypto from "crypto";
-
-function generateUserId() {
-  const prefix = "BTC";
-  const date = new Date().toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
-  const random = crypto.randomBytes(3).toString("hex").toUpperCase(); // 6-char random
-  return `${prefix}-${date}-${random}`;
-}
 
 const userSchema = new Schema<TUser, UserModel>(
   {
     userId: {
       type: String,
+      required: true,
       unique: true,
-      default: generateUserId,
+      trim: true,
     },
-    profilePicture: {
+    avatar: {
       type: String,
       required: false,
-      trim: true,
     },
     name: {
       type: String,
@@ -36,22 +28,32 @@ const userSchema = new Schema<TUser, UserModel>(
       trim: true,
       lowercase: true,
     },
+    countryCode: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     phoneNumber: {
       type: String,
       required: true,
       trim: true,
     },
-    gender: {
+    area: {
       type: String,
-      required: true,
-      enum: ["male", "female", "other"],
+      required: false,
+      trim: true,
     },
     city: {
       type: String,
       required: false,
       trim: true,
     },
-    area: {
+    state: {
+      type: String,
+      required: false,
+      trim: true,
+    },
+    country: {
       type: String,
       required: false,
       trim: true,
@@ -63,7 +65,21 @@ const userSchema = new Schema<TUser, UserModel>(
     },
     role: {
       type: String,
-      enum: ["admin", "staff", "tutor", "guardian"],
+      enum: ["user", "admin", "moderator", "super-admin", "temple"],
+      default: "user",
+    },
+    assignedPages: {
+      type: [String],
+      default: [],
+    },
+    totalQuizTaken: {
+      type: Number,
+      required: false,
+      default: 0,
+    },
+    expoPushToken: {
+      type: String,
+      default: null,
     },
     isDeleted: {
       type: Boolean,
@@ -73,46 +89,33 @@ const userSchema = new Schema<TUser, UserModel>(
       type: Boolean,
       default: false,
     },
-    isOtpVerified: {
-      type: Boolean,
-      default: false,
-    },
-    otp: {
+    resetPasswordToken: {
       type: String,
       default: null,
     },
-    otpExpireAt: {
+    resetPasswordExpires: {
       type: Date,
       default: null,
     },
-    resetOtp: {
-      type: String,
-      default: null,
-    },
-    resetOtpExpireAt: {
+    lastLoggedIn: {
       type: Date,
       default: null,
+      required: false,
     },
-    isResetOtpVerified: {
-      type: Boolean,
-      default: false,
-    },
-    passwordChangedAt: {
-      type: Date,
-    },
-    suspensionReason: {
-      type: String,
-      trim: true,
-      default: null,
-    },
-    accountDeleteReason: {
-      type: String,
-      trim: true,
-      default: null,
-    },
-    expoPushToken: {
-      type: String,
-      default: null,
+    plan: { type: String, default: "free" },
+    subscriptionStart: Date,
+    subscriptionEnd: Date,
+
+    // Usage tracking for subscription
+    usage: {
+      aiChatDaily: { type: Number, default: 0 },
+      aiRecipesMonthly: { type: Number, default: 0 },
+      vastuAiMonthly: { type: Number, default: 0 },
+      kundliMonthly: { type: Number, default: 0 },
+      muhurtaMonthly: { type: Number, default: 0 },
+
+      lastDailyReset: Date,
+      lastMonthlyReset: Date,
     },
   },
   {
@@ -120,7 +123,7 @@ const userSchema = new Schema<TUser, UserModel>(
   }
 );
 
-// Hashing password before saving
+// Hash password before saving
 userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(
@@ -149,10 +152,5 @@ userSchema.statics.isPasswordMatched = async function (
   return await bcrypt.compare(plainTextPassword, hashedPassword);
 };
 
-// Automatically remove expired OTP (for unverified users)
-userSchema.index(
-  { otpExpireAt: 1 },
-  { expireAfterSeconds: 0, partialFilterExpression: { isOtpVerified: false } }
-);
-
+// Export the model
 export const User = model<TUser, UserModel>("User", userSchema);

@@ -10,29 +10,41 @@ import { UserRole } from "./auth.constants";
 export type TUser = {
   _id: string;
   userId: string;
-  profilePicture?: string;
+  avatar?: string;
   name: string;
   email: string;
+  countryCode: string;
   phoneNumber: string;
-  gender: string;
-  city?: string;
   area?: string;
+  city?: string;
+  state?: string;
+  country?: string;
   password: string;
-  role: "user" | "admin" | "staff" | "tutor" | "guardian";
-  isDeleted?: boolean;
-  isSuspended?: boolean;
-  isOtpVerified?: boolean;
-  otp?: string | null;
-  otpExpireAt?: Date | null;
-  resetOtp?: string | null;
-  resetOtpExpireAt?: Date | null;
-  isResetOtpVerified?: boolean | null;
-  createdAt?: Date;
-  updatedAt?: Date;
-  passwordChangedAt?: Date;
-  suspensionReason?: string | null;
-  accountDeleteReason?: string | null;
-  expoPushToken?: string | null;
+  role: "user" | "admin" | "moderator" | "temple";
+  assignedPages?: string[];
+  totalQuizTaken?: number;
+  expoPushToken: string;
+  resetPasswordToken: string | null;
+  resetPasswordExpires: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  isDeleted: boolean;
+  isSuspended: boolean;
+  lastLoggedIn?: Date;
+  plan?: string;
+  subscriptionStart?: Date;
+  subscriptionEnd?: Date;
+  // Usage tracking for subscription
+  usage: {
+    aiChatDaily: number;
+    aiRecipesMonthly: number;
+    vastuAiMonthly: number;
+    kundliMonthly: number;
+    muhurtaMonthly: number;
+
+    lastDailyReset?: Date;
+    lastMonthlyReset?: Date;
+  };
 };
 
 export interface UserModel extends Model<TUser> {
