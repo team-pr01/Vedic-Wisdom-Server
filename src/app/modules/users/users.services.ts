@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import httpStatus from "http-status";
+import AppError from "../../errors/AppError";
 import { User } from "../auth/auth.model";
 // import AppError from "../../errors/AppError";
 // import httpStatus from "http-status";
@@ -291,6 +293,25 @@ const restoreDeletedAccount = async (userId: string) => {
 //   return updatedProfile;
 // };
 
+// Change user role (For admin)
+const saveUserPushToken = async (payload: any) => {
+  const user = await User.findById(payload?.userId);
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  const result = await User.findByIdAndUpdate(
+    payload.userId,
+    { expoPushToken: payload.expoPushToken },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  return result;
+};
+
 export const UserServices = {
   getAllUser,
   // getMe,
@@ -302,4 +323,5 @@ export const UserServices = {
   // requestToUnlockProfile,
   // toggleLockProfile,
   // updateProfile,
+  saveUserPushToken
 };

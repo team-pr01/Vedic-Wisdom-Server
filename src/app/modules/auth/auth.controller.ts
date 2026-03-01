@@ -97,17 +97,19 @@ const resetPassword = catchAsync(async (req, res) => {
   });
 });
 
-// Change User Role (For admin)
-const changeUserRole = catchAsync(async (req, res) => {
-  const result = await AuthServices.changeUserRole(req.body);
+const changePassword = catchAsync(async (req, res) => {
+  const userId = req.user.userId;
+  const result = await AuthServices.changePassword(userId, req.body);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User role updated successfully.",
+    message: "Password changed successfully.",
     data: result,
   });
 });
+
+
 
 const assignPagesToUser = catchAsync(async (req, res) => {
   const result = await AuthServices.assignPagesToUser(req.body);
@@ -120,17 +122,7 @@ const assignPagesToUser = catchAsync(async (req, res) => {
   });
 });
 
-// Save Push Token
-const savePushToken = catchAsync(async (req, res) => {
-  const result = await AuthServices.saveUserPushToken(req.body);
 
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Push token saved successfully",
-    data: result,
-  });
-});
 
 export const AuthControllers = {
   signup,
@@ -140,7 +132,6 @@ export const AuthControllers = {
   verifyForgotPasswordOtp,
   resendForgotPasswordOtp,
   resetPassword,
-  changeUserRole,
+  changePassword,
   assignPagesToUser,
-  savePushToken,
 };

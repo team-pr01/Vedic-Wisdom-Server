@@ -32,6 +32,12 @@ router.post(
   AuthControllers.resetPassword
 );
 
+router.post(
+  "/change-password",
+  auth(UserRole.admin, UserRole.user, UserRole.moderator, UserRole.temple),
+  AuthControllers.changePassword
+);
+
 // router.post("/verify-otp", AuthControllers.verifyOtp);
 // router.post("/resend-otp", AuthControllers.resendOtp);
 
@@ -52,11 +58,5 @@ router.post(
 //   auth(UserRole.admin, UserRole.user, UserRole.tutor, UserRole.guardian, UserRole.staff),
 //   AuthControllers.changePassword
 // );
-
-router.put(
-  "/change-role",
-  auth(UserRole.admin),
-  AuthControllers.changeUserRole
-);
 
 export const AuthRoute = router;

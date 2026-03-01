@@ -14,6 +14,19 @@ const getAdminStats = catchAsync(async (req, res) => {
   });
 });
 
+// Change User Role (For admin)
+const changeUserRole = catchAsync(async (req, res) => {
+  const result = await AdminService.changeUserRole(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User role updated successfully.",
+    data: result,
+  });
+});
+
 export const AdminController = {
   getAdminStats,
+  changeUserRole,
 };

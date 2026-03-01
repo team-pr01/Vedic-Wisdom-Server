@@ -4,7 +4,6 @@ import { TLoginAuth, TUser } from "./auth.interface";
 import AppError from "../../errors/AppError";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import config from "../../config";
-// import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 import { User } from "./auth.model";
 import { sendEmail } from "../../utils/sendEmail";
 import bcrypt from "bcrypt";
@@ -303,23 +302,60 @@ const resetPassword = async (payload: {
   return {};
 };
 
-// Change user role (For admin)
-const changeUserRole = async (payload: { userId: string; role: any }) => {
-  const user = await User.findById(payload?.userId);
+const changePassword = async (
+  userId: string,
+  payload: {
+    currentPassword: string;
+    newPassword: string;
+  }
+) => {
+  const { currentPassword, newPassword } = payload;
+
+  const user = await User.findById(userId).select("+password");
+
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+    throw new AppError(httpStatus.NOT_FOUND, "User not found.");
   }
 
-  const result = await User.findByIdAndUpdate(
-    payload?.userId,
-    { role: payload?.role },
+  // Check if user is deleted or suspended
+  if (user.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, "User account deleted.");
+  }
+
+  if (user.isSuspended) {
+    throw new AppError(httpStatus.FORBIDDEN, "Account suspended.");
+  }
+
+  // Verify current password
+  const isPasswordMatched = await User.isPasswordMatched(
+    currentPassword,
+    user.password
+  );
+
+  if (!isPasswordMatched) {
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      "Current password is incorrect."
+    );
+  }
+
+  // Hash new password
+  const hashedPassword = await bcrypt.hash(
+    newPassword,
+    Number(config.bcrypt_salt_round)
+  );
+
+  await User.updateOne(
+    { _id: userId },
     {
-      new: true,
-      runValidators: true,
+      $set: {
+        password: hashedPassword,
+        passwordChangedAt: new Date(),
+      },
     }
   );
 
-  return result;
+  return {};
 };
 
 const assignPagesToUser = async (payload: {
@@ -340,25 +376,6 @@ const assignPagesToUser = async (payload: {
   return result;
 };
 
-// Change user role (For admin)
-const saveUserPushToken = async (payload: any) => {
-  console.log(payload);
-  const user = await User.findById(payload?.userId);
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, "User not found");
-  }
-
-  const result = await User.findByIdAndUpdate(
-    payload.userId,
-    { expoPushToken: payload.expoPushToken },
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
-
-  return result;
-};
 
 export const AuthServices = {
   signup,
@@ -368,7 +385,6 @@ export const AuthServices = {
   verifyForgotPasswordOtp,
   resendForgotPasswordOtp,
   resetPassword,
-  changeUserRole,
+  changePassword,
   assignPagesToUser,
-  saveUserPushToken,
 };

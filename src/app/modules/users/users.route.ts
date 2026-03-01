@@ -52,6 +52,12 @@ router.get(
 // );
 
 router.patch(
+  "/save-push-token",
+  auth(UserRole.user, UserRole.temple, UserRole.admin, UserRole.moderator),
+  UserControllers.savePushToken
+);
+
+router.patch(
   "/delete-account",
   auth(UserRole.user, UserRole.guardian, UserRole.tutor),
   UserControllers.deleteAccount

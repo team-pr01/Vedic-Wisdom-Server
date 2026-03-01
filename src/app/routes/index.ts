@@ -2,6 +2,7 @@ import { Router } from "express";
 import { AuthRoute } from "../modules/auth/auth.route";
 import { AdminRoutes } from "../modules/admin/admin.route";
 import { UserRoutes } from "../modules/users/users.route";
+import { TempleRoutes } from "../modules/temple/temple.route";
 
 const router = Router();
 
@@ -17,6 +18,10 @@ const moduleRoutes = [
   {
     path: "/user",
     route: UserRoutes,
+  },
+  {
+    path: "/temple",
+    route: TempleRoutes,
   },
 ];
 
