@@ -15,6 +15,23 @@ router.post(
   AuthControllers.loginUser
 );
 
+router.post("/forgot-password", AuthControllers.forgetPassword);
+
+router.post(
+  "/verify-forgot-password-otp",
+  AuthControllers.verifyForgotPasswordOtp
+);
+
+router.post(
+  "/resend-forgot-password-otp",
+  AuthControllers.resendForgotPasswordOtp
+);
+
+router.post(
+  "/reset-password",
+  AuthControllers.resetPassword
+);
+
 // router.post("/verify-otp", AuthControllers.verifyOtp);
 // router.post("/resend-otp", AuthControllers.resendOtp);
 
@@ -25,15 +42,10 @@ router.post(
 //   AuthControllers.refreshToken
 // );
 
-// router.post("/forgot-password", AuthControllers.forgetPassword);
 // router.post("/verify-reset-password-otp", AuthControllers.verifyResetOtp);
 // router.post("/resend-forgot-password-otp", AuthControllers.resendForgotPasswordOtp);
 
-// router.post(
-//   "/reset-password",
-//   validateRequest(AuthValidations.resetPasswordValidationSchema),
-//   AuthControllers.resetPassword
-// );
+
 
 // router.post(
 //   "/change-password",

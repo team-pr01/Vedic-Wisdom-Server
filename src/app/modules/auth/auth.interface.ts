@@ -24,8 +24,8 @@ export type TUser = {
   assignedPages?: string[];
   totalQuizTaken?: number;
   expoPushToken: string;
-  resetPasswordToken: string | null;
-  resetPasswordExpires: Date | null;
+  resetPasswordOtp: string | null;
+  resetPasswordOtpExpiresAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   isDeleted: boolean;

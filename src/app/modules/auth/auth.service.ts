@@ -10,56 +10,10 @@ import { sendEmail } from "../../utils/sendEmail";
 import bcrypt from "bcrypt";
 import { createToken } from "./auth.utils";
 import { customUserIdGenerator } from "../../utils/customUserIdGenerator";
-
-const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString(); // Ensures a 6-digit number
-};
+import { generate4DigitsOTP } from "../../utils/generate4DigitsOTP";
 
 
-
-// const sendPushNotificationToUser = async (payload: {
-//   userId: string;
-//   title: string;
-//   message: string;
-// }) => {
-//   const { userId, title, message } = payload;
-
-//   const user = await User.findById(userId);
-//   if (!user || !user.expoPushToken) {
-//     throw new AppError(httpStatus.NOT_FOUND, "User or push token not found");
-//   }
-
-//   if (!Expo.isExpoPushToken(user.expoPushToken)) {
-//     throw new AppError(httpStatus.BAD_REQUEST, "Invalid Expo push token");
-//   }
-
-//   const messages = [
-//     {
-//       to: user.expoPushToken,
-//       sound: 'default',
-//       title,
-//       body: message,
-//       data: { userId },
-//     },
-//   ];
-
-//   const tickets: Expo.PushTicket[] = [];
-//   const chunks = expo.chunkPushNotifications(messages);
-
-//   for (const chunk of chunks) {
-//     try {
-//       const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-//       tickets.push(...ticketChunk);
-//     } catch (error) {
-//       console.error('Error sending push notification:', error);
-//       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to send push notification");
-//     }
-//   }
-
-//   return tickets;
-// };
-
-// Create user
+// Signup
 const signup = async (
   payload: Partial<TUser>
 ) => {
@@ -168,18 +122,22 @@ const refreshToken = async (token: string) => {
     config.jwt_refresh_secret as string
   ) as JwtPayload;
 
-  const { email } = decoded;
+  const { userId } = decoded;
 
-  const user = await User.isUserExists(email);
+  const user = await User.findById(userId);
 
   // Checking if the user exists or not
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, "User not found!");
   }
 
-  // Checking if the user is deleted or not
+  if (user.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, "User account deleted.");
+  }
 
-  // Have to check if the user is suspended or not
+  if (user.isSuspended) {
+    throw new AppError(httpStatus.FORBIDDEN, "Account suspended.");
+  }
 
   const jwtPayload = {
     userId: user._id.toString(),
@@ -206,13 +164,13 @@ const forgetPassword = async (email: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "User not found.");
   }
 
-  const otp = generateOTP();
+  const otp = generate4DigitsOTP();
 
   await User.updateOne(
     { email },
     {
-      resetPasswordToken: otp,
-      resetPasswordExpires: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+      resetPasswordOtp: otp,
+      resetPasswordOtpExpiresAt: new Date(Date.now() + 2 * 60 * 1000), // 2 min
     }
   );
 
@@ -232,9 +190,67 @@ const forgetPassword = async (email: string) => {
     <p>Thanks,<br/>AKF Team</p>
   `;
 
-  await sendEmail(user?.email, htmlBody);
+  await sendEmail(user?.email, htmlBody, "Reset your password within 2 minutes | Arya Kalyan Foundation");
 
   return {};
+};
+
+const verifyForgotPasswordOtp = async (payload: {
+  email: string;
+  otp: string;
+}) => {
+  const { email, otp } = payload;
+
+  const user = await User.findOne({ email });
+
+  if (
+    !user ||
+    !user.resetPasswordOtp ||
+    !user.resetPasswordOtpExpiresAt
+  ) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid OTP.");
+  }
+
+  // Expiry check
+  if (new Date(user.resetPasswordOtpExpiresAt) < new Date()) {
+    throw new AppError(httpStatus.BAD_REQUEST, "OTP expired.");
+  }
+
+  // Wrong OTP
+  if (user.resetPasswordOtp !== otp) {
+    await User.updateOne(
+      { email },
+      { $inc: { resetPasswordOtpAttempts: 1 } }
+    );
+
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid OTP.");
+  }
+
+  return {};
+};
+
+const resendForgotPasswordOtp = async (email: string) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return;
+  }
+
+  const otp = generate4DigitsOTP();
+
+  await User.updateOne(
+    { email },
+    {
+      resetPasswordOtp: otp,
+      resetPasswordOtpExpiresAt: new Date(Date.now() + 2 * 60 * 1000),
+      resetPasswordOtpAttempts: 0,
+    }
+  );
+
+  await sendEmail(user.email, `
+    <p>Your new OTP: <strong>${otp}</strong></p>
+    <p>Valid for 2 minutes.</p>
+  `, "Resend Reset Password OTP");
 };
 
 const resetPassword = async (payload: {
@@ -248,12 +264,20 @@ const resetPassword = async (payload: {
 
   if (
     !user ||
-    !user.resetPasswordToken ||
-    !user.resetPasswordExpires ||
-    user.resetPasswordToken !== otp ||
-    new Date(user.resetPasswordExpires) < new Date()
+    !user.resetPasswordOtp ||
+    !user.resetPasswordOtpExpiresAt
   ) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Invalid or expired OTP.");
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid request.");
+  }
+
+  // Expiry check
+  if (new Date(user.resetPasswordOtpExpiresAt) < new Date()) {
+    throw new AppError(httpStatus.BAD_REQUEST, "OTP expired.");
+  }
+
+  // OTP match check
+  if (user.resetPasswordOtp !== otp) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid OTP.");
   }
 
   const hashedPassword = await bcrypt.hash(
@@ -261,17 +285,17 @@ const resetPassword = async (payload: {
     Number(config.bcrypt_salt_round)
   );
 
-  // Use updateOne to update password and clear OTP fields
   await User.updateOne(
-    { email },
+    { _id: user._id },
     {
       $set: {
         password: hashedPassword,
         passwordChangedAt: new Date(),
       },
       $unset: {
-        resetPasswordToken: null,
-        resetPasswordExpires: null,
+        resetPasswordOtp: "",
+        resetPasswordOtpExpiresAt: "",
+        resetPasswordOtpAttempts: "",
       },
     }
   );
@@ -341,6 +365,8 @@ export const AuthServices = {
   loginUser,
   refreshToken,
   forgetPassword,
+  verifyForgotPasswordOtp,
+  resendForgotPasswordOtp,
   resetPassword,
   changeUserRole,
   assignPagesToUser,

@@ -89,11 +89,11 @@ const userSchema = new Schema<TUser, UserModel>(
       type: Boolean,
       default: false,
     },
-    resetPasswordToken: {
+    resetPasswordOtp: {
       type: String,
       default: null,
     },
-    resetPasswordExpires: {
+    resetPasswordOtpExpiresAt: {
       type: Date,
       default: null,
     },
