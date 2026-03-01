@@ -21,18 +21,18 @@ router.get("/", TempleController.getAllTemples);
 router.get("/:templeId", TempleController.getSingleTempleById);
 
 /* ---------------- UPDATE TEMPLE ---------------- */
-router.put("/:templeId", auth(UserRole.admin, UserRole.moderator, UserRole.user), multerUpload.array("images", 10), TempleController.updateTemple);
+router.put("/update/:templeId", auth(UserRole.admin, UserRole.moderator, UserRole.user), multerUpload.array("files", 10), TempleController.updateTemple);
 
 /* ---------------- UPDATE STATUS (ADMIN ONLY) ---------------- */
 router.patch(
-    "/:templeId/status",
+    "/update-status/:templeId",
     auth(UserRole.admin, UserRole.moderator),
     TempleController.updateTempleStatus
 );
 
 /* ---------------- DELETE (ADMIN ONLY) ---------------- */
 router.delete(
-    "/:templeId",
+    "/delete/:templeId",
     auth(UserRole.admin, UserRole.moderator),
     TempleController.deleteTemple
 );

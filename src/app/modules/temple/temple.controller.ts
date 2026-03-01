@@ -6,39 +6,39 @@ import { TempleServices } from "./temple.service";
 import AppError from "../../errors/AppError";
 
 const safeParse = (value: any) => {
-  if (!value) return undefined;
-  try {
-    return typeof value === "string" ? JSON.parse(value) : value;
-  } catch {
-    throw new AppError(400, "Invalid JSON format in request body");
-  }
+    if (!value) return undefined;
+    try {
+        return typeof value === "string" ? JSON.parse(value) : value;
+    } catch {
+        throw new AppError(400, "Invalid JSON format in request body");
+    }
 };
 
 const addTemple = catchAsync(async (req, res) => {
-  const files = (req.files as Express.Multer.File[]) || [];
+    const files = (req.files as Express.Multer.File[]) || [];
 
-  // Parse multipart JSON fields safely
-  const parsedBody = {
-    ...req.body,
-    basicInfo: safeParse(req.body.basicInfo),
-    socialMedia: safeParse(req.body.socialMedia),
-    location: safeParse(req.body.location),
-    otherInfo: safeParse(req.body.otherInfo),
-    media: safeParse(req.body.media) || {},
-  };
+    // Parse multipart JSON fields safely
+    const parsedBody = {
+        ...req.body,
+        basicInfo: safeParse(req.body.basicInfo),
+        socialMedia: safeParse(req.body.socialMedia),
+        location: safeParse(req.body.location),
+        otherInfo: safeParse(req.body.otherInfo),
+        media: safeParse(req.body.media) || {},
+    };
 
-  const result = await TempleServices.addTemple(
-    req.user,
-    parsedBody,
-    files
-  );
+    const result = await TempleServices.addTemple(
+        req.user,
+        parsedBody,
+        files
+    );
 
-  sendResponse(res, {
-    statusCode: 201,
-    success: true,
-    message: "Temple submitted successfully",
-    data: result,
-  });
+    sendResponse(res, {
+        statusCode: 201,
+        success: true,
+        message: "Temple submitted successfully",
+        data: result,
+    });
 });
 
 
@@ -95,15 +95,28 @@ const getSingleTempleById = catchAsync(async (req, res) => {
 });
 
 /* ---------------- UPDATE ---------------- */
+
 const updateTemple = catchAsync(async (req, res) => {
+    const files = (req.files as Express.Multer.File[]) || [];
+
+    const parsedBody = {
+        ...req.body,
+        basicInfo: safeParse(req.body.basicInfo),
+        socialMedia: safeParse(req.body.socialMedia),
+        location: safeParse(req.body.location),
+        otherInfo: safeParse(req.body.otherInfo),
+        media: safeParse(req.body.media),
+    };
+
     const result = await TempleServices.updateTemple(
         req.params.templeId,
         req.user,
-        req.body
+        parsedBody,
+        files
     );
 
     sendResponse(res, {
-        statusCode: httpStatus.OK,
+        statusCode: 200,
         success: true,
         message: "Temple updated successfully",
         data: result,
@@ -135,7 +148,7 @@ const deleteTemple = catchAsync(async (req, res) => {
         message: "Temple deleted successfully",
         data: result,
     });
-})
+});
 
 export const TempleController = {
     addTemple,
