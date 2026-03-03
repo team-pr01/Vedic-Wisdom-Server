@@ -6,6 +6,8 @@ import { TempleRoutes } from "../modules/temple/temple.route";
 import { FoodRoutes } from "../modules/food/food.routes";
 import { VastuRoutes } from "../modules/vastu/vastu.route";
 import { VastuTipsRoutes } from "../modules/vastuTips/vastuTips.routes";
+import { NewsRoutes } from "../modules/news/news.route";
+import { AiRoutes } from "../modules/ai/ai.route";
 
 const router = Router();
 
@@ -37,6 +39,14 @@ const moduleRoutes = [
   {
     path: "/vastu-tips",
     route: VastuTipsRoutes,
+  },
+  {
+    path: "/news",
+    route: NewsRoutes,
+  },
+  {
+    path: "/ai",
+    route: AiRoutes,
   },
 ];
 
