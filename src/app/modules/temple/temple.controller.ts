@@ -150,6 +150,71 @@ const deleteTemple = catchAsync(async (req, res) => {
     });
 });
 
+
+const addEvent = catchAsync(async (req, res) => {
+  const { templeId } = req.params;
+
+  const files = (req.files as Express.Multer.File[]) || [];
+
+  const parsedBody = {
+    ...req.body,
+    event: safeParse(req.body.event),
+  };
+
+  const result = await TempleServices.addEvent(
+    templeId,
+    parsedBody.event,
+    files
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Event added successfully",
+    data: result,
+  });
+});
+
+// UPDATE EVENT
+const updateEvent = catchAsync(async (req, res) => {
+  const { templeId, eventId } = req.params;
+
+  const files = (req.files as Express.Multer.File[]) || [];
+
+  const parsedBody = {
+    ...req.body,
+    event: safeParse(req.body.event),
+  };
+
+  const result = await TempleServices.updateEvent(
+    templeId,
+    eventId,
+    parsedBody.event,
+    files
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Event updated successfully",
+    data: result,
+  });
+});
+
+// DELETE EVENT
+const deleteEvent = catchAsync(async (req, res) => {
+  const { templeId, eventId } = req.params;
+
+  const result = await TempleServices.deleteEvent(templeId, eventId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Event deleted successfully",
+    data: result,
+  });
+});
+
 export const TempleController = {
     addTemple,
     getAllTemples,
@@ -157,4 +222,7 @@ export const TempleController = {
     updateTemple,
     updateTempleStatus,
     deleteTemple,
+    addEvent,
+    updateEvent,
+    deleteEvent,
 };

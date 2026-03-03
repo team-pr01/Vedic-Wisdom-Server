@@ -47,6 +47,13 @@ export type TempleStatus =
     | "approved"
     | "rejected";
 
+    export type TEvent = {
+        name : string;
+        date : Date;
+        description : string;
+        imageUrls : string[];
+    }
+
 //    MAIN TEMPLE INTERFACE
 export interface TTemple {
     basicInfo: TBasicInfo;
@@ -54,6 +61,7 @@ export interface TTemple {
     location: TLocation;
     otherInfo?: TOtherInfo;
     media?: TMedia;
+    event? : TEvent[];
 
     category: string;
 

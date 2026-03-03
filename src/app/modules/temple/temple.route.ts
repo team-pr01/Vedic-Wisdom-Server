@@ -8,10 +8,10 @@ const router = express.Router();
 
 /* ---------------- ADD TEMPLE ---------------- */
 router.post(
-  "/add",
-  auth(UserRole.admin, UserRole.moderator, UserRole.user),
-  multerUpload.array("files", 10), // max 10 images
-  TempleController.addTemple
+    "/add",
+    auth(UserRole.admin, UserRole.moderator, UserRole.user),
+    multerUpload.array("files", 10), // max 10 images
+    TempleController.addTemple
 );
 
 /* ---------------- GET ALL (INFINITE SCROLL) ---------------- */
@@ -36,5 +36,11 @@ router.delete(
     auth(UserRole.admin, UserRole.moderator),
     TempleController.deleteTemple
 );
+
+router.post("/add-event/:templeId", auth(UserRole.admin, UserRole.moderator, UserRole.user), multerUpload.array("files", 5), TempleController.addEvent);
+
+router.patch("/update-event/:templeId/event/:eventId", auth(UserRole.admin, UserRole.moderator, UserRole.user), multerUpload.array("files", 5), TempleController.updateEvent);
+
+router.delete("/delete-event/:templeId/event/:eventId", auth(UserRole.admin, UserRole.moderator, UserRole.user), TempleController.deleteEvent);
 
 export const TempleRoutes = router;

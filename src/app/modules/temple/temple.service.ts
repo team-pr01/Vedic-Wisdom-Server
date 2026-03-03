@@ -270,6 +270,147 @@ const deleteTemple = async (templeId: string) => {
     return Temple.findByIdAndDelete(templeId);
 };
 
+// ADD EVENT
+const addEvent = async (
+    templeId: string,
+    eventPayload: any,
+    files: Express.Multer.File[] = []
+) => {
+    if (!eventPayload) {
+        throw new AppError(httpStatus.BAD_REQUEST, "Event data is required");
+    }
+
+    const temple = await Temple.findById(templeId);
+
+    if (!temple) {
+        throw new AppError(httpStatus.NOT_FOUND, "Temple not found");
+    }
+
+    if (files.length > 5) {
+        throw new AppError(
+            httpStatus.BAD_REQUEST,
+            "Maximum 5 images allowed for event"
+        );
+    }
+
+    let imageUrls: string[] = [];
+
+    if (files.length > 0) {
+        const uploadPromises = files.map(async (file, index) => {
+            const imageName = `${eventPayload.name}-${Date.now()}-${index}`;
+
+            const { secure_url } = await sendImageToCloudinary(
+                imageName,
+                file.path
+            );
+
+            return secure_url;
+        });
+
+        imageUrls = await Promise.all(uploadPromises);
+    }
+
+    const newEvent = {
+        ...eventPayload,
+        imageUrls,
+    };
+
+    temple.event = temple.event || [];
+    temple.event.push(newEvent);
+
+    await temple.save();
+
+    return temple;
+};
+
+// UPDATE EVENT
+const updateEvent = async (
+    templeId: string,
+    eventId: string,
+    eventPayload: any,
+    files: Express.Multer.File[] = []
+) => {
+    const temple = await Temple.findById(templeId);
+
+    if (!temple) {
+        throw new AppError(httpStatus.NOT_FOUND, "Temple not found");
+    }
+
+    // Ensure event is an array
+    if (!Array.isArray(temple.event)) {
+        throw new AppError(httpStatus.BAD_REQUEST, "Invalid event structure");
+    }
+
+    const eventIndex = temple.event.findIndex(
+        (ev: any) => ev._id.toString() === eventId
+    );
+
+    if (eventIndex === -1) {
+        throw new AppError(httpStatus.NOT_FOUND, "Event not found");
+    }
+
+    const existingEvent = temple.event[eventIndex];
+
+    /* ---------------- PARTIAL FIELD UPDATE ---------------- */
+
+    if (eventPayload?.name !== undefined) {
+        existingEvent.name = eventPayload.name;
+    }
+
+    if (eventPayload?.date !== undefined) {
+        existingEvent.date = eventPayload.date;
+    }
+
+    if (eventPayload?.description !== undefined) {
+        existingEvent.description = eventPayload.description;
+    }
+
+    /* ---------------- IMAGE UPDATE (REPLACE ONLY IF NEW FILES) ---------------- */
+
+    if (files.length > 0) {
+        if (files.length > 5) {
+            throw new AppError(
+                httpStatus.BAD_REQUEST,
+                "Maximum 5 images allowed for event"
+            );
+        }
+
+        const uploadPromises = files.map(async (file, index) => {
+            const imageName = `${existingEvent.name}-${Date.now()}-${index}`;
+
+            const { secure_url } = await sendImageToCloudinary(
+                imageName,
+                file.path
+            );
+
+            return secure_url;
+        });
+
+        existingEvent.imageUrls = await Promise.all(uploadPromises);
+    }
+
+    await temple.save();
+
+    return temple;
+};
+
+// DELETE EVENT
+const deleteEvent = async (templeId: string, eventId: string) => {
+    const temple = await Temple.findById(templeId);
+
+    if (!temple) {
+        throw new AppError(httpStatus.NOT_FOUND, "Temple not found");
+    }
+
+    temple.event = temple.event?.filter(
+        (ev: any) => ev._id.toString() !== eventId
+    );
+
+    await temple.save();
+
+    return temple;
+};
+
 
 export const TempleServices = {
     addTemple,
@@ -278,4 +419,7 @@ export const TempleServices = {
     updateTemple,
     updateTempleStatus,
     deleteTemple,
+    addEvent,
+    updateEvent,
+    deleteEvent,
 };

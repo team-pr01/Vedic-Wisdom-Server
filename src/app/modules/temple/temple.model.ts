@@ -43,18 +43,17 @@ const TempleSchema = new Schema<TTemple>(
             },
             videoUrls: {
                 type: [String],
-                // validate: [
-                //   {
-                //     validator: function (urls: string[]) {
-                //       return urls.every((url) =>
-                //         /youtube\.com|youtu\.be|facebook\.com/.test(url)
-                //       );
-                //     },
-                //     message: "Only YouTube and Facebook video URLs allowed",
-                //   },
-                // ],
             },
         },
+
+        event: [
+            {
+                name: { type: String },
+                date: { type: Date },
+                description: { type: String },
+                imageUrls: [{ type: String }],
+            },
+        ],
 
         category: {
             type: String,
