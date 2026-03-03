@@ -5,7 +5,7 @@ import { UserRole } from "../auth/auth.constants";
 
 const router = express.Router();
 
-router.post("/", auth(UserRole.admin, UserRole.moderator), VastuTipsControllers.addVastuTips);
+router.post("/add", auth(UserRole.admin, UserRole.moderator), VastuTipsControllers.addVastuTips);
 
 router.get("/", VastuTipsControllers.getAllVastuTips);
 
