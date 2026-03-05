@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import AppError from "../../errors/AppError";
 import { openai } from "../../utils/openai";
-import BookText from "../book/texts/bookText.model";
+// import BookText from "../book/texts/bookText.model";
 import News from "../news/news.model";
-import Quiz from "../quiz/quiz.model";
+// import Quiz from "../quiz/quiz.model";
 
 interface TranslatePayload {
   newsId: string;
@@ -23,99 +23,99 @@ const aiChat = async (message: string) => {
   return completion.choices[0].message?.content || "No response";
 };
 
-type TranslateShlokaPayload = {
-  textId: string;
-  languageCodes: string[];
-};
+// type TranslateShlokaPayload = {
+//   textId: string;
+//   languageCodes: string[];
+// };
 
-const translateShloka = async (payload: TranslateShlokaPayload) => {
-  const { textId, languageCodes } = payload;
+// const translateShloka = async (payload: TranslateShlokaPayload) => {
+//   const { textId, languageCodes } = payload;
 
-  // Fetch original Sanskrit text
-  const bookText = await BookText.findById(textId);
-  if (!bookText) throw new AppError(404, "Book text not found");
+//   // Fetch original Sanskrit text
+//   const bookText = await BookText.findById(textId);
+//   if (!bookText) throw new AppError(404, "Book text not found");
 
-  // Use primary translation as source
-  const inputText = bookText.primaryTranslation || bookText.originalText;
+//   // Use primary translation as source
+//   const inputText = bookText.primaryTranslation || bookText.originalText;
 
-  // Build GPT system message
-  const systemMessage = `
-You are a Vedic scholar who translates Sanskrit shlokas.
-Translate the following text (already translated from Sanskrit) into exactly ${languageCodes.length} languages listed below.
-For each language, provide:
-- translation: simple, clear meaning
-- sanskritWordBreakdown: an array of objects with sanskritWord, shortMeaning, descriptiveMeaning
+//   // Build GPT system message
+//   const systemMessage = `
+// You are a Vedic scholar who translates Sanskrit shlokas.
+// Translate the following text (already translated from Sanskrit) into exactly ${languageCodes.length} languages listed below.
+// For each language, provide:
+// - translation: simple, clear meaning
+// - sanskritWordBreakdown: an array of objects with sanskritWord, shortMeaning, descriptiveMeaning
 
-Return JSON in the format:
-{
-${languageCodes
-  .map(
-    (code) =>
-      `  "${code}": { "translation": "...", "sanskritWordBreakdown": [ { "sanskritWord": "...", "shortMeaning": "...", "descriptiveMeaning": "..." } ] }`
-  )
-  .join(",\n")}
-}
-`;
+// Return JSON in the format:
+// {
+// ${languageCodes
+//   .map(
+//     (code) =>
+//       `  "${code}": { "translation": "...", "sanskritWordBreakdown": [ { "sanskritWord": "...", "shortMeaning": "...", "descriptiveMeaning": "..." } ] }`
+//   )
+//   .join(",\n")}
+// }
+// `;
 
-  // GPT request
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: systemMessage },
-      { role: "user", content: inputText },
-    ],
-    temperature: 0,
-    max_tokens: 4000,
-  });
+//   // GPT request
+//   const response = await openai.chat.completions.create({
+//     model: "gpt-4o-mini",
+//     messages: [
+//       { role: "system", content: systemMessage },
+//       { role: "user", content: inputText },
+//     ],
+//     temperature: 0,
+//     max_tokens: 4000,
+//   });
 
-  const contentRes = response.choices[0]?.message?.content;
+//   const contentRes = response.choices[0]?.message?.content;
 
-  let translations;
-  try {
-    translations = JSON.parse(contentRes || "{}");
-  } catch (err) {
-    throw new AppError(500, "Failed to parse GPT response: " + contentRes);
-  }
+//   let translations;
+//   try {
+//     translations = JSON.parse(contentRes || "{}");
+//   } catch (err) {
+//     throw new AppError(500, "Failed to parse GPT response: " + contentRes);
+//   }
 
-  // Check for missing languages
-  const missing = languageCodes.filter((code) => !translations[code]);
-  if (missing.length > 0)
-    throw new AppError(
-      500,
-      `GPT did not return translations for: ${missing.join(", ")}`
-    );
+//   // Check for missing languages
+//   const missing = languageCodes.filter((code) => !translations[code]);
+//   if (missing.length > 0)
+//     throw new AppError(
+//       500,
+//       `GPT did not return translations for: ${missing.join(", ")}`
+//     );
 
-  // Merge new translations with existing ones
-  const updatedTranslations = [...(bookText.translations || [])];
+//   // Merge new translations with existing ones
+//   const updatedTranslations = [...(bookText.translations || [])];
 
-  for (const code of languageCodes) {
-    const idx = updatedTranslations.findIndex((t) => t.langCode === code);
-    const newTrans = {
-      langCode: code,
-      translation: translations[code].translation || "",
-      sanskritWordBreakdown: translations[code].sanskritWordBreakdown || [],
-    };
+//   for (const code of languageCodes) {
+//     const idx = updatedTranslations.findIndex((t) => t.langCode === code);
+//     const newTrans = {
+//       langCode: code,
+//       translation: translations[code].translation || "",
+//       sanskritWordBreakdown: translations[code].sanskritWordBreakdown || [],
+//     };
 
-    if (idx >= 0) {
-      // Replace existing translation
-      updatedTranslations[idx] = newTrans;
-    } else {
-      // Add new translation
-      updatedTranslations.push(newTrans);
-    }
-  }
+//     if (idx >= 0) {
+//       // Replace existing translation
+//       updatedTranslations[idx] = newTrans;
+//     } else {
+//       // Add new translation
+//       updatedTranslations.push(newTrans);
+//     }
+//   }
 
-  // Update BookText in DB
-  const updatedText = await BookText.findByIdAndUpdate(
-    textId,
-    { $set: { translations: updatedTranslations } },
-    { new: true, runValidators: true }
-  );
+//   // Update BookText in DB
+//   const updatedText = await BookText.findByIdAndUpdate(
+//     textId,
+//     { $set: { translations: updatedTranslations } },
+//     { new: true, runValidators: true }
+//   );
 
-  if (!updatedText) throw new AppError(404, "Book text not found after update");
+//   if (!updatedText) throw new AppError(404, "Book text not found after update");
 
-  return updatedText;
-};
+//   return updatedText;
+// };
 
 const generateRecipe = async (query: string) => {
   const response = await openai.chat.completions.create({
@@ -143,55 +143,55 @@ const generateRecipe = async (query: string) => {
   return response.choices[0]?.message?.content || "Could not generate recipe";
 };
 
-const generateQuiz = async (title: string) => {
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: `You are an expert quiz generator. 
-                  Respond ONLY with valid JSON.
-                  Generate BETWEEN 10 and 15 questions for the given topic.
-                  Format:
-                  [
-                    {
-                      "question": "string",
-                      "options": ["string","string","string","string"],
-                      "correctAnswer": number (1-4)
-                    }
-                  ]`,
-      },
-      { role: "user", content: `Generate a quiz on the topic: ${title}` },
-    ],
-    temperature: 0.7,
-    max_tokens: 1000,
-  });
+// const generateQuiz = async (title: string) => {
+//   const response = await openai.chat.completions.create({
+//     model: "gpt-4o-mini",
+//     messages: [
+//       {
+//         role: "system",
+//         content: `You are an expert quiz generator. 
+//                   Respond ONLY with valid JSON.
+//                   Generate BETWEEN 10 and 15 questions for the given topic.
+//                   Format:
+//                   [
+//                     {
+//                       "question": "string",
+//                       "options": ["string","string","string","string"],
+//                       "correctAnswer": number (1-4)
+//                     }
+//                   ]`,
+//       },
+//       { role: "user", content: `Generate a quiz on the topic: ${title}` },
+//     ],
+//     temperature: 0.7,
+//     max_tokens: 1000,
+//   });
 
-  let content = response.choices[0]?.message?.content || "[]";
+//   let content = response.choices[0]?.message?.content || "[]";
 
-  // strip ```json ... ```
-  content = content
-    .replace(/```json/gi, "")
-    .replace(/```/g, "")
-    .trim();
+//   // strip ```json ... ```
+//   content = content
+//     .replace(/```json/gi, "")
+//     .replace(/```/g, "")
+//     .trim();
 
-  let questions: any[] = [];
-  try {
-    questions = JSON.parse(content);
-  } catch (error) {
-    console.error("Failed to parse AI response:", content, error);
-    return null;
-  }
+//   let questions: any[] = [];
+//   try {
+//     questions = JSON.parse(content);
+//   } catch (error) {
+//     console.error("Failed to parse AI response:", content, error);
+//     return null;
+//   }
 
-  if (!questions || questions.length === 0) {
-    return null;
-  }
+//   if (!questions || questions.length === 0) {
+//     return null;
+//   }
 
-  // 🛠 Save to DB inside service
-  const newQuiz = await Quiz.create({ title, questions });
+//   // 🛠 Save to DB inside service
+//   const newQuiz = await Quiz.create({ title, questions });
 
-  return newQuiz;
-};
+//   return newQuiz;
+// };
 
 const translateNews = async (payload: TranslatePayload) => {
   const { newsId, title, content, tags, category, batchLanguages } = payload;
@@ -396,9 +396,9 @@ const generateVastuAnalysis = async (query: string) => {
 
 export const AiServices = {
   aiChat,
-  translateShloka,
+  // translateShloka,
   generateRecipe,
-  generateQuiz,
+  // generateQuiz,
   translateNews,
   generateKundli,
   generateMuhurta,
