@@ -10,6 +10,7 @@ import { NewsRoutes } from "../modules/news/news.route";
 import { AiRoutes } from "../modules/ai/ai.route";
 import { ReelsRoutes } from "../modules/reels/reels.route";
 import { CourseRoutes } from "../modules/course/course.route";
+import { AyurvedaRoutes } from "../modules/ayurveda/ayurveda.route";
 
 const router = Router();
 
@@ -57,6 +58,10 @@ const moduleRoutes = [
   {
     path: "/course",
     route: CourseRoutes,
+  },
+  {
+    path: "/ayurveda",
+    route: AyurvedaRoutes,
   },
 ];
 
