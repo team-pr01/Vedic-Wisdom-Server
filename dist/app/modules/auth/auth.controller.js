@@ -92,13 +92,13 @@ const resetPassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
         data: {},
     });
 }));
-// Change User Role (For admin)
-const changeUserRole = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield auth_service_1.AuthServices.changeUserRole(req.body);
+const changePassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = req.user.userId;
+    const result = yield auth_service_1.AuthServices.changePassword(userId, req.body);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
-        message: "User role updated successfully.",
+        message: "Password changed successfully.",
         data: result,
     });
 }));
@@ -111,16 +111,6 @@ const assignPagesToUser = (0, catchAsync_1.default)((req, res) => __awaiter(void
         data: result,
     });
 }));
-// Save Push Token
-const savePushToken = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield auth_service_1.AuthServices.saveUserPushToken(req.body);
-    (0, sendResponse_1.default)(res, {
-        statusCode: http_status_1.default.OK,
-        success: true,
-        message: "Push token saved successfully",
-        data: result,
-    });
-}));
 exports.AuthControllers = {
     signup,
     loginUser,
@@ -129,7 +119,6 @@ exports.AuthControllers = {
     verifyForgotPasswordOtp,
     resendForgotPasswordOtp,
     resetPassword,
-    changeUserRole,
+    changePassword,
     assignPagesToUser,
-    savePushToken,
 };

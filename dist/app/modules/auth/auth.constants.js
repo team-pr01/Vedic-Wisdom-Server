@@ -4,6 +4,5 @@ exports.UserRole = void 0;
 exports.UserRole = {
     user: 'user',
     moderator: 'moderator',
-    temple: 'temple',
     admin: 'admin',
 };

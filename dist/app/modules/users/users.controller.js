@@ -123,6 +123,16 @@ const restoreDeletedAccount = (0, catchAsync_1.default)((req, res) => __awaiter(
 //     data: result,
 //   });
 // });
+// Save Push Token
+const savePushToken = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield users_services_1.UserServices.saveUserPushToken(req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Push token saved successfully",
+        data: result,
+    });
+}));
 exports.UserControllers = {
     getAllUser,
     // getMe,
@@ -134,4 +144,5 @@ exports.UserControllers = {
     // requestToUnlockProfile,
     // toggleLockProfile,
     // updateProfile,
+    savePushToken,
 };

@@ -36,6 +36,7 @@ router.get("/:userId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth
 //   multerUpload.single("file"),
 //   UserControllers.updateProfile
 // );
+router.patch("/save-push-token", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.temple, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), users_controller_1.UserControllers.savePushToken);
 router.patch("/delete-account", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.guardian, auth_constants_1.UserRole.tutor), users_controller_1.UserControllers.deleteAccount);
 // For admin and staff only
 router.patch("/account/restore/:userId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.staff), users_controller_1.UserControllers.restoreDeletedAccount);

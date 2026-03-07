@@ -18,7 +18,6 @@ const http_status_1 = __importDefault(require("http-status"));
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = __importDefault(require("../../config"));
-// import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 const auth_model_1 = require("./auth.model");
 const sendEmail_1 = require("../../utils/sendEmail");
 const bcrypt_1 = __importDefault(require("bcrypt"));
@@ -210,17 +209,33 @@ const resetPassword = (payload) => __awaiter(void 0, void 0, void 0, function* (
     });
     return {};
 });
-// Change user role (For admin)
-const changeUserRole = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield auth_model_1.User.findById(payload === null || payload === void 0 ? void 0 : payload.userId);
+const changePassword = (userId, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const { currentPassword, newPassword } = payload;
+    const user = yield auth_model_1.User.findById(userId).select("+password");
     if (!user) {
-        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
+        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found.");
     }
-    const result = yield auth_model_1.User.findByIdAndUpdate(payload === null || payload === void 0 ? void 0 : payload.userId, { role: payload === null || payload === void 0 ? void 0 : payload.role }, {
-        new: true,
-        runValidators: true,
+    // Check if user is deleted or suspended
+    if (user.isDeleted) {
+        throw new AppError_1.default(http_status_1.default.FORBIDDEN, "User account deleted.");
+    }
+    if (user.isSuspended) {
+        throw new AppError_1.default(http_status_1.default.FORBIDDEN, "Account suspended.");
+    }
+    // Verify current password
+    const isPasswordMatched = yield auth_model_1.User.isPasswordMatched(currentPassword, user.password);
+    if (!isPasswordMatched) {
+        throw new AppError_1.default(http_status_1.default.UNAUTHORIZED, "Current password is incorrect.");
+    }
+    // Hash new password
+    const hashedPassword = yield bcrypt_1.default.hash(newPassword, Number(config_1.default.bcrypt_salt_round));
+    yield auth_model_1.User.updateOne({ _id: userId }, {
+        $set: {
+            password: hashedPassword,
+            passwordChangedAt: new Date(),
+        },
     });
-    return result;
+    return {};
 });
 const assignPagesToUser = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield auth_model_1.User.findById(payload.userId);
@@ -228,19 +243,6 @@ const assignPagesToUser = (payload) => __awaiter(void 0, void 0, void 0, functio
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
     }
     const result = yield auth_model_1.User.findByIdAndUpdate(payload.userId, { assignedPages: payload.pages }, { new: true, runValidators: true });
-    return result;
-});
-// Change user role (For admin)
-const saveUserPushToken = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(payload);
-    const user = yield auth_model_1.User.findById(payload === null || payload === void 0 ? void 0 : payload.userId);
-    if (!user) {
-        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
-    }
-    const result = yield auth_model_1.User.findByIdAndUpdate(payload.userId, { expoPushToken: payload.expoPushToken }, {
-        new: true,
-        runValidators: true,
-    });
     return result;
 });
 exports.AuthServices = {
@@ -251,7 +253,6 @@ exports.AuthServices = {
     verifyForgotPasswordOtp,
     resendForgotPasswordOtp,
     resetPassword,
-    changeUserRole,
+    changePassword,
     assignPagesToUser,
-    saveUserPushToken,
 };

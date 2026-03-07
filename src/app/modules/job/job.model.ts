@@ -93,7 +93,6 @@ const jobSchema = new Schema<TJob>(
 
         experienceLevel: {
             type: String,
-            enum: ["entry", "junior", "mid", "senior", "lead"],
             required: true,
         },
 
@@ -123,6 +122,7 @@ const jobSchema = new Schema<TJob>(
         /* These are conditionally required */
         company: companySchema,
         individual: individualSchema,
+        postedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     },
     {
         timestamps: true,
@@ -131,9 +131,15 @@ const jobSchema = new Schema<TJob>(
 );
 
 /* ---------------- INDEXES ---------------- */
+
 jobSchema.index({ title: "text", description: "text" });
 jobSchema.index({ status: 1 });
 jobSchema.index({ "location.city": 1 });
+jobSchema.index({ "location.state": 1 });
+jobSchema.index({ "location.country": 1 });
+jobSchema.index({ jobType: 1 });
+jobSchema.index({ workMode: 1 });
+jobSchema.index({ experienceLevel: 1 });
 
 /* ---------------- MODEL ---------------- */
 const Job = model<TJob>("Job", jobSchema);

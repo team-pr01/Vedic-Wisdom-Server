@@ -1,3 +1,5 @@
+import { ObjectId } from "mongoose";
+
 // salary type
 export type TSalary =
     | {
@@ -68,7 +70,7 @@ export type TJobBase = {
 
     workMode: "hybrid" | "remote" | "onsite";
 
-    experienceLevel: "entry" | "junior" | "mid" | "senior" | "lead";
+    experienceLevel: string;
 
     salary: TSalary;
 
@@ -81,6 +83,7 @@ export type TJobBase = {
     applicationCount?: number;
 
     status: "pending" | "rejected" | "active" | "closed";
+    postedBy : ObjectId;
 
     createdAt?: Date;
     updatedAt?: Date;

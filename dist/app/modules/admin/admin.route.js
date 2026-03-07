@@ -9,5 +9,6 @@ const auth_1 = __importDefault(require("../../middlewares/auth"));
 const auth_constants_1 = require("../auth/auth.constants");
 const admin_controller_1 = require("./admin.controller");
 const router = express_1.default.Router();
-router.get("/stats", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.staff), admin_controller_1.AdminController.getAdminStats);
+router.get("/stats", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), admin_controller_1.AdminController.getAdminStats);
+router.put("/change-role", (0, auth_1.default)(auth_constants_1.UserRole.admin), admin_controller_1.AdminController.changeUserRole);
 exports.AdminRoutes = router;

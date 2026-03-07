@@ -8,9 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserServices = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
+const http_status_1 = __importDefault(require("http-status"));
+const AppError_1 = __importDefault(require("../../errors/AppError"));
 const auth_model_1 = require("../auth/auth.model");
 // import AppError from "../../errors/AppError";
 // import httpStatus from "http-status";
@@ -89,7 +94,7 @@ const deleteAccount = (userId, payload) => __awaiter(void 0, void 0, void 0, fun
     if (!user)
         throw new Error("User not found");
     user.isDeleted = true;
-    user.accountDeleteReason = payload.accountDeleteReason || null;
+    // user.accountDeleteReason = payload.accountDeleteReason || null;
     yield user.save();
     return user;
 });
@@ -252,6 +257,18 @@ const restoreDeletedAccount = (userId) => __awaiter(void 0, void 0, void 0, func
 //   );
 //   return updatedProfile;
 // };
+// Change user role (For admin)
+const saveUserPushToken = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield auth_model_1.User.findById(payload === null || payload === void 0 ? void 0 : payload.userId);
+    if (!user) {
+        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
+    }
+    const result = yield auth_model_1.User.findByIdAndUpdate(payload.userId, { expoPushToken: payload.expoPushToken }, {
+        new: true,
+        runValidators: true,
+    });
+    return result;
+});
 exports.UserServices = {
     getAllUser,
     // getMe,
@@ -263,4 +280,5 @@ exports.UserServices = {
     // requestToUnlockProfile,
     // toggleLockProfile,
     // updateProfile,
+    saveUserPushToken
 };

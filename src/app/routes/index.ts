@@ -11,6 +11,7 @@ import { AiRoutes } from "../modules/ai/ai.route";
 import { ReelsRoutes } from "../modules/reels/reels.route";
 import { CourseRoutes } from "../modules/course/course.route";
 import { AyurvedaRoutes } from "../modules/ayurveda/ayurveda.route";
+import { JobRoutes } from "../modules/job/job.route";
 
 const router = Router();
 
@@ -62,6 +63,10 @@ const moduleRoutes = [
   {
     path: "/ayurveda",
     route: AyurvedaRoutes,
+  },
+  {
+    path: "/job",
+    route: JobRoutes,
   },
 ];
 
