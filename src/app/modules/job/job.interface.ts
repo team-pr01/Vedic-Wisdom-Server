@@ -81,6 +81,7 @@ export type TJobBase = {
     applicationDeadline: Date;
 
     applicationCount?: number;
+    applications ?: ObjectId[];
 
     status: "pending" | "rejected" | "active" | "closed";
     postedBy : ObjectId;

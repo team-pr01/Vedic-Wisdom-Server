@@ -105,6 +105,7 @@ const jobSchema = new Schema<TJob>(
         applicationDeadline: { type: Date, required: true },
 
         applicationCount: { type: Number, default: 0 },
+        applications: [{ type: Schema.Types.ObjectId, ref: "Application" }],
 
         status: {
             type: String,
