@@ -37,14 +37,20 @@ const deleteProduct = catchAsync(async (req, res) => {
 });
 
 const getVendorProducts = catchAsync(async (req, res) => {
+
+  const { vendorId } = req.params;
+  const { skip = "0", limit = "10" } = req.query;
+
   const result = await ProductServices.getVendorProducts(
-    req.user.userId
+    vendorId,
+    Number(skip),
+    Number(limit)
   );
 
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
-    message: "Products fetched successfully",
+    message: "Vendor products fetched successfully",
     data: result,
   });
 });

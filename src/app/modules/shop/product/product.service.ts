@@ -4,6 +4,7 @@ import Product from "./product.model";
 import Vendor from "../vendor/vendor.model";
 import AppError from "../../../errors/AppError";
 import { sendImageToCloudinary } from "../../../utils/sendImageToCloudinary";
+import { infinitePaginate } from "../../../utils/infinitePaginate";
 
 const addProduct = async (
     user: any,
@@ -36,7 +37,6 @@ const addProduct = async (
 
     const product = await Product.create({
         ...payload,
-        vendorId: vendor._id,
         imageUrls,
     });
 
@@ -69,16 +69,23 @@ const deleteProduct = async (productId: string, user: any) => {
     return true;
 };
 
-const getVendorProducts = async (userId: string) => {
-    const vendor = await Vendor.findOne({ userId });
+const getVendorProducts = async (
+    vendorId: string,
+    skip = 0,
+    limit = 10
+) => {
+
+    const vendor = await Vendor.findById(vendorId);
 
     if (!vendor) {
         throw new AppError(httpStatus.NOT_FOUND, "Vendor not found");
     }
 
-    return Product.find({ vendorId: vendor._id }).sort({
-        createdAt: -1,
-    });
+    const query = {
+        vendorId,
+    };
+
+    return infinitePaginate(Product, query, skip, limit);
 };
 
 export const ProductServices = {

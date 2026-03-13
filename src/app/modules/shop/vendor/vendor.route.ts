@@ -9,21 +9,10 @@ const router = express.Router();
 router.post(
     "/apply",
     auth(UserRole.user),
-    multerUpload.array("files", 5),
+    multerUpload.array("files", 2),
     VendorControllers.applyVendor
 );
 
-router.patch(
-    "/update-status/:vendorId",
-    auth(UserRole.admin, UserRole.moderator),
-    VendorControllers.updateVendorStatus
-);
-
-router.get(
-    "/my-stats",
-    auth(UserRole.user),
-    VendorControllers.getMyVendorStats
-);
 
 /* Get Pending Applications */
 router.get(
@@ -41,6 +30,13 @@ router.get(
 );
 
 
+router.get(
+    "/my-stats",
+    auth(UserRole.user),
+    VendorControllers.getMyVendorStats
+);
+
+
 /* Get Single Vendor */
 router.get(
     "/:vendorId",
@@ -49,11 +45,25 @@ router.get(
 );
 
 
+
+router.patch(
+    "/update-status/:vendorId",
+    auth(UserRole.admin, UserRole.moderator),
+    VendorControllers.updateVendorStatus
+);
+
+
 /* Suspend Vendor */
 router.patch(
     "/suspend/:vendorId",
     auth(UserRole.admin, UserRole.moderator),
     VendorControllers.suspendVendor
+);
+
+router.patch(
+    "/withdraw-suspension/:vendorId",
+    auth(UserRole.admin, UserRole.moderator),
+    VendorControllers.withdrawVendorSuspension
 );
 
 export const VendorRoutes = router;

@@ -38,7 +38,6 @@ const getPendingVendorApplications = catchAsync(async (req, res) => {
     });
 });
 
-
 /* All Vendors */
 const getAllVendors = catchAsync(async (req, res) => {
 
@@ -63,7 +62,6 @@ const getAllVendors = catchAsync(async (req, res) => {
     });
 });
 
-
 /* Single Vendor */
 const getSingleVendorById = catchAsync(async (req, res) => {
 
@@ -83,6 +81,7 @@ const getSingleVendorById = catchAsync(async (req, res) => {
 
 // For vendors
 const getMyVendorStats = catchAsync(async (req, res) => {
+    console.log(req.user);
     const result = await VendorServices.getMyVendorStats(
         req.user.userId
     );
@@ -116,11 +115,10 @@ const updateVendorStatus = catchAsync(async (req, res) => {
 const suspendVendor = catchAsync(async (req, res) => {
 
     const { vendorId } = req.params;
-    const { reason } = req.body;
 
     const result = await VendorServices.suspendVendor(
         vendorId,
-        reason
+        req.body
     );
 
     sendResponse(res, {
@@ -131,12 +129,30 @@ const suspendVendor = catchAsync(async (req, res) => {
     });
 });
 
+/* Withdraw Suspension */
+const withdrawVendorSuspension = catchAsync(async (req, res) => {
+
+    const { vendorId } = req.params;
+
+    const result = await VendorServices.withdrawVendorSuspension(
+        vendorId
+    );
+
+    sendResponse(res, {
+        success: true,
+        statusCode: httpStatus.OK,
+        message: "Vendor suspension withdrawn successfully",
+        data: result,
+    });
+});
+
 export const VendorControllers = {
     applyVendor,
     getPendingVendorApplications,
     getAllVendors,
     getSingleVendorById,
     getMyVendorStats,
-    suspendVendor,
     updateVendorStatus,
+    suspendVendor,
+    withdrawVendorSuspension,
 };

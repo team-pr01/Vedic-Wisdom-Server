@@ -4,6 +4,7 @@ import Vendor from "./vendor.model";
 import AppError from "../../../errors/AppError";
 import { sendImageToCloudinary } from "../../../utils/sendImageToCloudinary";
 import { infinitePaginate } from "../../../utils/infinitePaginate";
+import Product from "../product/product.model";
 
 const applyVendor = async (
     user: any,
@@ -17,6 +18,10 @@ const applyVendor = async (
     }
 
     let documentUrls: string[] = [];
+
+    if (!files.length) {
+        throw new AppError(httpStatus.BAD_REQUEST, "Please upload your NID or Business Trade License");
+    }
 
     if (files.length) {
         const uploads = files.map(async (file, index) => {
@@ -56,14 +61,12 @@ const getPendingVendorApplications = async (
     ]);
 };
 
-
 /* Get All Vendors */
 const getAllVendors = async (
     filters: any = {},
     skip = 0,
     limit = 10
 ) => {
-
     const query: any = {};
 
     if (filters.status) {
@@ -71,23 +74,18 @@ const getAllVendors = async (
     }
 
     if (filters.keyword) {
-        query.shopName = {
-            $regex: filters.keyword,
-            $options: "i",
+        query.$text = {
+            $search: filters.keyword,
         };
     }
 
-    return infinitePaginate(Vendor, query, skip, limit, [
-        { path: "userId", select: "name email phoneNumber" },
-    ]);
+    return infinitePaginate(Vendor, query, skip, limit, []);
 };
-
 
 /* Get Single Vendor */
 const getSingleVendorById = async (vendorId: string) => {
 
-    const vendor = await Vendor.findById(vendorId)
-        .populate("userId", "name email phoneNumber");
+    const vendor = await Vendor.findById(vendorId);
 
     if (!vendor) {
         throw new AppError(httpStatus.NOT_FOUND, "Vendor not found");
@@ -98,34 +96,35 @@ const getSingleVendorById = async (vendorId: string) => {
 
 // For vendors
 const getMyVendorStats = async (userId: string) => {
+
     const vendor = await Vendor.findOne({ userId });
 
     if (!vendor) {
         throw new AppError(httpStatus.NOT_FOUND, "Vendor not found");
     }
 
-    return vendor;
-};
+    const stats = await Product.aggregate([
+        {
+            $match: {
+                vendorId: vendor._id,
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                totalProductsCount: { $sum: 1 },
+                totalClicksCount: { $sum: "$totalClicks" },
+            },
+        },
+    ]);
 
-/* Suspend Vendor */
-const suspendVendor = async (
-    vendorId: string,
-    reason: string
-) => {
+    const totalProductsCount = stats[0]?.totalProductsCount || 0;
+    const totalClicksCount = stats[0]?.totalClicksCount || 0;
 
-    const vendor = await Vendor.findById(vendorId);
-
-    if (!vendor) {
-        throw new AppError(httpStatus.NOT_FOUND, "Vendor not found");
-    }
-
-    vendor.status = "suspended";
-    vendor.suspensionReason = reason;
-    vendor.suspendedAt = new Date();
-
-    await vendor.save();
-
-    return vendor;
+    return {
+        totalProductsCount,
+        totalClicksCount,
+    };
 };
 
 const updateVendorStatus = async (vendorId: string, status: string) => {
@@ -134,6 +133,51 @@ const updateVendorStatus = async (vendorId: string, status: string) => {
     if (!vendor) {
         throw new AppError(httpStatus.NOT_FOUND, "Vendor not found");
     };
+
+    return {};
+};
+
+/* Suspend Vendor */
+const suspendVendor = async (
+    vendorId: string,
+    payload: any
+) => {
+
+    const vendor = await Vendor.findByIdAndUpdate(vendorId, {
+        $set: {
+            status: "suspended",
+            suspensionReason: payload?.suspensionReason,
+            suspendedAt: new Date(),
+        },
+    });
+
+    if (!vendor) {
+        throw new AppError(httpStatus.NOT_FOUND, "Vendor not found");
+    };
+
+    return vendor;
+};
+
+/* Withdraw Vendor Suspension */
+const withdrawVendorSuspension = async (vendorId: string) => {
+
+    const vendor = await Vendor.findByIdAndUpdate(
+        vendorId,
+        {
+            $set: {
+                status: "approved",
+            },
+            $unset: {
+                suspensionReason: "",
+                suspendedAt: "",
+            },
+        },
+        { new: true }
+    );
+
+    if (!vendor) {
+        throw new AppError(httpStatus.NOT_FOUND, "Vendor not found");
+    }
 
     return vendor;
 };
@@ -146,6 +190,7 @@ export const VendorServices = {
     getAllVendors,
     getSingleVendorById,
     getMyVendorStats,
-    suspendVendor,
     updateVendorStatus,
+    suspendVendor,
+    withdrawVendorSuspension,
 };

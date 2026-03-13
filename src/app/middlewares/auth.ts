@@ -10,6 +10,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const token = req.headers.authorization;
 
+
     // Check if there is any token sent by the client or not.
     if (!token) {
       throw new AppError(

@@ -51,14 +51,15 @@ const productSchema = new Schema<TProduct>(
       type: Number,
     },
 
-    totalViews: {
-      type: Number,
-      default: 0,
-    },
-
     totalClicks: {
       type: Number,
       default: 0,
+    },
+    addedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
     },
   },
   {
