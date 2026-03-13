@@ -40,8 +40,8 @@ router.get(
 
 router.patch(
   "/update/:productId",
-  auth(UserRole.user),
-  multerUpload.array("files", 10),
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
+  multerUpload.array("files", 4),
   ProductControllers.updateProduct
 );
 

@@ -6,6 +6,7 @@ import AppError from "../../../errors/AppError";
 import { sendImageToCloudinary } from "../../../utils/sendImageToCloudinary";
 import { infinitePaginate } from "../../../utils/infinitePaginate";
 import { User } from "../../auth/auth.model";
+import { deleteImageFromCloudinary } from "../../../utils/deleteImageFromCloudinary";
 
 const addProduct = async (
     userId: any,
@@ -86,28 +87,28 @@ const getSingleProductById = async (productId: string) => {
 
 // For Vendor
 const getMyProducts = async (
-  userId: string,
-  skip = 0,
-  limit = 10
+    userId: string,
+    skip = 0,
+    limit = 10
 ) => {
 
-  const vendor = await Vendor.findOne({
-    userId,
-    status: "approved",
-  }).lean();
+    const vendor = await Vendor.findOne({
+        userId,
+        status: "approved",
+    }).lean();
 
-  if (!vendor) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "Vendor not approved or not found"
-    );
-  }
+    if (!vendor) {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            "Vendor not approved or not found"
+        );
+    }
 
-  const query = {
-    addedBy: userId,
-  };
+    const query = {
+        addedBy: userId,
+    };
 
-  return infinitePaginate(Product, query, skip, limit);
+    return infinitePaginate(Product, query, skip, limit);
 };
 
 // For admin
@@ -133,7 +134,7 @@ const getVendorProducts = async (
 /* Update Product */
 const updateProduct = async (
     productId: string,
-    user: any,
+    userId: any,
     payload: any,
     files: Express.Multer.File[]
 ) => {
@@ -144,11 +145,23 @@ const updateProduct = async (
         throw new AppError(httpStatus.NOT_FOUND, "Product not found");
     }
 
-    const vendor = await Vendor.findOne({ userId: user.userId });
+    const user = await User.findById(userId).lean();
 
-    if (!vendor || product.addedBy.toString() !== vendor._id.toString()) {
-        throw new AppError(httpStatus.FORBIDDEN, "Not allowed");
-    }
+    // Checking if vendor is approved or not
+    if (user?.role === "user") {
+        const vendor = await Vendor.findOne({
+            userId,
+            status: "approved",
+        });
+
+        if (!vendor) {
+            throw new AppError(httpStatus.FORBIDDEN, "Vendor not approved");
+        }
+
+        if (vendor.userId.toString() !== product.addedBy.toString()) {
+            throw new AppError(httpStatus.FORBIDDEN, "Not allowed");
+        }
+    };
 
     let imageUrls = product.imageUrls || [];
 
@@ -181,24 +194,36 @@ const updateProduct = async (
     return updatedProduct;
 };
 
-const deleteProduct = async (productId: string, user: any) => {
+const deleteProduct = async (productId: string, userId: string) => {
+
     const product = await Product.findById(productId);
 
     if (!product) {
         throw new AppError(httpStatus.NOT_FOUND, "Product not found");
     }
 
-    const vendor = await Vendor.findOne({ userId: user.userId });
-
-    if (!vendor || product.addedBy.toString() !== vendor._id.toString()) {
+    if (userId.toString() !== product.addedBy.toString()) {
         throw new AppError(httpStatus.FORBIDDEN, "Not allowed");
     }
 
-    await Product.findByIdAndDelete(productId);
+    /* Delete images from cloudinary */
+    if (product.imageUrls?.length) {
 
-    await Vendor.findByIdAndUpdate(vendor._id, {
-        $inc: { totalProducts: -1 },
-    });
+        await Promise.all(
+            product.imageUrls.map(async (url: string) => {
+
+                const publicId = url.split("/").pop()?.split(".")[0];
+
+                if (publicId) {
+                    await deleteImageFromCloudinary(publicId);
+                }
+
+            })
+        );
+
+    }
+
+    await Product.findByIdAndDelete(productId);
 
     return true;
 };

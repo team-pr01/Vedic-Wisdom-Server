@@ -108,7 +108,7 @@ const updateProduct = catchAsync(async (req, res) => {
 
   const result = await ProductServices.updateProduct(
     productId,
-    req.user,
+    req.user.userId,
     req.body,
     files
   );
@@ -126,7 +126,7 @@ const deleteProduct = catchAsync(async (req, res) => {
 
   const result = await ProductServices.deleteProduct(
     productId,
-    req.user
+    req.user.userId
   );
 
   sendResponse(res, {
