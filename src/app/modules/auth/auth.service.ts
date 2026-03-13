@@ -10,28 +10,39 @@ import bcrypt from "bcrypt";
 import { createToken } from "./auth.utils";
 import { customUserIdGenerator } from "../../utils/customUserIdGenerator";
 import { generate4DigitsOTP } from "../../utils/generate4DigitsOTP";
+import { ReferralServices } from "../referral/referral.service";
 
 
 // Signup
-const signup = async (
-  payload: Partial<TUser>
-) => {
+const signup = async (payload: Partial<TUser>) => {
+
   // Checking if user already exists by email address
   const isUserExistsByEmail = await User.findOne({ email: payload.email });
   if (isUserExistsByEmail) {
-    throw new AppError(httpStatus.CONFLICT, "User already exists by this email address.");
-  };
+    throw new AppError(
+      httpStatus.CONFLICT,
+      "User already exists by this email address."
+    );
+  }
 
   // Checking if user already exists by phone number
-  const isUserExistsByPhoneNumber = await User.findOne({ phoneNumber: payload.phoneNumber });
+  const isUserExistsByPhoneNumber = await User.findOne({
+    phoneNumber: payload.phoneNumber,
+  });
   if (isUserExistsByPhoneNumber) {
-    throw new AppError(httpStatus.CONFLICT, "User already exists by this phone number.");
-  };
+    throw new AppError(
+      httpStatus.CONFLICT,
+      "User already exists by this phone number."
+    );
+  }
 
   const userId = await customUserIdGenerator();
 
+  // Extract referralCode if exists
+  const { referralCode, ...restPayload } = payload;
+
   const payloadData = {
-    ...payload,
+    ...restPayload,
     role: payload.role || "user",
     userId,
     isDeleted: false,
@@ -40,6 +51,15 @@ const signup = async (
   };
 
   const result = await User.create(payloadData);
+
+  // Handle referral reward if referralCode provided
+  if (referralCode) {
+    await ReferralServices.handleReferralReward(
+      result._id.toString(),
+      referralCode
+    );
+  }
+
   return result;
 };
 

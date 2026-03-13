@@ -11,7 +11,7 @@ const userSchema = new Schema<TUser, UserModel>(
       unique: true,
       trim: true,
     },
-    avatar: {
+    profilePicture: {
       type: String,
       required: false,
     },
@@ -65,17 +65,12 @@ const userSchema = new Schema<TUser, UserModel>(
     },
     role: {
       type: String,
-      enum: ["user", "admin", "moderator", "super-admin", "temple"],
+      enum: ["user", "admin", "moderator"],
       default: "user",
     },
     assignedPages: {
       type: [String],
       default: [],
-    },
-    totalQuizTaken: {
-      type: Number,
-      required: false,
-      default: 0,
     },
     expoPushToken: {
       type: String,
@@ -102,9 +97,6 @@ const userSchema = new Schema<TUser, UserModel>(
       default: null,
       required: false,
     },
-    plan: { type: String, default: "free" },
-    subscriptionStart: Date,
-    subscriptionEnd: Date,
 
     // Usage tracking for subscription
     usage: {
@@ -117,6 +109,23 @@ const userSchema = new Schema<TUser, UserModel>(
       lastDailyReset: Date,
       lastMonthlyReset: Date,
     },
+    referralCode: {
+      type: String,
+      unique: true,
+      default: null,
+    },
+    referralCount: {
+      type: Number,
+      default: 0,
+    },
+    premiumUnlocked: {
+      type: Boolean,
+      default: false,
+    },
+    coins: {
+      type: Number,
+      default: 0,
+    }
   },
   {
     timestamps: true,

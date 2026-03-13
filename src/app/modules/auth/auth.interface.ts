@@ -10,7 +10,7 @@ import { UserRole } from "./auth.constants";
 export type TUser = {
   _id: string;
   userId: string;
-  avatar?: string;
+  profilePicture?: string;
   name: string;
   email: string;
   countryCode: string;
@@ -20,9 +20,8 @@ export type TUser = {
   state?: string;
   country?: string;
   password: string;
-  role: "user" | "admin" | "moderator" | "temple";
+  role: "user" | "admin" | "moderator";
   assignedPages?: string[];
-  totalQuizTaken?: number;
   expoPushToken: string;
   resetPasswordOtp: string | null;
   resetPasswordOtpExpiresAt: Date | null;
@@ -31,9 +30,6 @@ export type TUser = {
   isDeleted: boolean;
   isSuspended: boolean;
   lastLoggedIn?: Date;
-  plan?: string;
-  subscriptionStart?: Date;
-  subscriptionEnd?: Date;
   // Usage tracking for subscription
   usage: {
     aiChatDaily: number;
@@ -45,6 +41,10 @@ export type TUser = {
     lastDailyReset?: Date;
     lastMonthlyReset?: Date;
   };
+  referralCode?: string;
+  referralCount: number;
+  premiumUnlocked: boolean;
+  coins: number;
 };
 
 export interface UserModel extends Model<TUser> {
