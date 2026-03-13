@@ -5,20 +5,26 @@ import Vendor from "../vendor/vendor.model";
 import AppError from "../../../errors/AppError";
 import { sendImageToCloudinary } from "../../../utils/sendImageToCloudinary";
 import { infinitePaginate } from "../../../utils/infinitePaginate";
+import { User } from "../../auth/auth.model";
 
 const addProduct = async (
-    user: any,
+    userId: any,
     payload: any,
     files: Express.Multer.File[]
 ) => {
-    const vendor = await Vendor.findOne({
-        userId: user.userId,
-        status: "approved",
-    });
+    const user = await User.findById(userId).lean();
 
-    if (!vendor) {
-        throw new AppError(httpStatus.FORBIDDEN, "Vendor not approved");
-    }
+    // Checking if vendor is approved or not
+    if (user?.role === "user") {
+        const vendor = await Vendor.findOne({
+            userId,
+            status: "approved",
+        });
+
+        if (!vendor) {
+            throw new AppError(httpStatus.FORBIDDEN, "Vendor not approved");
+        }
+    };
 
     let imageUrls: string[] = [];
 
@@ -38,13 +44,141 @@ const addProduct = async (
     const product = await Product.create({
         ...payload,
         imageUrls,
-    });
-
-    await Vendor.findByIdAndUpdate(vendor._id, {
-        $inc: { totalProducts: 1 },
+        addedBy: userId,
     });
 
     return product;
+};
+
+/* Get All Products */
+const getAllProducts = async (
+    filters: any = {},
+    skip = 0,
+    limit = 10
+) => {
+
+    const query: any = {};
+
+    if (filters.category) {
+        query.category = filters.category;
+    }
+
+    if (filters.keyword) {
+        query.$text = {
+            $search: filters.keyword,
+        };
+    }
+
+    return infinitePaginate(Product, query, skip, limit, []);
+};
+
+/* Get Single Product */
+const getSingleProductById = async (productId: string) => {
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+        throw new AppError(httpStatus.NOT_FOUND, "Product not found");
+    }
+
+    return product;
+};
+
+// For Vendor
+const getMyProducts = async (
+  userId: string,
+  skip = 0,
+  limit = 10
+) => {
+
+  const vendor = await Vendor.findOne({
+    userId,
+    status: "approved",
+  }).lean();
+
+  if (!vendor) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Vendor not approved or not found"
+    );
+  }
+
+  const query = {
+    addedBy: userId,
+  };
+
+  return infinitePaginate(Product, query, skip, limit);
+};
+
+// For admin
+const getVendorProducts = async (
+    userId: string,
+    skip = 0,
+    limit = 10
+) => {
+
+    const vendor = await Vendor.findOne({ userId }).lean();
+
+    if (!vendor) {
+        throw new AppError(httpStatus.NOT_FOUND, "Vendor not found");
+    }
+
+    const query = {
+        addedBy: vendor.userId,
+    };
+
+    return infinitePaginate(Product, query, skip, limit);
+};
+
+/* Update Product */
+const updateProduct = async (
+    productId: string,
+    user: any,
+    payload: any,
+    files: Express.Multer.File[]
+) => {
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+        throw new AppError(httpStatus.NOT_FOUND, "Product not found");
+    }
+
+    const vendor = await Vendor.findOne({ userId: user.userId });
+
+    if (!vendor || product.addedBy.toString() !== vendor._id.toString()) {
+        throw new AppError(httpStatus.FORBIDDEN, "Not allowed");
+    }
+
+    let imageUrls = product.imageUrls || [];
+
+    if (files?.length) {
+
+        const uploads = files.map(async (file, index) => {
+
+            const { secure_url } = await sendImageToCloudinary(
+                `product-${Date.now()}-${index}`,
+                file.path
+            );
+
+            return secure_url;
+        });
+
+        const uploadedImages = await Promise.all(uploads);
+
+        imageUrls = [...imageUrls, ...uploadedImages];
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+        productId,
+        {
+            ...payload,
+            imageUrls,
+        },
+        { new: true }
+    );
+
+    return updatedProduct;
 };
 
 const deleteProduct = async (productId: string, user: any) => {
@@ -56,7 +190,7 @@ const deleteProduct = async (productId: string, user: any) => {
 
     const vendor = await Vendor.findOne({ userId: user.userId });
 
-    if (!vendor || product.vendorId.toString() !== vendor._id.toString()) {
+    if (!vendor || product.addedBy.toString() !== vendor._id.toString()) {
         throw new AppError(httpStatus.FORBIDDEN, "Not allowed");
     }
 
@@ -69,27 +203,13 @@ const deleteProduct = async (productId: string, user: any) => {
     return true;
 };
 
-const getVendorProducts = async (
-    vendorId: string,
-    skip = 0,
-    limit = 10
-) => {
-
-    const vendor = await Vendor.findById(vendorId);
-
-    if (!vendor) {
-        throw new AppError(httpStatus.NOT_FOUND, "Vendor not found");
-    }
-
-    const query = {
-        vendorId,
-    };
-
-    return infinitePaginate(Product, query, skip, limit);
-};
 
 export const ProductServices = {
     addProduct,
-    deleteProduct,
+    getAllProducts,
+    getSingleProductById,
+    getMyProducts,
     getVendorProducts,
+    updateProduct,
+    deleteProduct,
 };

@@ -1,9 +1,9 @@
 import { ObjectId } from "mongoose";
 
 export type TProduct = {
-  vendorId: ObjectId;
   name: string;
   category: string;
+  description: string;
   imageUrls: string[];
   rating?: number;
   soldCount?: number;

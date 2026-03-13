@@ -3,13 +3,6 @@ import { TProduct } from "./product.interface";
 
 const productSchema = new Schema<TProduct>(
   {
-    vendorId: {
-      type: Schema.Types.ObjectId,
-      ref: "Vendor",
-      required: true,
-      index: true,
-    },
-
     name: {
       type: String,
       required: true,
@@ -20,6 +13,10 @@ const productSchema = new Schema<TProduct>(
       type: String,
       required: true,
       index: true,
+    },
+    description: {
+      type: String,
+      required: true,
     },
 
     imageUrls: {
@@ -66,6 +63,16 @@ const productSchema = new Schema<TProduct>(
     timestamps: true,
   }
 );
+
+/* TEXT SEARCH INDEX */
+productSchema.index({
+  name: "text",
+  description: "text",
+  category: "text",
+});
+
+productSchema.index({ addedBy: 1 });
+productSchema.index({ category: 1 });
 
 const Product = model<TProduct>("Product", productSchema);
 
