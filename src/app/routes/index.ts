@@ -14,6 +14,8 @@ import { AyurvedaRoutes } from "../modules/ayurveda/ayurveda.route";
 import { JobRoutes } from "../modules/job/job.route";
 import { ApplicationRoutes } from "../modules/job/applications/application.route";
 import { ReferralRoutes } from "../modules/referral/referral.route";
+import { VendorRoutes } from "../modules/shop/vendor/vendor.route";
+import { ProductRoutes } from "../modules/shop/product/product.route";
 
 const router = Router();
 
@@ -77,6 +79,14 @@ const moduleRoutes = [
   {
     path: "/referral",
     route: ReferralRoutes,
+  },
+  {
+    path: "/product",
+    route: ProductRoutes,
+  },
+  {
+    path: "/vendor",
+    route: VendorRoutes,
   },
 ];
 
