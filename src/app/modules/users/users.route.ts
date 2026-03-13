@@ -2,6 +2,7 @@ import express from "express";
 import { UserControllers } from "./users.controller";
 import auth from "../../middlewares/auth";
 import { UserRole } from "../auth/auth.constants";
+import { multerUpload } from "../../config/multer.config";
 
 const router = express.Router();
 
@@ -32,22 +33,20 @@ router.patch(
 );
 router.get(
   "/:userId",
-  auth(UserRole.admin, UserRole.staff),
+  auth(UserRole.admin, UserRole.moderator),
   UserControllers.getSingleUserById
 );
 
-// router.patch(
-//   "/update-profile",
-//   auth(
-//     UserRole.user,
-//     UserRole.admin,
-//     UserRole.staff,
-//     UserRole.tutor,
-//     UserRole.guardian
-//   ),
-//   multerUpload.single("file"),
-//   UserControllers.updateProfile
-// );
+router.patch(
+  "/update-profile",
+  auth(
+    UserRole.user,
+    UserRole.admin,
+    UserRole.user,
+  ),
+  multerUpload.single("file"),
+  UserControllers.updateProfile
+);
 
 router.patch(
   "/save-push-token",
@@ -61,10 +60,11 @@ router.patch(
   UserControllers.deleteAccount
 );
 
-// For admin and staff only
+// For admin and moderator only
 router.patch(
   "/account/restore/:userId",
-  UserControllers.restoreDeletedAccount
+  auth(UserRole.admin, UserRole.moderator),
+  UserControllers.restoreUsersDeletedAccount
 );
 
 export const UserRoutes = router;

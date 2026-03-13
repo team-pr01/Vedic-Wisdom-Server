@@ -3,6 +3,8 @@ import httpStatus from "http-status";
 import AppError from "../../errors/AppError";
 import { User } from "../auth/auth.model";
 import { infinitePaginate } from "../../utils/infinitePaginate";
+import { deleteImageFromCloudinary, extractPublicId } from "../../utils/deleteImageFromCloudinary";
+import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 // import AppError from "../../errors/AppError";
 // import httpStatus from "http-status";
 // import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
@@ -67,6 +69,52 @@ const suspendUser = async (userId: string, payload: any) => {
   return {};
 };
 
+const updateProfile = async (
+  userId: string,
+  payload: any,
+  file?: Express.Multer.File
+) => {
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  let profilePicture = user.profilePicture;
+
+  /* HANDLE IMAGE UPDATE */
+
+  if (file) {
+
+    /* DELETE OLD IMAGE */
+    if (user.profilePicture) {
+      const publicId = extractPublicId(user.profilePicture);
+      await deleteImageFromCloudinary(publicId);
+    }
+
+    /* UPLOAD NEW IMAGE */
+
+    const { secure_url } = await sendImageToCloudinary(
+      `profile-${Date.now()}`,
+      file.path
+    );
+
+    profilePicture = secure_url;
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    {
+      ...payload,
+      profilePicture,
+    },
+    { new: true }
+  );
+
+  return updatedUser;
+};
+
 // Activate user back
 const withdrawSuspension = async (userId: string) => {
   const user = await User.findByIdAndUpdate(userId, { isSuspended: false, suspensionReason: null });
@@ -84,107 +132,12 @@ const deleteAccount = async (userId: string, payload: any) => {
 };
 
 // Activate user back
-const restoreDeletedAccount = async (userId: string) => {
+const restoreUsersDeletedAccount = async (userId: string) => {
   const user = await User.findByIdAndUpdate(userId, { isDeleted: false });
   if (!user) throw new Error("User not found");
 
   return user;
 };
-
-// const requestToUnlockProfile = async (userId: string, payload: any) => {
-//   const user = await User.findById(userId);
-//   if (!user) throw new Error("User not found");
-
-//   // For Tutor
-//   if (user.role === "tutor") {
-//     const updatedTutor = await Tutor.findOneAndUpdate(
-//       { userId },
-//       {
-//         $set: {
-//           hasAppliedForUnlock: true,
-//           unlockRequestReason: payload?.unlockRequestReason,
-//         },
-//       },
-//       { new: true }
-//     );
-
-//     if (!updatedTutor) throw new Error("Tutor not found");
-//     return updatedTutor;
-//   }
-
-//   // For Guardian
-//   if (user.role === "guardian") {
-//     const updatedGuardian = await Guardian.findOneAndUpdate(
-//       { userId },
-//       {
-//         $set: {
-//           hasAppliedForUnlock: true,
-//           unlockRequestReason: payload?.unlockRequestReason,
-//         },
-//       },
-//       { new: true }
-//     );
-
-//     if (!updatedGuardian) throw new Error("Guardian not found");
-//     return updatedGuardian;
-//   }
-
-//   // If role is neither tutor nor guardian
-//   throw new AppError(
-//     httpStatus.BAD_REQUEST,
-//     "User role not supported for unlock request"
-//   );
-// };
-
-// const toggleLockProfile = async (userId: string) => {
-//   const user = await User.findById(userId);
-//   if (!user) throw new Error("User not found");
-
-//   if (user.role === "tutor") {
-//     const tutor = await Tutor.findOne({ userId });
-//     if (!tutor) throw new Error("Tutor not found");
-
-//     const isLocked = tutor.profileStatus === "locked";
-
-//     const updatedTutor = await Tutor.findOneAndUpdate(
-//       { userId },
-//       isLocked
-//         ? {
-//             profileStatus: "unlocked",
-//             hasAppliedForUnlock: false,
-//             unlockRequestReason: null,
-//           }
-//         : { profileStatus: "locked" },
-//       {
-//         runValidators: false,
-//         new: true, // ✅ return updated doc
-//       }
-//     );
-
-//     return updatedTutor;
-//   }
-
-//   if (user.role === "guardian") {
-//     const guardian = await Guardian.findOne({ userId });
-//     if (!guardian) throw new Error("Guardian not found");
-
-//     guardian.profileStatus =
-//       guardian.profileStatus === "locked" ? "unlocked" : "locked";
-
-//     if (guardian.profileStatus === "unlocked") {
-//       guardian.hasAppliedForUnlock = false;
-//       guardian.unlockRequestReason = null;
-//     }
-
-//     await guardian.save({ validateBeforeSave: false });
-//     return guardian;
-//   }
-
-//   throw new AppError(
-//     httpStatus.BAD_REQUEST,
-//     "User role not supported for lock/unlock"
-//   );
-// };
 
 // Update tutor profile
 // const updateProfile = async (
@@ -301,10 +254,8 @@ export const UserServices = {
   suspendUser,
   withdrawSuspension,
   getSingleUserById,
+  updateProfile,
   deleteAccount,
-  restoreDeletedAccount,
-  // requestToUnlockProfile,
-  // toggleLockProfile,
-  // updateProfile,
+  restoreUsersDeletedAccount,
   saveUserPushToken
 };

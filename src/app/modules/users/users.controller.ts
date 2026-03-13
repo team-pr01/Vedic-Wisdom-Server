@@ -61,6 +61,24 @@ const withdrawSuspension = catchAsync(async (req, res) => {
   });
 });
 
+const updateProfile = catchAsync(async (req, res) => {
+
+  const file = req.file;
+
+  const result = await UserServices.updateProfile(
+    req.user.userId,
+    req.body,
+    file
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Profile updated successfully",
+    data: result,
+  });
+});
+
 // Delete account
 const deleteAccount = catchAsync(async (req, res) => {
   const userId = req.user.userId;
@@ -75,9 +93,9 @@ const deleteAccount = catchAsync(async (req, res) => {
 });
 
 // Restore Deleted account
-const restoreDeletedAccount = catchAsync(async (req, res) => {
+const restoreUsersDeletedAccount = catchAsync(async (req, res) => {
   const { userId } = req.params;
-  const result = await UserServices.restoreDeletedAccount(userId);
+  const result = await UserServices.restoreUsersDeletedAccount(userId);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -105,10 +123,8 @@ export const UserControllers = {
   suspendUser,
   withdrawSuspension,
   getSingleUserById,
+  updateProfile,
   deleteAccount,
-  restoreDeletedAccount,
-  // requestToUnlockProfile,
-  // toggleLockProfile,
-  // updateProfile,
+  restoreUsersDeletedAccount,
   savePushToken,
 };
