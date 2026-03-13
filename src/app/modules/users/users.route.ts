@@ -7,30 +7,28 @@ const router = express.Router();
 
 router.get(
   "/",
-  auth(UserRole.admin, UserRole.staff),
-  UserControllers.getAllUser
+  auth(UserRole.admin, UserRole.moderator),
+  UserControllers.getAllUsers
 );
-// router.get(
-//   "/me",
-//   auth(
-//     UserRole.user,
-//     UserRole.admin,
-//     UserRole.staff,
-//     UserRole.tutor,
-//     UserRole.guardian
-//   ),
-//   UserControllers.getMe
-// );
+router.get(
+  "/me",
+  auth(
+    UserRole.user,
+    UserRole.admin,
+    UserRole.moderator,
+  ),
+  UserControllers.getMe
+);
 
 router.patch(
   "/suspend/:userId",
-  auth(UserRole.admin, UserRole.staff),
+  auth(UserRole.admin, UserRole.moderator),
   UserControllers.suspendUser
 );
 router.patch(
-  "/active/:userId",
-  auth(UserRole.admin, UserRole.staff),
-  UserControllers.activeUser
+  "/suspension/withdraw/:userId",
+  auth(UserRole.admin, UserRole.moderator),
+  UserControllers.withdrawSuspension
 );
 router.get(
   "/:userId",
@@ -53,20 +51,19 @@ router.get(
 
 router.patch(
   "/save-push-token",
-  auth(UserRole.user, UserRole.temple, UserRole.admin, UserRole.moderator),
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
   UserControllers.savePushToken
 );
 
 router.patch(
   "/delete-account",
-  auth(UserRole.user, UserRole.guardian, UserRole.tutor),
+  auth(UserRole.user, UserRole.moderator, UserRole.user),
   UserControllers.deleteAccount
 );
 
 // For admin and staff only
 router.patch(
   "/account/restore/:userId",
-  auth(UserRole.admin, UserRole.staff),
   UserControllers.restoreDeletedAccount
 );
 

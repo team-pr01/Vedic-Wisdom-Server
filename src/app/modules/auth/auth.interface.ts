@@ -28,7 +28,9 @@ export type TUser = {
   createdAt: Date;
   updatedAt: Date;
   isDeleted: boolean;
+  accountDeleteReason: string | null;
   isSuspended: boolean;
+  suspensionReason: string | null;
   lastLoggedIn?: Date;
   // Usage tracking for subscription
   usage: {

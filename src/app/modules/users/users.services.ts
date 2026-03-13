@@ -2,15 +2,44 @@
 import httpStatus from "http-status";
 import AppError from "../../errors/AppError";
 import { User } from "../auth/auth.model";
+import { infinitePaginate } from "../../utils/infinitePaginate";
 // import AppError from "../../errors/AppError";
 // import httpStatus from "http-status";
 // import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 // import mongoose from "mongoose";
 // import { calculateProfileSections } from "../../utils/calculateTutorProfileSections";
 
-const getAllUser = async () => {
-  const result = await User.find();
-  return result;
+const getAllUsers = async (
+  filters: any = {},
+  skip = 0,
+  limit = 10
+) => {
+
+  const query: any = {};
+
+  /* TEXT SEARCH */
+  if (filters.keyword) {
+    query.$text = {
+      $search: filters.keyword,
+    };
+  }
+
+  /* FILTERS */
+  if (filters.role) query.role = filters.role;
+
+  if (filters.country) query.country = filters.country;
+
+  if (filters.state) query.state = filters.state;
+
+  if (filters.city) query.city = filters.city;
+
+  if (filters.area) query.area = filters.area;
+
+  if (filters.premiumUnlocked !== undefined) {
+    query.premiumUnlocked = filters.premiumUnlocked;
+  }
+
+  return infinitePaginate(User, query, skip, limit);
 };
 
 const getSingleUserById = async (userId: string) => {
@@ -18,84 +47,38 @@ const getSingleUserById = async (userId: string) => {
   return result;
 };
 
-// const getMe = async (userId: string) => {
-//   const user = await User.findById(userId);
+const getMe = async (userId: string) => {
+  const user = await User.findById(userId);
 
-//   if (!user) {
-//     throw new AppError(httpStatus.NOT_FOUND, "User not found");
-//   }
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
 
-//   let result;
+  const result = await User.findById(userId);
 
-//   if (user.role === "tutor") {
-//     result = await Tutor.findOne({ userId }).populate(
-//       "userId",
-//       "name email phoneNumber gender city area role isVerified hasRequestedToVerify"
-//     );
-
-//     if (!result) {
-//       throw new AppError(httpStatus.NOT_FOUND, "Tutor profile not found");
-//     }
-
-//     // 🔥 ADD THIS BLOCK
-//     const profileCompleted = calculateProfileSections(result);
-//     result = {
-//       ...result.toObject(),
-//       profileCompleted,
-//     };
-//   } else if (user.role === "guardian") {
-//     result = await Guardian.findOne({ userId }).populate(
-//       "userId",
-//       "name email phoneNumber gender city area role isVerified hasRequestedToVerify hasPostedAnyJob"
-//     );
-//   } else if (user.role === "staff") {
-//     result = await Staff.findOne({ userId }).populate(
-//       "userId",
-//       "name email phoneNumber gender city area role"
-//     );
-//   } else {
-//     result = user;
-//   }
-
-//   if (!result) {
-//     throw new AppError(httpStatus.NOT_FOUND, `${user.role} profile not found`);
-//   }
-
-//   return result;
-// };
+  return result;
+};
 
 // Suspend user - actual operation on User model
 const suspendUser = async (userId: string, payload: any) => {
-  const user = await User.findById(userId);
+  const user = await User.findByIdAndUpdate(userId, { isSuspended: true, suspensionReason: payload.suspensionReason });
   if (!user) throw new Error("User not found");
 
-  user.isSuspended = true;
-  user.suspensionReason = payload.suspensionReason;
-  await user.save();
-
-  return user;
+  return {};
 };
 
 // Activate user back
-const activeUser = async (userId: string) => {
-  const user = await User.findById(userId);
+const withdrawSuspension = async (userId: string) => {
+  const user = await User.findByIdAndUpdate(userId, { isSuspended: false, suspensionReason: null });
   if (!user) throw new Error("User not found");
 
-  user.isSuspended = false;
-  user.suspensionReason = null;
-  await user.save();
-
-  return user;
+  return {};
 };
 
 // Activate user back
 const deleteAccount = async (userId: string, payload: any) => {
-  const user = await User.findById(userId);
+  const user = await User.findByIdAndUpdate(userId, { isDeleted: true, accountDeleteReason: payload.accountDeleteReason });
   if (!user) throw new Error("User not found");
-
-  user.isDeleted = true;
-  // user.accountDeleteReason = payload.accountDeleteReason || null;
-  await user.save();
 
   return user;
 };
@@ -313,10 +296,10 @@ const saveUserPushToken = async (payload: any) => {
 };
 
 export const UserServices = {
-  getAllUser,
-  // getMe,
+  getAllUsers,
+  getMe,
   suspendUser,
-  activeUser,
+  withdrawSuspension,
   getSingleUserById,
   deleteAccount,
   restoreDeletedAccount,

@@ -1,11 +1,10 @@
-// users.controller.ts
 import { UserServices } from "./users.services";
 import sendResponse from "../../utils/sendResponse";
 import httpStatus from "http-status";
 import catchAsync from "../../utils/catchAsync";
 
-const getAllUser = catchAsync(async (req, res) => {
-  const result = await UserServices.getAllUser();
+const getAllUsers = catchAsync(async (req, res) => {
+  const result = await UserServices.getAllUsers();
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -14,7 +13,7 @@ const getAllUser = catchAsync(async (req, res) => {
   });
 });
 
-// Get single post by ID
+// Get single user by ID
 const getSingleUserById = catchAsync(async (req, res) => {
   const { userId } = req.params;
   const result = await UserServices.getSingleUserById(userId);
@@ -27,16 +26,16 @@ const getSingleUserById = catchAsync(async (req, res) => {
   });
 });
 
-// const getMe = catchAsync(async (req, res) => {
-//   const userId = req.user._id;
-//   const result = await UserServices.getMe(userId);
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: "Profile retrieved successfully",
-//     data: result,
-//   });
-// });
+const getMe = catchAsync(async (req, res) => {
+  const userId = req.user.userId;
+  const result = await UserServices.getMe(userId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Profile retrieved successfully",
+    data: result,
+  });
+});
 
 // suspend user
 const suspendUser = catchAsync(async (req, res) => {
@@ -51,12 +50,12 @@ const suspendUser = catchAsync(async (req, res) => {
 });
 
 // activate user
-const activeUser = catchAsync(async (req, res) => {
+const withdrawSuspension = catchAsync(async (req, res) => {
   const { userId } = req.params;
-  const result = await UserServices.activeUser(userId);
+  const result = await UserServices.withdrawSuspension(userId);
   sendResponse(res, {
     success: true,
-    message: "User activated successfully",
+    message: "Suspension withdrawn successfully",
     statusCode: httpStatus.OK,
     data: result,
   });
@@ -64,13 +63,13 @@ const activeUser = catchAsync(async (req, res) => {
 
 // Delete account
 const deleteAccount = catchAsync(async (req, res) => {
-  const userId = req.user._id;
+  const userId = req.user.userId;
   const result = await UserServices.deleteAccount(userId, req.body);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Account deleted successfully!",
+    message: "It's sad to see you go.",
     data: result,
   });
 });
@@ -88,44 +87,6 @@ const restoreDeletedAccount = catchAsync(async (req, res) => {
   });
 });
 
-// const requestToUnlockProfile = catchAsync(async (req, res) => {
-//   const userId  = req.user._id;
-
-//   const tutor = await UserServices.requestToUnlockProfile(userId, req.body);
-
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: "Profile unlocked successfully",
-//     data: tutor,
-//   });
-// });
-
-// const toggleLockProfile = catchAsync(async (req, res) => {
-//   const { userId } = req.params;
-//   const result = await UserServices.toggleLockProfile(userId);
-//   sendResponse(res, {
-//     success: true,
-//     message: "Profile status updated successfully",
-//     statusCode: httpStatus.OK,
-//     data: result,
-//   });
-// });
-
-// const updateProfile = catchAsync(async (req, res) => {
-//   const file = req.file;
-//   const userId = req.user._id
-//   const result = await UserServices.updateProfile(userId, req.body, file);
-
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: "Profile updated successfully",
-//     data: result,
-//   });
-// });
-
-
 // Save Push Token
 const savePushToken = catchAsync(async (req, res) => {
   const result = await UserServices.saveUserPushToken(req.body);
@@ -139,10 +100,10 @@ const savePushToken = catchAsync(async (req, res) => {
 });
 
 export const UserControllers = {
-  getAllUser,
-  // getMe,
+  getAllUsers,
+  getMe,
   suspendUser,
-  activeUser,
+  withdrawSuspension,
   getSingleUserById,
   deleteAccount,
   restoreDeletedAccount,

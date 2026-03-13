@@ -16,30 +16,103 @@ import { ReferralServices } from "../referral/referral.service";
 // Signup
 const signup = async (payload: Partial<TUser>) => {
 
-  // Checking if user already exists by email address
-  const isUserExistsByEmail = await User.findOne({ email: payload.email });
-  if (isUserExistsByEmail) {
+  const { mode, referralCode, ...restPayload } = payload as any;
+
+  /* CHECK DELETED ACCOUNT */
+  const deletedUser = await User.findOne({
+    $or: [
+      { email: payload.email },
+      { phoneNumber: payload.phoneNumber }
+    ],
+    isDeleted: true
+  });
+
+  /* CASE 1: DELETED ACCOUNT FOUND */
+  if (deletedUser) {
+
+    if (!mode) {
+      return {
+        restoreAccount: true,
+        message: "A deleted account exists. Do you want to restore your previous account?",
+        userId: deletedUser._id
+      };
+    }
+
+    /* RESTORE ACCOUNT */
+    if (mode === "restore") {
+
+      deletedUser.isDeleted = false;
+      deletedUser.isSuspended = false;
+
+      await deletedUser.save();
+
+      return {
+        restoreAccount: false,
+        message: "Account restored successfully",
+        user: deletedUser
+      };
+    }
+
+    /* CREATE NEW ACCOUNT */
+    if (mode === "createNew") {
+
+      await User.findByIdAndDelete(deletedUser._id);
+
+      const userId = await customUserIdGenerator();
+
+      const payloadData = {
+        ...restPayload,
+        role: payload.role || "user",
+        userId,
+        isDeleted: false,
+        isSuspended: false,
+        isVerified: false,
+      };
+
+      const newUser = await User.create(payloadData);
+
+      if (referralCode) {
+        await ReferralServices.handleReferralReward(
+          newUser._id.toString(),
+          referralCode
+        );
+      }
+
+      return {
+        restoreAccount: false,
+        message: "New account created successfully",
+        user: newUser
+      };
+    }
+  }
+
+  /* CHECK ACTIVE USERS */
+  const activeUserByEmail = await User.findOne({
+    email: payload.email,
+    isDeleted: false
+  });
+
+  if (activeUserByEmail) {
     throw new AppError(
       httpStatus.CONFLICT,
       "User already exists by this email address."
     );
   }
 
-  // Checking if user already exists by phone number
-  const isUserExistsByPhoneNumber = await User.findOne({
+  const activeUserByPhone = await User.findOne({
     phoneNumber: payload.phoneNumber,
+    isDeleted: false
   });
-  if (isUserExistsByPhoneNumber) {
+
+  if (activeUserByPhone) {
     throw new AppError(
       httpStatus.CONFLICT,
       "User already exists by this phone number."
     );
   }
 
+  /* CREATE NEW USER */
   const userId = await customUserIdGenerator();
-
-  // Extract referralCode if exists
-  const { referralCode, ...restPayload } = payload;
 
   const payloadData = {
     ...restPayload,
@@ -52,7 +125,6 @@ const signup = async (payload: Partial<TUser>) => {
 
   const result = await User.create(payloadData);
 
-  // Handle referral reward if referralCode provided
   if (referralCode) {
     await ReferralServices.handleReferralReward(
       result._id.toString(),
@@ -60,7 +132,10 @@ const signup = async (payload: Partial<TUser>) => {
     );
   }
 
-  return result;
+  return {
+    restoreAccount: false,
+    user: result
+  };
 };
 
 // Login

@@ -80,9 +80,17 @@ const userSchema = new Schema<TUser, UserModel>(
       type: Boolean,
       default: false,
     },
+    accountDeleteReason: {
+      type: String,
+      default: null,
+    },
     isSuspended: {
       type: Boolean,
       default: false,
+    },
+    suspensionReason: {
+      type: String,
+      default: null,
     },
     resetPasswordOtp: {
       type: String,
@@ -160,6 +168,28 @@ userSchema.statics.isPasswordMatched = async function (
 ) {
   return await bcrypt.compare(plainTextPassword, hashedPassword);
 };
+
+
+/* TEXT SEARCH INDEX */
+userSchema.index({
+  name: "text",
+  email: "text",
+  phoneNumber: "text",
+  userId: "text",
+});
+
+/* FILTER INDEXES */
+userSchema.index({ role: 1 });
+userSchema.index({ country: 1 });
+userSchema.index({ state: 1 });
+userSchema.index({ city: 1 });
+userSchema.index({ area: 1 });
+userSchema.index({ premiumUnlocked: 1 });
+
+/* SORT / PAGINATION */
+
+userSchema.index({ createdAt: -1 });
+
 
 // Export the model
 export const User = model<TUser, UserModel>("User", userSchema);
