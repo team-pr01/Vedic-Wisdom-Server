@@ -138,7 +138,7 @@ export const checkKundliLimit = async (
   if (!user) return res.status(400).json({ message: "User not found" });
 
   const planConfig = Plans[user.plan as keyof typeof Plans];
-  const monthlyLimit = planConfig.kundliMonthly;
+  const monthlyLimit = planConfig?.kundliMonthly;
 
   const nowMonth = new Date().getMonth();
   const lastResetMonth = user.usage.lastMonthlyReset?.getMonth();

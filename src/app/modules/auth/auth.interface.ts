@@ -32,6 +32,7 @@ export type TUser = {
   isSuspended: boolean;
   suspensionReason: string | null;
   lastLoggedIn?: Date;
+  plan: string;
   // Usage tracking for subscription
   usage: {
     aiChatDaily: number;
