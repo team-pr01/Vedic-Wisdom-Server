@@ -13,6 +13,7 @@ const audioTrackSchema = new Schema<TAudioTrack>(
     title: {
       type: String,
       required: true,
+      trim: true,
     },
 
     url: {

@@ -6,7 +6,6 @@ export type TAudioTrack = {
   url: string;
   duration: string;
   order: number;
-
   createdAt?: Date;
   updatedAt?: Date;
 };

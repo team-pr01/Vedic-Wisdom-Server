@@ -17,6 +17,7 @@ import { ReferralRoutes } from "../modules/referral/referral.route";
 import { VendorRoutes } from "../modules/shop/vendor/vendor.route";
 import { ProductRoutes } from "../modules/shop/product/product.route";
 import { AudioBookRoutes } from "../modules/audioBook/audioBook.route";
+import { AudioTracksRoutes } from "../modules/audioBook/audioTrack/audiotracks.route";
 
 const router = Router();
 
@@ -92,6 +93,10 @@ const moduleRoutes = [
   {
     path: "/audioBook",
     route: AudioBookRoutes,
+  },
+  {
+    path: "/audioTracks",
+    route: AudioTracksRoutes,
   },
 ];
 
