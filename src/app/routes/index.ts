@@ -19,6 +19,9 @@ import { ProductRoutes } from "../modules/shop/product/product.route";
 import { AudioBookRoutes } from "../modules/audioBook/audioBook.route";
 import { AudioTracksRoutes } from "../modules/audioBook/audioTrack/audiotracks.route";
 import { EmergencyRoutes } from "../modules/emergency/emergency.route";
+import { BooksRoutes } from "../modules/book/books/books.route";
+import { BookTextRoutes } from "../modules/book/texts/bookText.route";
+import { ReportMantraRoutes } from "../modules/book/reportMantra/reportMantra.route";
 
 const router = Router();
 
@@ -98,6 +101,18 @@ const moduleRoutes = [
   {
     path: "/audioTracks",
     route: AudioTracksRoutes,
+  },
+  {
+    path: "/book",
+    route: BooksRoutes,
+  },
+  {
+    path: "/book-text",
+    route: BookTextRoutes,
+  },
+  {
+    path: "/reportMantra",
+    route: ReportMantraRoutes
   },
   {
     path: "/emergency",
