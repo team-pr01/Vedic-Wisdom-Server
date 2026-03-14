@@ -4,6 +4,8 @@ import { TBooks } from "./books.interface";
 import httpStatus from "http-status";
 import AppError from "../../../errors/AppError";
 import { sendImageToCloudinary } from "../../../utils/sendImageToCloudinary";
+import { infinitePaginate } from "../../../utils/infinitePaginate";
+import { deleteImageFromCloudinary, extractPublicId } from "../../../utils/deleteImageFromCloudinary";
 
 const createBook = async (
   payload: TBooks,
@@ -28,21 +30,19 @@ const createBook = async (
   return result;
 };
 
-const getAllBooks = async (keyword?: string) => {
-  let query = {};
+const getAllBooks = async (
+  keyword?: string,
+  skip = 0,
+  limit = 10
+) => {
+
+  const query: any = {};
 
   if (keyword) {
-    const regex = new RegExp(keyword, "i");
-    query = {
-      $or: [
-        { name: regex },
-        { type: regex },
-        { structure: regex },
-      ],
-    };
+    query.$text = { $search: keyword };
   }
 
-  return await Books.find(query);
+  return infinitePaginate(Books, query, skip, limit);
 };
 
 
@@ -65,13 +65,22 @@ const updateBook = async (
     throw new AppError(httpStatus.NOT_FOUND, "Book not found");
   }
 
-  let imageUrl: string | undefined;
+  let imageUrl: string | undefined = existing.imageUrl;
+
+  /* ---------- REPLACE IMAGE ---------- */
 
   if (file) {
+    // delete old image
+    if (existing.imageUrl) {
+      const publicId = extractPublicId(existing.imageUrl);
+      await deleteImageFromCloudinary(publicId);
+    }
+
     const imageName = `Book-${Date.now()}`;
     const path = file.path;
 
     const { secure_url } = await sendImageToCloudinary(imageName, path);
+
     imageUrl = secure_url;
   }
 
@@ -89,11 +98,21 @@ const updateBook = async (
 };
 
 const deleteBook = async (bookId: string) => {
-  const result = await Books.findByIdAndDelete(bookId);
-  if (!result) {
+  const existing = await Books.findById(bookId);
+
+  if (!existing) {
     throw new AppError(httpStatus.NOT_FOUND, "Book not found");
   }
-  return result;
+
+  /* ---------- DELETE IMAGE FROM CLOUDINARY ---------- */
+  if (existing.imageUrl) {
+    const publicId = extractPublicId(existing.imageUrl);
+    await deleteImageFromCloudinary(publicId);
+  }
+
+  await Books.findByIdAndDelete(bookId);
+
+  return {};
 };
 
 export const BooksService = {

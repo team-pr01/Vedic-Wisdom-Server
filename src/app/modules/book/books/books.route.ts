@@ -1,17 +1,15 @@
 import express from "express";
 import auth from "../../../middlewares/auth";
-import { UserRole } from "../../auth/auth.constannts";
 import { BooksController } from "./books.controller";
-import authorizeRoute from "../../../middlewares/authorizeRoute";
 import { multerUpload } from "../../../config/multer.config";
+import { UserRole } from "../../auth/auth.constants";
 
 const router = express.Router();
 
 // Create a new book (with optional image)
 router.post(
   "/create-book",
-  auth(UserRole.admin, UserRole.moderator, UserRole["super-admin"]),
-  authorizeRoute(),
+  auth(UserRole.admin, UserRole.moderator),
   multerUpload.single("file"),
   BooksController.createBook
 );
@@ -25,8 +23,7 @@ router.get("/:bookId", BooksController.getSingleBook);
 // Update a book by ID (with optional new image)
 router.put(
   "/update/:bookId",
-  auth(UserRole.admin, UserRole.moderator, UserRole["super-admin"]),
-  authorizeRoute(),
+  auth(UserRole.admin, UserRole.moderator),
   multerUpload.single("file"),
   BooksController.updateBook
 );
@@ -34,8 +31,7 @@ router.put(
 // Delete a book by ID
 router.delete(
   "/delete/:bookId",
-  auth(UserRole.admin, UserRole.moderator, UserRole["super-admin"]),
-  authorizeRoute(),
+  auth(UserRole.admin, UserRole.moderator),
   BooksController.deleteBook
 );
 

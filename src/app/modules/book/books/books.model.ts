@@ -24,5 +24,10 @@ const BooksSchema = new Schema<TBooks>(
   { timestamps: true }
 );
 
+/* TEXT SEARCH INDEX */
+BooksSchema.index({
+  name: "text",
+});
+
 const Books = model<TBooks>("Books", BooksSchema);
 export default Books;

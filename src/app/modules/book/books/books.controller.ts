@@ -17,15 +17,20 @@ const createBook = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getAllBooks = catchAsync(async (req: Request, res: Response) => {
-  const { keyword } = req.query;
+const getAllBooks = catchAsync(async (req, res) => {
 
-  const result = await BooksService.getAllBooks(keyword as string);
+  const { keyword, skip = "0", limit = "10" } = req.query;
+
+  const result = await BooksService.getAllBooks(
+    keyword as string,
+    Number(skip),
+    Number(limit)
+  );
 
   sendResponse(res, {
-    statusCode: httpStatus.OK,
     success: true,
-    message: "Books retrieved successfully",
+    statusCode: 200,
+    message: "Books fetched successfully",
     data: result,
   });
 });

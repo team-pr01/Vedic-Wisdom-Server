@@ -13,7 +13,7 @@ export const checkAiChatLimit = async (
     return res.status(400).json({ message: "User not found" });
   }
 
-  const planConfig = Plans[user.plan as keyof typeof Plans];
+  const planConfig = Plans[user?.plan as keyof typeof Plans];
 
   // Extract actual AI Chat daily limit from Plans
   const dailyLimit = planConfig.aiChatDaily;
