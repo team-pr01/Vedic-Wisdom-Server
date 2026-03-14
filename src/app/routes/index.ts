@@ -18,6 +18,7 @@ import { VendorRoutes } from "../modules/shop/vendor/vendor.route";
 import { ProductRoutes } from "../modules/shop/product/product.route";
 import { AudioBookRoutes } from "../modules/audioBook/audioBook.route";
 import { AudioTracksRoutes } from "../modules/audioBook/audioTrack/audiotracks.route";
+import { EmergencyRoutes } from "../modules/emergency/emergency.route";
 
 const router = Router();
 
@@ -97,6 +98,10 @@ const moduleRoutes = [
   {
     path: "/audioTracks",
     route: AudioTracksRoutes,
+  },
+  {
+    path: "/emergency",
+    route: EmergencyRoutes,
   },
 ];
 
