@@ -27,6 +27,7 @@ export const infinitePaginate = async (
       filteredTotal,
       skip,
       limit,
+      totalPages: Math.ceil(filteredTotal / limit),
       hasMore: skip + data.length < filteredTotal,
     },
   };

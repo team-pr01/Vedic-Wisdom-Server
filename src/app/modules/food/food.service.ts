@@ -88,7 +88,7 @@ const updateFood = async (
     }
 
     if (
-        food.createdBy.toString() !== user.userId &&
+        food.createdBy !== user.userId &&
         user.role !== "admin"
     ) {
         throw new AppError(httpStatus.FORBIDDEN, "Not authorized");

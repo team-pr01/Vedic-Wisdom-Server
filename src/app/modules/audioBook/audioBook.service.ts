@@ -5,11 +5,9 @@ import AudioBook from "./audioBook.model";
 import { infinitePaginate } from "../../utils/infinitePaginate";
 import AppError from "../../errors/AppError";
 import { deleteImageFromCloudinary, extractPublicId } from "../../utils/deleteImageFromCloudinary";
-
-
+import AudioTrack from "./audioTrack/audioTrack.model";
 
 /* ADD AUDIOBOOK */
-
 const addAudioBook = async (
     payload: any,
     file?: Express.Multer.File
@@ -34,10 +32,7 @@ const addAudioBook = async (
     return audioBook;
 };
 
-
-
 /* GET ALL AUDIOBOOKS */
-
 const getAllAudioBooks = async (
     filters: any = {},
     skip = 0,
@@ -57,10 +52,7 @@ const getAllAudioBooks = async (
     return infinitePaginate(AudioBook, query, skip, limit);
 };
 
-
-
 /* GET SINGLE AUDIOBOOK */
-
 const getSingleAudioBook = async (audioBookId: string) => {
 
     const book = await AudioBook.findById(audioBookId);
@@ -72,10 +64,7 @@ const getSingleAudioBook = async (audioBookId: string) => {
     return book;
 };
 
-
-
 /* UPDATE AUDIOBOOK */
-
 const updateAudioBook = async (
     audioBookId: string,
     payload: any,
@@ -117,10 +106,7 @@ const updateAudioBook = async (
     return updatedBook;
 };
 
-
-
 /* DELETE AUDIOBOOK */
-
 const deleteAudioBook = async (audioBookId: string) => {
 
     const book = await AudioBook.findById(audioBookId);
@@ -134,11 +120,12 @@ const deleteAudioBook = async (audioBookId: string) => {
         await deleteImageFromCloudinary(publicId);
     }
 
+    await AudioTrack.deleteMany({ audioBookId });
+
     await AudioBook.findByIdAndDelete(audioBookId);
 
     return true;
 };
-
 
 
 export const AudioBookServices = {

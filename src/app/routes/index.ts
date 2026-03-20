@@ -22,6 +22,7 @@ import { EmergencyRoutes } from "../modules/emergency/emergency.route";
 import { BooksRoutes } from "../modules/book/books/books.route";
 import { BookTextRoutes } from "../modules/book/texts/bookText.route";
 import { ReportMantraRoutes } from "../modules/book/reportMantra/reportMantra.route";
+import { CategoryRoutes } from "../modules/categories/categories.route";
 
 const router = Router();
 
@@ -117,6 +118,10 @@ const moduleRoutes = [
   {
     path: "/emergency",
     route: EmergencyRoutes,
+  },
+  {
+    path: "/category",
+    route: CategoryRoutes,
   },
 ];
 
