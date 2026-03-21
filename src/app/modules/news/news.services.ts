@@ -46,8 +46,8 @@ const getAllNews = async (
 
   // CATEGORY FILTER
   if (filters.category) {
-    query.category = filters.category.trim().toLowerCase();
-  }
+  query.category = { $regex: `^${filters.category.trim()}$`, $options: "i" };
+}
 
   // KEYWORD SEARCH (title + content + tags)
   if (filters.keyword) {
@@ -89,15 +89,17 @@ const getAllNews = async (
       news.translations.get(languageCode) ||
       news.translations.get("en");
 
+    const languages = Array.from(news.translations.keys());
+
     return {
       _id: news._id,
       imageUrl: news.imageUrl,
       category: news.category,
       likes: news.likes,
       views: news.views,
+      languages,
       createdAt: news.createdAt,
 
-      // 🔥 only selected translation
       title: translation?.title || "",
       content: translation?.content || "",
       tags: translation?.tags || [],
@@ -117,9 +119,16 @@ const getSingleNewsById = async (
     throw new AppError(httpStatus.NOT_FOUND, "News not found");
   }
 
-  const translation =
-    result.translations.get(languageCode) ||
-    result.translations.get("en");
+  const translation = result.translations.get(languageCode);
+
+  if (!translation) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      `Translation not available for language: ${languageCode}`
+    );
+  }
+
+  const languages = Array.from(result.translations.keys());
 
   return {
     _id: result._id,
@@ -127,11 +136,12 @@ const getSingleNewsById = async (
     category: result.category,
     likes: result.likes,
     views: result.views,
+    languages,
     createdAt: result.createdAt,
 
-    title: translation?.title || "",
-    content: translation?.content || "",
-    tags: translation?.tags || [],
+    title: translation.title,
+    content: translation.content,
+    tags: translation.tags,
   };
 };
 

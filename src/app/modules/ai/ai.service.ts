@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import httpStatus from "http-status";
 import AppError from "../../errors/AppError";
 import { openai } from "../../utils/openai";
 import BookText from "../book/texts/bookText.model";
@@ -35,14 +36,6 @@ If a question is unrelated, respond like this:
 Always keep answers clear, concise, and spiritually respectful.
 `;
 
-interface TranslatePayload {
-  newsId: string;
-  title: string;
-  content: string;
-  tags: string[];
-  category: string;
-  batchLanguages: { code: string; name: string }[];
-}
 
 const aiChat = async (message: string) => {
 
@@ -89,11 +82,11 @@ For each language, provide:
 Return JSON in the format:
 {
 ${languageCodes
-  .map(
-    (code) =>
-      `  "${code}": { "translation": "...", "sanskritWordBreakdown": [ { "sanskritWord": "...", "shortMeaning": "...", "descriptiveMeaning": "..." } ] }`
-  )
-  .join(",\n")}
+      .map(
+        (code) =>
+          `  "${code}": { "translation": "...", "sanskritWordBreakdown": [ { "sanskritWord": "...", "shortMeaning": "...", "descriptiveMeaning": "..." } ] }`
+      )
+      .join(",\n")}
 }
 `;
 
@@ -233,32 +226,48 @@ const generateRecipe = async (query: string) => {
 //   return newQuiz;
 // };
 
-const translateNews = async (payload: TranslatePayload) => {
-  const { newsId, title, content, tags, category, batchLanguages } = payload;
+const translateNews = async (payload: any) => {
+  const { newsId, batchLanguages } = payload;
+  const news = await News.findById(newsId);
+
+  if (!news) {
+    throw new AppError(httpStatus.NOT_FOUND, "News not found");
+  };
+
+  const englishTranslatedNews = news.translations.get("en");
+
+  const { title, content, tags } = englishTranslatedNews || {};
 
   // Input text for GPT
   const inputText = `Title: ${title}
 Content: ${content}
-Tags: ${tags.join(", ")}
-Category: ${category}`;
+Tags: ${tags!.join(", ")}`;
 
   // GPT prompt
   const systemMessage = `
 You are a professional translator.
-Translate the following news into exactly ${batchLanguages.length} languages provided.
+
+Translate ALL fields including title, content, AND tags.
+
+IMPORTANT:
+- Tags MUST be translated to the target language.
+- Tags must remain an array of strings.
+- Do NOT keep tags in English.
+- Do NOT return original tags.
+
 Output JSON in the following format:
 
 {
 ${batchLanguages
       .map(
-        (lang) =>
+        (lang: any) =>
           `  "${lang.code}": { "title": "...", "content": "...", "tags": [...], "category": "..." }`
       )
       .join(",\n")}
 }
 
-Only include the languages listed in this fixed list:
-${batchLanguages.map((lang) => `${lang.code} (${lang.name})`).join(", ")}
+Only include the languages listed:
+${batchLanguages.map((lang: any) => `${lang.code} (${lang.name})`).join(", ")}
 `;
 
   // Call GPT
@@ -285,13 +294,13 @@ ${batchLanguages.map((lang) => `${lang.code} (${lang.name})`).join(", ")}
   }
 
   const missingLanguages = batchLanguages.filter(
-    (lang) => !translations[lang.code]
+    (lang: any) => !translations[lang.code]
   );
   if (missingLanguages.length > 0) {
     throw new AppError(
       500,
       `GPT did not return translations for: ${missingLanguages
-        .map((l) => l.name)
+        .map((l: any) => l.name)
         .join(", ")}`
     );
   }
@@ -307,7 +316,6 @@ ${batchLanguages.map((lang) => `${lang.code} (${lang.name})`).join(", ")}
       title: v.title || "",
       content: v.content || "",
       tags: v.tags || [],
-      category: v.category || category,
     };
   }
 
