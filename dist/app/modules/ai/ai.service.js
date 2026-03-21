@@ -16,94 +16,125 @@ exports.AiServices = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const openai_1 = require("../../utils/openai");
+const bookText_model_1 = __importDefault(require("../book/texts/bookText.model"));
 // import BookText from "../book/texts/bookText.model";
 const news_model_1 = __importDefault(require("../news/news.model"));
+// import Quiz from "../quiz/quiz.model";
+const SYSTEM_PROMPT = `
+You are "Vedic Wisdom", a knowledgeable assistant representing the Arya Kalyan Foundation.
+
+Your role is to provide accurate and respectful information related ONLY to:
+
+• Vedic scriptures (Vedas, Upanishads, Brahmanas, Aranyakas)
+• Hindu philosophy and Vedanta
+• Vedic rituals, practices, and traditions
+• Hindu culture and dharma
+• Sanskrit verses and their meanings
+• Ancient Indian spiritual knowledge
+• Hindu epics like Ramayana and Mahabharata
+• Teachings of Vedic sages and rishis
+• Concepts such as karma, dharma, moksha, yajna, yoga, etc.
+
+Important Rules:
+1. Only answer questions related to Hindu/Vedic knowledge.
+2. If a user asks about unrelated topics (technology, politics, general world knowledge, etc.), politely decline.
+3. When declining, guide the user back to Vedic or Hindu knowledge topics.
+4. Always maintain a respectful, calm, and spiritual tone.
+5. Do not generate harmful, misleading, or non-religious content.
+6. If a scripture is referenced, provide authentic context if possible.
+
+If a question is unrelated, respond like this:
+"I am a Vedic Wisdom assistant and can only help with topics related to Vedic knowledge, Hindu scriptures, philosophy, and traditions."
+
+Always keep answers clear, concise, and spiritually respectful.
+`;
 const aiChat = (message) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const completion = yield openai_1.openai.chat.completions.create({
         model: "gpt-4o-mini",
-        messages: [{ role: "user", content: message }],
+        messages: [
+            {
+                role: "system",
+                content: SYSTEM_PROMPT,
+            },
+            {
+                role: "user",
+                content: message,
+            },
+        ],
     });
     return ((_a = completion.choices[0].message) === null || _a === void 0 ? void 0 : _a.content) || "No response";
 });
-// type TranslateShlokaPayload = {
-//   textId: string;
-//   languageCodes: string[];
-// };
-// const translateShloka = async (payload: TranslateShlokaPayload) => {
-//   const { textId, languageCodes } = payload;
-//   // Fetch original Sanskrit text
-//   const bookText = await BookText.findById(textId);
-//   if (!bookText) throw new AppError(404, "Book text not found");
-//   // Use primary translation as source
-//   const inputText = bookText.primaryTranslation || bookText.originalText;
-//   // Build GPT system message
-//   const systemMessage = `
-// You are a Vedic scholar who translates Sanskrit shlokas.
-// Translate the following text (already translated from Sanskrit) into exactly ${languageCodes.length} languages listed below.
-// For each language, provide:
-// - translation: simple, clear meaning
-// - sanskritWordBreakdown: an array of objects with sanskritWord, shortMeaning, descriptiveMeaning
-// Return JSON in the format:
-// {
-// ${languageCodes
-//   .map(
-//     (code) =>
-//       `  "${code}": { "translation": "...", "sanskritWordBreakdown": [ { "sanskritWord": "...", "shortMeaning": "...", "descriptiveMeaning": "..." } ] }`
-//   )
-//   .join(",\n")}
-// }
-// `;
-//   // GPT request
-//   const response = await openai.chat.completions.create({
-//     model: "gpt-4o-mini",
-//     messages: [
-//       { role: "system", content: systemMessage },
-//       { role: "user", content: inputText },
-//     ],
-//     temperature: 0,
-//     max_tokens: 4000,
-//   });
-//   const contentRes = response.choices[0]?.message?.content;
-//   let translations;
-//   try {
-//     translations = JSON.parse(contentRes || "{}");
-//   } catch (err) {
-//     throw new AppError(500, "Failed to parse GPT response: " + contentRes);
-//   }
-//   // Check for missing languages
-//   const missing = languageCodes.filter((code) => !translations[code]);
-//   if (missing.length > 0)
-//     throw new AppError(
-//       500,
-//       `GPT did not return translations for: ${missing.join(", ")}`
-//     );
-//   // Merge new translations with existing ones
-//   const updatedTranslations = [...(bookText.translations || [])];
-//   for (const code of languageCodes) {
-//     const idx = updatedTranslations.findIndex((t) => t.langCode === code);
-//     const newTrans = {
-//       langCode: code,
-//       translation: translations[code].translation || "",
-//       sanskritWordBreakdown: translations[code].sanskritWordBreakdown || [],
-//     };
-//     if (idx >= 0) {
-//       // Replace existing translation
-//       updatedTranslations[idx] = newTrans;
-//     } else {
-//       // Add new translation
-//       updatedTranslations.push(newTrans);
-//     }
-//   }
-//   // Update BookText in DB
-//   const updatedText = await BookText.findByIdAndUpdate(
-//     textId,
-//     { $set: { translations: updatedTranslations } },
-//     { new: true, runValidators: true }
-//   );
-//   if (!updatedText) throw new AppError(404, "Book text not found after update");
-//   return updatedText;
-// };
+const translateShloka = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    const { textId, languageCodes } = payload;
+    // Fetch original Sanskrit text
+    const bookText = yield bookText_model_1.default.findById(textId);
+    if (!bookText)
+        throw new AppError_1.default(404, "Book text not found");
+    // Use primary translation as source
+    const inputText = bookText.primaryTranslation || bookText.originalText;
+    // Build GPT system message
+    const systemMessage = `
+You are a Vedic scholar who translates Sanskrit shlokas.
+Translate the following text (already translated from Sanskrit) into exactly ${languageCodes.length} languages listed below.
+For each language, provide:
+- translation: simple, clear meaning
+- sanskritWordBreakdown: an array of objects with sanskritWord, shortMeaning, descriptiveMeaning
+
+Return JSON in the format:
+{
+${languageCodes
+        .map((code) => `  "${code}": { "translation": "...", "sanskritWordBreakdown": [ { "sanskritWord": "...", "shortMeaning": "...", "descriptiveMeaning": "..." } ] }`)
+        .join(",\n")}
+}
+`;
+    // GPT request
+    const response = yield openai_1.openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+            { role: "system", content: systemMessage },
+            { role: "user", content: inputText },
+        ],
+        temperature: 0,
+        max_tokens: 4000,
+    });
+    const contentRes = (_b = (_a = response.choices[0]) === null || _a === void 0 ? void 0 : _a.message) === null || _b === void 0 ? void 0 : _b.content;
+    let translations;
+    try {
+        translations = JSON.parse(contentRes || "{}");
+    }
+    catch (err) {
+        throw new AppError_1.default(500, "Failed to parse GPT response: " + contentRes);
+    }
+    // Check for missing languages
+    const missing = languageCodes.filter((code) => !translations[code]);
+    if (missing.length > 0)
+        throw new AppError_1.default(500, `GPT did not return translations for: ${missing.join(", ")}`);
+    // Merge new translations with existing ones
+    const updatedTranslations = [...(bookText.translations || [])];
+    for (const code of languageCodes) {
+        const idx = updatedTranslations.findIndex((t) => t.langCode === code);
+        const newTrans = {
+            langCode: code,
+            translation: translations[code].translation || "",
+            sanskritWordBreakdown: translations[code].sanskritWordBreakdown || [],
+        };
+        if (idx >= 0) {
+            // Replace existing translation
+            updatedTranslations[idx] = newTrans;
+        }
+        else {
+            // Add new translation
+            updatedTranslations.push(newTrans);
+        }
+    }
+    // Update BookText in DB
+    const updatedText = yield bookText_model_1.default.findByIdAndUpdate(textId, { $set: { translations: updatedTranslations } }, { new: true, runValidators: true });
+    if (!updatedText)
+        throw new AppError_1.default(404, "Book text not found after update");
+    return updatedText;
+});
 const generateRecipe = (query) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     const response = yield openai_1.openai.chat.completions.create({
@@ -335,7 +366,7 @@ const generateVastuAnalysis = (query) => __awaiter(void 0, void 0, void 0, funct
 });
 exports.AiServices = {
     aiChat,
-    // translateShloka,
+    translateShloka,
     generateRecipe,
     // generateQuiz,
     translateNews,

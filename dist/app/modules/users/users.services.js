@@ -17,173 +17,98 @@ exports.UserServices = void 0;
 const http_status_1 = __importDefault(require("http-status"));
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const auth_model_1 = require("../auth/auth.model");
+const infinitePaginate_1 = require("../../utils/infinitePaginate");
+const deleteImageFromCloudinary_1 = require("../../utils/deleteImageFromCloudinary");
+const sendImageToCloudinary_1 = require("../../utils/sendImageToCloudinary");
 // import AppError from "../../errors/AppError";
 // import httpStatus from "http-status";
 // import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 // import mongoose from "mongoose";
 // import { calculateProfileSections } from "../../utils/calculateTutorProfileSections";
-const getAllUser = () => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield auth_model_1.User.find();
-    return result;
+const getAllUsers = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (filters = {}, skip = 0, limit = 10) {
+    const query = {};
+    /* TEXT SEARCH */
+    if (filters.keyword) {
+        query.$text = {
+            $search: filters.keyword,
+        };
+    }
+    /* FILTERS */
+    if (filters.role)
+        query.role = filters.role;
+    if (filters.country)
+        query.country = filters.country;
+    if (filters.state)
+        query.state = filters.state;
+    if (filters.city)
+        query.city = filters.city;
+    if (filters.area)
+        query.area = filters.area;
+    if (filters.premiumUnlocked !== undefined) {
+        query.premiumUnlocked = filters.premiumUnlocked;
+    }
+    return (0, infinitePaginate_1.infinitePaginate)(auth_model_1.User, query, skip, limit);
 });
 const getSingleUserById = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield auth_model_1.User.findById(userId);
     return result;
 });
-// const getMe = async (userId: string) => {
-//   const user = await User.findById(userId);
-//   if (!user) {
-//     throw new AppError(httpStatus.NOT_FOUND, "User not found");
-//   }
-//   let result;
-//   if (user.role === "tutor") {
-//     result = await Tutor.findOne({ userId }).populate(
-//       "userId",
-//       "name email phoneNumber gender city area role isVerified hasRequestedToVerify"
-//     );
-//     if (!result) {
-//       throw new AppError(httpStatus.NOT_FOUND, "Tutor profile not found");
-//     }
-//     // 🔥 ADD THIS BLOCK
-//     const profileCompleted = calculateProfileSections(result);
-//     result = {
-//       ...result.toObject(),
-//       profileCompleted,
-//     };
-//   } else if (user.role === "guardian") {
-//     result = await Guardian.findOne({ userId }).populate(
-//       "userId",
-//       "name email phoneNumber gender city area role isVerified hasRequestedToVerify hasPostedAnyJob"
-//     );
-//   } else if (user.role === "staff") {
-//     result = await Staff.findOne({ userId }).populate(
-//       "userId",
-//       "name email phoneNumber gender city area role"
-//     );
-//   } else {
-//     result = user;
-//   }
-//   if (!result) {
-//     throw new AppError(httpStatus.NOT_FOUND, `${user.role} profile not found`);
-//   }
-//   return result;
-// };
+const getMe = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield auth_model_1.User.findById(userId);
+    if (!user) {
+        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
+    }
+    const result = yield auth_model_1.User.findById(userId);
+    return result;
+});
 // Suspend user - actual operation on User model
 const suspendUser = (userId, payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield auth_model_1.User.findById(userId);
+    const user = yield auth_model_1.User.findByIdAndUpdate(userId, { isSuspended: true, suspensionReason: payload.suspensionReason });
     if (!user)
         throw new Error("User not found");
-    user.isSuspended = true;
-    user.suspensionReason = payload.suspensionReason;
-    yield user.save();
-    return user;
+    return {};
+});
+const updateProfile = (userId, payload, file) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield auth_model_1.User.findById(userId);
+    if (!user) {
+        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
+    }
+    let profilePicture = user.profilePicture;
+    /* HANDLE IMAGE UPDATE */
+    if (file) {
+        /* DELETE OLD IMAGE */
+        if (user.profilePicture) {
+            const publicId = (0, deleteImageFromCloudinary_1.extractPublicId)(user.profilePicture);
+            yield (0, deleteImageFromCloudinary_1.deleteImageFromCloudinary)(publicId);
+        }
+        /* UPLOAD NEW IMAGE */
+        const { secure_url } = yield (0, sendImageToCloudinary_1.sendImageToCloudinary)(`profile-${Date.now()}`, file.path);
+        profilePicture = secure_url;
+    }
+    const updatedUser = yield auth_model_1.User.findByIdAndUpdate(userId, Object.assign(Object.assign({}, payload), { profilePicture }), { new: true });
+    return updatedUser;
 });
 // Activate user back
-const activeUser = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield auth_model_1.User.findById(userId);
+const withdrawSuspension = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield auth_model_1.User.findByIdAndUpdate(userId, { isSuspended: false, suspensionReason: null });
     if (!user)
         throw new Error("User not found");
-    user.isSuspended = false;
-    user.suspensionReason = null;
-    yield user.save();
-    return user;
+    return {};
 });
 // Activate user back
 const deleteAccount = (userId, payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield auth_model_1.User.findById(userId);
+    const user = yield auth_model_1.User.findByIdAndUpdate(userId, { isDeleted: true, accountDeleteReason: payload.accountDeleteReason });
     if (!user)
         throw new Error("User not found");
-    user.isDeleted = true;
-    // user.accountDeleteReason = payload.accountDeleteReason || null;
-    yield user.save();
     return user;
 });
 // Activate user back
-const restoreDeletedAccount = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+const restoreUsersDeletedAccount = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield auth_model_1.User.findByIdAndUpdate(userId, { isDeleted: false });
     if (!user)
         throw new Error("User not found");
     return user;
 });
-// const requestToUnlockProfile = async (userId: string, payload: any) => {
-//   const user = await User.findById(userId);
-//   if (!user) throw new Error("User not found");
-//   // For Tutor
-//   if (user.role === "tutor") {
-//     const updatedTutor = await Tutor.findOneAndUpdate(
-//       { userId },
-//       {
-//         $set: {
-//           hasAppliedForUnlock: true,
-//           unlockRequestReason: payload?.unlockRequestReason,
-//         },
-//       },
-//       { new: true }
-//     );
-//     if (!updatedTutor) throw new Error("Tutor not found");
-//     return updatedTutor;
-//   }
-//   // For Guardian
-//   if (user.role === "guardian") {
-//     const updatedGuardian = await Guardian.findOneAndUpdate(
-//       { userId },
-//       {
-//         $set: {
-//           hasAppliedForUnlock: true,
-//           unlockRequestReason: payload?.unlockRequestReason,
-//         },
-//       },
-//       { new: true }
-//     );
-//     if (!updatedGuardian) throw new Error("Guardian not found");
-//     return updatedGuardian;
-//   }
-//   // If role is neither tutor nor guardian
-//   throw new AppError(
-//     httpStatus.BAD_REQUEST,
-//     "User role not supported for unlock request"
-//   );
-// };
-// const toggleLockProfile = async (userId: string) => {
-//   const user = await User.findById(userId);
-//   if (!user) throw new Error("User not found");
-//   if (user.role === "tutor") {
-//     const tutor = await Tutor.findOne({ userId });
-//     if (!tutor) throw new Error("Tutor not found");
-//     const isLocked = tutor.profileStatus === "locked";
-//     const updatedTutor = await Tutor.findOneAndUpdate(
-//       { userId },
-//       isLocked
-//         ? {
-//             profileStatus: "unlocked",
-//             hasAppliedForUnlock: false,
-//             unlockRequestReason: null,
-//           }
-//         : { profileStatus: "locked" },
-//       {
-//         runValidators: false,
-//         new: true, // ✅ return updated doc
-//       }
-//     );
-//     return updatedTutor;
-//   }
-//   if (user.role === "guardian") {
-//     const guardian = await Guardian.findOne({ userId });
-//     if (!guardian) throw new Error("Guardian not found");
-//     guardian.profileStatus =
-//       guardian.profileStatus === "locked" ? "unlocked" : "locked";
-//     if (guardian.profileStatus === "unlocked") {
-//       guardian.hasAppliedForUnlock = false;
-//       guardian.unlockRequestReason = null;
-//     }
-//     await guardian.save({ validateBeforeSave: false });
-//     return guardian;
-//   }
-//   throw new AppError(
-//     httpStatus.BAD_REQUEST,
-//     "User role not supported for lock/unlock"
-//   );
-// };
 // Update tutor profile
 // const updateProfile = async (
 //   userId: string,
@@ -270,15 +195,13 @@ const saveUserPushToken = (payload) => __awaiter(void 0, void 0, void 0, functio
     return result;
 });
 exports.UserServices = {
-    getAllUser,
-    // getMe,
+    getAllUsers,
+    getMe,
     suspendUser,
-    activeUser,
+    withdrawSuspension,
     getSingleUserById,
+    updateProfile,
     deleteAccount,
-    restoreDeletedAccount,
-    // requestToUnlockProfile,
-    // toggleLockProfile,
-    // updateProfile,
+    restoreUsersDeletedAccount,
     saveUserPushToken
 };

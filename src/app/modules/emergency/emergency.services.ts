@@ -38,6 +38,10 @@ const forwardMessageToOthers = async (payload: any) => {
     message,
     data
   );
+  await Emergency.updateOne(
+    { _id: emergencyMessageId },
+    { $set: { status: "forwarded" } }
+  );
 
   return {};
 };

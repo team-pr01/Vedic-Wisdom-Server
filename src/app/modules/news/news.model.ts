@@ -29,10 +29,10 @@ const NewsSchema = new Schema<TNews>(
 
 // TEXT INDEX
 NewsSchema.index({
-  title: "text",
-  description: "text",
+  "translations.en.title": "text",
+  "translations.en.content": "text",
+  "translations.en.tags": "text",
   category: "text",
-  tags: "text",
 });
 
 // Sorting optimization

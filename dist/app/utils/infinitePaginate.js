@@ -29,6 +29,7 @@ const infinitePaginate = (model_1, query_1, skip_1, limit_1, ...args_1) => __awa
             filteredTotal,
             skip,
             limit,
+            totalPages: Math.ceil(filteredTotal / limit),
             hasMore: skip + data.length < filteredTotal,
         },
     };

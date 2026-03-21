@@ -62,7 +62,7 @@ const updateFood = (foodId, user, payload) => __awaiter(void 0, void 0, void 0, 
     if (!food) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Food not found");
     }
-    if (food.createdBy.toString() !== user.userId &&
+    if (food.createdBy !== user.userId &&
         user.role !== "admin") {
         throw new AppError_1.default(http_status_1.default.FORBIDDEN, "Not authorized");
     }

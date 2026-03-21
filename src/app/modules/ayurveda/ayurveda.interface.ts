@@ -1,7 +1,7 @@
 export type TAyurveda = {
   title: string;
   category: string;
-  videoSource: "youtube" | "vimeo" | "upload" | string;
+  videoSource: "youtube" | "facebook";
   videoUrl: string;
   duration: string;
 };

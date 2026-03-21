@@ -18,7 +18,7 @@ router.post("/forgot-password", auth_controller_1.AuthControllers.forgetPassword
 router.post("/verify-forgot-password-otp", auth_controller_1.AuthControllers.verifyForgotPasswordOtp);
 router.post("/resend-forgot-password-otp", auth_controller_1.AuthControllers.resendForgotPasswordOtp);
 router.post("/reset-password", auth_controller_1.AuthControllers.resetPassword);
-router.post("/change-password", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.user, auth_constants_1.UserRole.moderator, auth_constants_1.UserRole.temple), auth_controller_1.AuthControllers.changePassword);
+router.post("/change-password", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.user, auth_constants_1.UserRole.moderator), auth_controller_1.AuthControllers.changePassword);
 // router.post("/verify-otp", AuthControllers.verifyOtp);
 // router.post("/resend-otp", AuthControllers.resendOtp);
 // router.post(

@@ -14,6 +14,17 @@ const reels_route_1 = require("../modules/reels/reels.route");
 const course_route_1 = require("../modules/course/course.route");
 const ayurveda_route_1 = require("../modules/ayurveda/ayurveda.route");
 const job_route_1 = require("../modules/job/job.route");
+const application_route_1 = require("../modules/job/applications/application.route");
+const referral_route_1 = require("../modules/referral/referral.route");
+const vendor_route_1 = require("../modules/shop/vendor/vendor.route");
+const product_route_1 = require("../modules/shop/product/product.route");
+const audioBook_route_1 = require("../modules/audioBook/audioBook.route");
+const audiotracks_route_1 = require("../modules/audioBook/audioTrack/audiotracks.route");
+const emergency_route_1 = require("../modules/emergency/emergency.route");
+const books_route_1 = require("../modules/book/books/books.route");
+const bookText_route_1 = require("../modules/book/texts/bookText.route");
+const reportMantra_route_1 = require("../modules/book/reportMantra/reportMantra.route");
+const categories_route_1 = require("../modules/categories/categories.route");
 const router = (0, express_1.Router)();
 const moduleRoutes = [
     {
@@ -67,6 +78,50 @@ const moduleRoutes = [
     {
         path: "/job",
         route: job_route_1.JobRoutes,
+    },
+    {
+        path: "/application",
+        route: application_route_1.ApplicationRoutes,
+    },
+    {
+        path: "/referral",
+        route: referral_route_1.ReferralRoutes,
+    },
+    {
+        path: "/product",
+        route: product_route_1.ProductRoutes,
+    },
+    {
+        path: "/vendor",
+        route: vendor_route_1.VendorRoutes,
+    },
+    {
+        path: "/audioBook",
+        route: audioBook_route_1.AudioBookRoutes,
+    },
+    {
+        path: "/audioTracks",
+        route: audiotracks_route_1.AudioTracksRoutes,
+    },
+    {
+        path: "/book",
+        route: books_route_1.BooksRoutes,
+    },
+    {
+        path: "/book-text",
+        route: bookText_route_1.BookTextRoutes,
+    },
+    {
+        path: "/reportMantra",
+        route: reportMantra_route_1.ReportMantraRoutes
+    },
+    {
+        path: "/emergency",
+        route: emergency_route_1.EmergencyRoutes,
+    },
+    {
+        path: "/category",
+        route: categories_route_1.CategoryRoutes,
     },
 ];
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

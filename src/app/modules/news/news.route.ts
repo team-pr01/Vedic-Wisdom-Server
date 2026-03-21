@@ -14,7 +14,7 @@ router.post(
 );
 
 router.get("/", NewsControllers.getAllNews);
-router.get("/:newsId", NewsControllers.getSingleNewsById);
+router.get("/:newsId/:languageCode", NewsControllers.getSingleNewsById);
 
 router.put(
   "/update/:newsId",

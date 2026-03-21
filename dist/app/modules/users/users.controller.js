@@ -13,13 +13,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserControllers = void 0;
-// users.controller.ts
 const users_services_1 = require("./users.services");
 const sendResponse_1 = __importDefault(require("../../utils/sendResponse"));
 const http_status_1 = __importDefault(require("http-status"));
 const catchAsync_1 = __importDefault(require("../../utils/catchAsync"));
-const getAllUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield users_services_1.UserServices.getAllUser();
+const getAllUsers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield users_services_1.UserServices.getAllUsers();
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -27,7 +26,7 @@ const getAllUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, voi
         data: result,
     });
 }));
-// Get single post by ID
+// Get single user by ID
 const getSingleUserById = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
     const result = yield users_services_1.UserServices.getSingleUserById(userId);
@@ -38,16 +37,16 @@ const getSingleUserById = (0, catchAsync_1.default)((req, res) => __awaiter(void
         data: result,
     });
 }));
-// const getMe = catchAsync(async (req, res) => {
-//   const userId = req.user._id;
-//   const result = await UserServices.getMe(userId);
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: "Profile retrieved successfully",
-//     data: result,
-//   });
-// });
+const getMe = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = req.user.userId;
+    const result = yield users_services_1.UserServices.getMe(userId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Profile retrieved successfully",
+        data: result,
+    });
+}));
 // suspend user
 const suspendUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
@@ -60,31 +59,41 @@ const suspendUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, vo
     });
 }));
 // activate user
-const activeUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const withdrawSuspension = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
-    const result = yield users_services_1.UserServices.activeUser(userId);
+    const result = yield users_services_1.UserServices.withdrawSuspension(userId);
     (0, sendResponse_1.default)(res, {
         success: true,
-        message: "User activated successfully",
+        message: "Suspension withdrawn successfully",
         statusCode: http_status_1.default.OK,
+        data: result,
+    });
+}));
+const updateProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const file = req.file;
+    const result = yield users_services_1.UserServices.updateProfile(req.user.userId, req.body, file);
+    (0, sendResponse_1.default)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Profile updated successfully",
         data: result,
     });
 }));
 // Delete account
 const deleteAccount = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const result = yield users_services_1.UserServices.deleteAccount(userId, req.body);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
-        message: "Account deleted successfully!",
+        message: "It's sad to see you go.",
         data: result,
     });
 }));
 // Restore Deleted account
-const restoreDeletedAccount = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const restoreUsersDeletedAccount = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
-    const result = yield users_services_1.UserServices.restoreDeletedAccount(userId);
+    const result = yield users_services_1.UserServices.restoreUsersDeletedAccount(userId);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -92,37 +101,6 @@ const restoreDeletedAccount = (0, catchAsync_1.default)((req, res) => __awaiter(
         data: result,
     });
 }));
-// const requestToUnlockProfile = catchAsync(async (req, res) => {
-//   const userId  = req.user._id;
-//   const tutor = await UserServices.requestToUnlockProfile(userId, req.body);
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: "Profile unlocked successfully",
-//     data: tutor,
-//   });
-// });
-// const toggleLockProfile = catchAsync(async (req, res) => {
-//   const { userId } = req.params;
-//   const result = await UserServices.toggleLockProfile(userId);
-//   sendResponse(res, {
-//     success: true,
-//     message: "Profile status updated successfully",
-//     statusCode: httpStatus.OK,
-//     data: result,
-//   });
-// });
-// const updateProfile = catchAsync(async (req, res) => {
-//   const file = req.file;
-//   const userId = req.user._id
-//   const result = await UserServices.updateProfile(userId, req.body, file);
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: "Profile updated successfully",
-//     data: result,
-//   });
-// });
 // Save Push Token
 const savePushToken = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield users_services_1.UserServices.saveUserPushToken(req.body);
@@ -134,15 +112,13 @@ const savePushToken = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
     });
 }));
 exports.UserControllers = {
-    getAllUser,
-    // getMe,
+    getAllUsers,
+    getMe,
     suspendUser,
-    activeUser,
+    withdrawSuspension,
     getSingleUserById,
+    updateProfile,
     deleteAccount,
-    restoreDeletedAccount,
-    // requestToUnlockProfile,
-    // toggleLockProfile,
-    // updateProfile,
+    restoreUsersDeletedAccount,
     savePushToken,
 };

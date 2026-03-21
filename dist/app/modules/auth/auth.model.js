@@ -23,7 +23,7 @@ const userSchema = new mongoose_1.Schema({
         unique: true,
         trim: true,
     },
-    avatar: {
+    profilePicture: {
         type: String,
         required: false,
     },
@@ -77,17 +77,12 @@ const userSchema = new mongoose_1.Schema({
     },
     role: {
         type: String,
-        enum: ["user", "admin", "moderator", "super-admin", "temple"],
+        enum: ["user", "admin", "moderator"],
         default: "user",
     },
     assignedPages: {
         type: [String],
         default: [],
-    },
-    totalQuizTaken: {
-        type: Number,
-        required: false,
-        default: 0,
     },
     expoPushToken: {
         type: String,
@@ -97,9 +92,17 @@ const userSchema = new mongoose_1.Schema({
         type: Boolean,
         default: false,
     },
+    accountDeleteReason: {
+        type: String,
+        default: null,
+    },
     isSuspended: {
         type: Boolean,
         default: false,
+    },
+    suspensionReason: {
+        type: String,
+        default: null,
     },
     resetPasswordOtp: {
         type: String,
@@ -114,9 +117,10 @@ const userSchema = new mongoose_1.Schema({
         default: null,
         required: false,
     },
-    plan: { type: String, default: "free" },
-    subscriptionStart: Date,
-    subscriptionEnd: Date,
+    plan: {
+        type: String,
+        default: "free",
+    },
     // Usage tracking for subscription
     usage: {
         aiChatDaily: { type: Number, default: 0 },
@@ -127,6 +131,23 @@ const userSchema = new mongoose_1.Schema({
         lastDailyReset: Date,
         lastMonthlyReset: Date,
     },
+    referralCode: {
+        type: String,
+        unique: true,
+        default: null,
+    },
+    referralCount: {
+        type: Number,
+        default: 0,
+    },
+    premiumUnlocked: {
+        type: Boolean,
+        default: false,
+    },
+    coins: {
+        type: Number,
+        default: 0,
+    }
 }, {
     timestamps: true,
 });
@@ -155,5 +176,21 @@ userSchema.statics.isPasswordMatched = function (plainTextPassword, hashedPasswo
         return yield bcrypt_1.default.compare(plainTextPassword, hashedPassword);
     });
 };
+/* TEXT SEARCH INDEX */
+userSchema.index({
+    name: "text",
+    email: "text",
+    phoneNumber: "text",
+    userId: "text",
+});
+/* FILTER INDEXES */
+userSchema.index({ role: 1 });
+userSchema.index({ country: 1 });
+userSchema.index({ state: 1 });
+userSchema.index({ city: 1 });
+userSchema.index({ area: 1 });
+userSchema.index({ premiumUnlocked: 1 });
+/* SORT / PAGINATION */
+userSchema.index({ createdAt: -1 });
 // Export the model
 exports.User = (0, mongoose_1.model)("User", userSchema);

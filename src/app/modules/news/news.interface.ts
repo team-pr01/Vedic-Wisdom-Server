@@ -8,12 +8,12 @@ export type TNewsTranslation = {
 
 export type TNews = {
   imageUrl: string;
-  translations: {
-    [languageCode: string]: TNewsTranslation;
-  };
+  translations: Map<string, TNewsTranslation>;
    category: string;
   likes?: number;
   likedBy?: ObjectId[];
   views?: number;
   viewedBy?: ObjectId[];
+  createdAt?: Date;
+  updatedAt?: Date;
 };

@@ -21,6 +21,7 @@ const getAllNews = catchAsync(async (req, res) => {
   const {
     keyword,
     category,
+    languageCode = "en",
     skip = "0",
     limit = "10",
   } = req.query;
@@ -28,6 +29,7 @@ const getAllNews = catchAsync(async (req, res) => {
   const filters = {
     keyword: keyword as string,
     category: category as string,
+    languageCode: languageCode as string,
   };
 
   const result = await NewsServices.getAllNews(
@@ -49,8 +51,8 @@ const getAllNews = catchAsync(async (req, res) => {
 
 // Get Single
 const getSingleNewsById = catchAsync(async (req, res) => {
-  const { newsId } = req.params;
-  const result = await NewsServices.getSingleNewsById(newsId);
+  const { newsId, languageCode } = req.params;
+  const result = await NewsServices.getSingleNewsById(newsId, languageCode);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

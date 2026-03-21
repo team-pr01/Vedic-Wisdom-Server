@@ -70,6 +70,7 @@ const jobSchema = new mongoose_1.Schema({
     benefits: [String],
     applicationDeadline: { type: Date, required: true },
     applicationCount: { type: Number, default: 0 },
+    applications: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "Application" }],
     status: {
         type: String,
         enum: ["pending", "rejected", "active", "closed"],

@@ -5,7 +5,7 @@ export type TEmergency = {
   phoneNumber: string;
   location: string;
   message: string;
-  status?: "pending" | "processing" | "resolved";
+  status?: "pending" | "processing" | "forwarded" | "resolved";
   resolvedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;

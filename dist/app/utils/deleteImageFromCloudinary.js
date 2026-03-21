@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteImageFromCloudinary = void 0;
+exports.extractPublicId = exports.deleteImageFromCloudinary = void 0;
 const cloudinary_1 = require("cloudinary");
 const AppError_1 = __importDefault(require("../errors/AppError"));
 const http_status_1 = __importDefault(require("http-status"));
@@ -27,3 +27,14 @@ const deleteImageFromCloudinary = (publicId) => __awaiter(void 0, void 0, void 0
     }
 });
 exports.deleteImageFromCloudinary = deleteImageFromCloudinary;
+const extractPublicId = (url) => {
+    if (!url)
+        return "";
+    const parts = url.split("/upload/");
+    const publicIdWithVersion = parts[1];
+    const publicId = publicIdWithVersion
+        .replace(/^v\d+\//, "")
+        .replace(/\.[^/.]+$/, "");
+    return publicId;
+};
+exports.extractPublicId = extractPublicId;

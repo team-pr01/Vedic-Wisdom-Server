@@ -17,7 +17,7 @@ const checkAiChatLimit = (req, res, next) => __awaiter(void 0, void 0, void 0, f
     if (!user) {
         return res.status(400).json({ message: "User not found" });
     }
-    const planConfig = plans_1.Plans[user.plan];
+    const planConfig = plans_1.Plans[user === null || user === void 0 ? void 0 : user.plan];
     // Extract actual AI Chat daily limit from Plans
     const dailyLimit = planConfig.aiChatDaily;
     const today = new Date().toDateString();
@@ -106,7 +106,7 @@ const checkKundliLimit = (req, res, next) => __awaiter(void 0, void 0, void 0, f
     if (!user)
         return res.status(400).json({ message: "User not found" });
     const planConfig = plans_1.Plans[user.plan];
-    const monthlyLimit = planConfig.kundliMonthly;
+    const monthlyLimit = planConfig === null || planConfig === void 0 ? void 0 : planConfig.kundliMonthly;
     const nowMonth = new Date().getMonth();
     const lastResetMonth = (_a = user.usage.lastMonthlyReset) === null || _a === void 0 ? void 0 : _a.getMonth();
     if (lastResetMonth !== nowMonth) {

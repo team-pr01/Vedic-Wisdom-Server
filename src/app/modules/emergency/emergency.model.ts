@@ -20,7 +20,7 @@ const EmergencySchema = new Schema<TEmergency>(
     },
     status: {
       type: String,
-      enum: ["pending", "processing", "resolved"],
+      enum: ["pending", "processing", "forwarded", "resolved"],
       default: "pending",
     },
     resolvedAt  : {

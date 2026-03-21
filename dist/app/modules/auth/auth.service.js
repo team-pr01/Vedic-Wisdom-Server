@@ -8,6 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -24,24 +35,80 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const auth_utils_1 = require("./auth.utils");
 const customUserIdGenerator_1 = require("../../utils/customUserIdGenerator");
 const generate4DigitsOTP_1 = require("../../utils/generate4DigitsOTP");
+const referral_service_1 = require("../referral/referral.service");
 // Signup
 const signup = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    // Checking if user already exists by email address
-    const isUserExistsByEmail = yield auth_model_1.User.findOne({ email: payload.email });
-    if (isUserExistsByEmail) {
+    const _a = payload, { mode, referralCode } = _a, restPayload = __rest(_a, ["mode", "referralCode"]);
+    /* CHECK DELETED ACCOUNT */
+    const deletedUser = yield auth_model_1.User.findOne({
+        $or: [
+            { email: payload.email },
+            { phoneNumber: payload.phoneNumber }
+        ],
+        isDeleted: true
+    });
+    /* CASE 1: DELETED ACCOUNT FOUND */
+    if (deletedUser) {
+        if (!mode) {
+            return {
+                restoreAccount: true,
+                message: "A deleted account exists. Do you want to restore your previous account?",
+                userId: deletedUser._id
+            };
+        }
+        /* RESTORE ACCOUNT */
+        if (mode === "restore") {
+            deletedUser.isDeleted = false;
+            deletedUser.isSuspended = false;
+            yield deletedUser.save();
+            return {
+                restoreAccount: false,
+                message: "Account restored successfully",
+                user: deletedUser
+            };
+        }
+        /* CREATE NEW ACCOUNT */
+        if (mode === "createNew") {
+            yield auth_model_1.User.findByIdAndDelete(deletedUser._id);
+            const userId = yield (0, customUserIdGenerator_1.customUserIdGenerator)();
+            const payloadData = Object.assign(Object.assign({}, restPayload), { role: payload.role || "user", userId, isDeleted: false, isSuspended: false, isVerified: false });
+            const newUser = yield auth_model_1.User.create(payloadData);
+            if (referralCode) {
+                yield referral_service_1.ReferralServices.handleReferralReward(newUser._id.toString(), referralCode);
+            }
+            return {
+                restoreAccount: false,
+                message: "New account created successfully",
+                user: newUser
+            };
+        }
+    }
+    /* CHECK ACTIVE USERS */
+    const activeUserByEmail = yield auth_model_1.User.findOne({
+        email: payload.email,
+        isDeleted: false
+    });
+    if (activeUserByEmail) {
         throw new AppError_1.default(http_status_1.default.CONFLICT, "User already exists by this email address.");
     }
-    ;
-    // Checking if user already exists by phone number
-    const isUserExistsByPhoneNumber = yield auth_model_1.User.findOne({ phoneNumber: payload.phoneNumber });
-    if (isUserExistsByPhoneNumber) {
+    const activeUserByPhone = yield auth_model_1.User.findOne({
+        phoneNumber: payload.phoneNumber,
+        isDeleted: false
+    });
+    if (activeUserByPhone) {
         throw new AppError_1.default(http_status_1.default.CONFLICT, "User already exists by this phone number.");
     }
-    ;
+    /* CREATE NEW USER */
     const userId = yield (0, customUserIdGenerator_1.customUserIdGenerator)();
-    const payloadData = Object.assign(Object.assign({}, payload), { role: payload.role || "user", userId, isDeleted: false, isSuspended: false, isVerified: false });
+    const payloadData = Object.assign(Object.assign({}, restPayload), { role: payload.role || "user", userId, isDeleted: false, isSuspended: false, isVerified: false });
     const result = yield auth_model_1.User.create(payloadData);
-    return result;
+    if (referralCode) {
+        yield referral_service_1.ReferralServices.handleReferralReward(result._id.toString(), referralCode);
+    }
+    return {
+        restoreAccount: false,
+        user: result
+    };
 });
 // Login
 const loginUser = (payload) => __awaiter(void 0, void 0, void 0, function* () {

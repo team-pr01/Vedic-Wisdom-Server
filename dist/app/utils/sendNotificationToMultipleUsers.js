@@ -14,7 +14,7 @@ exports.sendNotificationToMultipleUsers = void 0;
 const auth_model_1 = require("../modules/auth/auth.model");
 const notification_model_1 = require("../modules/notification/notification.model");
 const server_1 = require("../../server");
-const sendNotificationToMultipleUsers = (userIds, title, message) => __awaiter(void 0, void 0, void 0, function* () {
+const sendNotificationToMultipleUsers = (userIds, title, message, data) => __awaiter(void 0, void 0, void 0, function* () {
     if (!userIds.length)
         return;
     // 1️⃣ Fetch users
@@ -26,7 +26,7 @@ const sendNotificationToMultipleUsers = (userIds, title, message) => __awaiter(v
         to: users.map((u) => u._id),
         title,
         message,
-        deliveryStatus: "pending",
+        data,
     });
     // 3️⃣ Emit socket event ONLY to intended users
     users.forEach((user) => {
@@ -34,6 +34,7 @@ const sendNotificationToMultipleUsers = (userIds, title, message) => __awaiter(v
             _id: createdNotification._id,
             title,
             message,
+            data,
             createdAt: createdNotification.createdAt,
         });
     });

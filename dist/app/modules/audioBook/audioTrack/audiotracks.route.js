@@ -1,0 +1,20 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AudioTracksRoutes = void 0;
+const express_1 = __importDefault(require("express"));
+const auth_1 = __importDefault(require("../../../middlewares/auth"));
+const auth_constants_1 = require("../../auth/auth.constants");
+const multer_config_1 = require("../../../config/multer.config");
+const audioTrack_controller_1 = require("./audioTrack.controller");
+const uploadAudioToCloudinary_1 = require("../../../utils/uploadAudioToCloudinary");
+const router = express_1.default.Router();
+router.post("/add", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), uploadAudioToCloudinary_1.uploadAudio.single("file"), audioTrack_controller_1.AudioTrackControllers.addAudioTrack);
+router.get("/", audioTrack_controller_1.AudioTrackControllers.getAllAudioTracks);
+router.get("/book/:audioBookId", audioTrack_controller_1.AudioTrackControllers.getAllAudioTracksOfABook);
+router.get("/:trackId", audioTrack_controller_1.AudioTrackControllers.getSingleAudioTrack);
+router.patch("/update/:trackId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), multer_config_1.multerUpload.single("file"), audioTrack_controller_1.AudioTrackControllers.updateAudioTrack);
+router.delete("/delete/:trackId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), audioTrack_controller_1.AudioTrackControllers.deleteAudioTrack);
+exports.AudioTracksRoutes = router;
