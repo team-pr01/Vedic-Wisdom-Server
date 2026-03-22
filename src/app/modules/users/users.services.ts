@@ -16,7 +16,6 @@ const getAllUsers = async (
   skip = 0,
   limit = 10
 ) => {
-
   const query: any = {};
 
   /* TEXT SEARCH */
@@ -28,17 +27,18 @@ const getAllUsers = async (
 
   /* FILTERS */
   if (filters.role) query.role = filters.role;
-
   if (filters.country) query.country = filters.country;
-
   if (filters.state) query.state = filters.state;
-
   if (filters.city) query.city = filters.city;
-
   if (filters.area) query.area = filters.area;
 
-  if (filters.premiumUnlocked !== undefined) {
-    query.premiumUnlocked = filters.premiumUnlocked;
+  /* STATUS LOGIC */
+  if (filters.status && filters.status !== "all") {
+    query.isSuspended = filters.status === "true";
+  }
+
+  if (filters.premiumUnlocked && filters.premiumUnlocked !== "all") {
+    query.premiumUnlocked = filters.premiumUnlocked === "true";
   }
 
   return infinitePaginate(User, query, skip, limit);
@@ -133,7 +133,7 @@ const deleteAccount = async (userId: string, payload: any) => {
 
 // Activate user back
 const restoreUsersDeletedAccount = async (userId: string) => {
-  const user = await User.findByIdAndUpdate(userId, { isDeleted: false });
+  const user = await User.findByIdAndUpdate(userId, { isDeleted: false, accountDeleteReason: null });
   if (!user) throw new Error("User not found");
 
   return user;

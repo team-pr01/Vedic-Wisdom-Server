@@ -19,6 +19,13 @@ router.get(
   ReferralControllers.getMyReferrals
 );
 
+/* Get All Referrals of An User */
+router.get(
+  "/user/:userId",
+  auth(UserRole.moderator, UserRole.admin),
+  ReferralControllers.getAllReferralsOfAnUser
+);
+
 /* Get Coin History */
 router.get(
   "/coins",

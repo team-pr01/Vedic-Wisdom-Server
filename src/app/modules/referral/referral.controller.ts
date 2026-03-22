@@ -17,9 +17,26 @@ const generateReferralCode = catchAsync(async (req, res) => {
 });
 
 const getMyReferrals = catchAsync(async (req, res) => {
+  const { skip = "0", limit = "10" } = req.query;
   const userId = req.user.userId;
 
-  const result = await ReferralServices.getMyReferrals(userId);
+  const result = await ReferralServices.getMyReferrals(userId, Number(skip),
+    Number(limit));
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Referral list fetched successfully",
+    data: result,
+  });
+});
+
+const getAllReferralsOfAnUser = catchAsync(async (req, res) => {
+  const { skip = "0", limit = "10" } = req.query;
+  const { userId } = req.params;
+
+  const result = await ReferralServices.getAllReferralsOfAnUser(userId, Number(skip),
+    Number(limit));
 
   sendResponse(res, {
     success: true,
@@ -45,5 +62,6 @@ const getMyCoins = catchAsync(async (req, res) => {
 export const ReferralControllers = {
   generateReferralCode,
   getMyReferrals,
+  getAllReferralsOfAnUser,
   getMyCoins,
 };

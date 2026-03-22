@@ -4,7 +4,33 @@ import httpStatus from "http-status";
 import catchAsync from "../../utils/catchAsync";
 
 const getAllUsers = catchAsync(async (req, res) => {
-  const result = await UserServices.getAllUsers();
+  const {
+    keyword,
+    role,
+    country,
+    state,
+    city,
+    area,
+    premiumUnlocked,
+    status,
+    skip = "0",
+    limit = "10",
+  } = req.query;
+
+  const filters = {
+    keyword: keyword as string,
+    role: role as string,
+    country: country as string,
+    state: state as string,
+    city: city as string,
+    area: area as string,
+    premiumUnlocked: premiumUnlocked as string,
+    status: status as string,
+  };
+
+  const result = await UserServices.getAllUsers(filters,
+    Number(skip),
+    Number(limit));
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,

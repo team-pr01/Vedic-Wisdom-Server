@@ -15,10 +15,10 @@ export type TUser = {
   email: string;
   countryCode: string;
   phoneNumber: string;
-  area?: string;
   city?: string;
   state?: string;
   country?: string;
+  address?: string;
   password: string;
   role: "user" | "admin" | "moderator";
   assignedPages?: string[];

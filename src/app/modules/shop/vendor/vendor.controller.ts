@@ -82,7 +82,6 @@ const getSingleVendorById = catchAsync(async (req, res) => {
 /* All products of a vendor */
 const getAllProductsOfAVendor = catchAsync(async (req, res) => {
     const { vendorId, keyword, status, skip = "0", limit = "10" } = req.query;
-    console.log(vendorId);
 
     const filters = {
         keyword: keyword as string,

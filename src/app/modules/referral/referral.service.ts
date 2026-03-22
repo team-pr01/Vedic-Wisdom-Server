@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from "http-status";
 import { User } from "../auth/auth.model";
 import AppError from "../../errors/AppError";
 import Referral from "./referral.model";
 import CoinTransaction from "./coinTransaction/coinTransaction.model";
 import { generateUniqueReferralCode } from "../../utils/generateReferralCode";
+import { infinitePaginate } from "../../utils/infinitePaginate";
+import { Types } from "mongoose";
 
 /* Generate Referral Code */
 const generateReferralCode = async (userId: string) => {
@@ -81,12 +84,39 @@ const handleReferralReward = async (
 };
 
 /* Get My Referrals */
-const getMyReferrals = async (userId: string) => {
-    const referrals = await Referral.find({ referrer: userId })
-        .populate("referredUser", "name profilePicture")
-        .sort({ rank: 1 });
+const getMyReferrals = async (
+  userId: string,
+  skip = 0,
+  limit = 10
+) => {
+  const query: any = {
+    referrer: new Types.ObjectId(userId),
+  };
 
-    return referrals;
+  return infinitePaginate(Referral, query, skip, limit, [
+    {
+      path: "referredUser",
+      select: "name profilePicture",
+    },
+  ]);
+};
+
+/* Get All Referrals of An User */
+const getAllReferralsOfAnUser = async (
+  userId: string,
+  skip = 0,
+  limit = 10
+) => {
+  const query: any = {
+    referrer: new Types.ObjectId(userId),
+  };
+
+  return infinitePaginate(Referral, query, skip, limit, [
+    {
+      path: "referredUser",
+      select: "name profilePicture",
+    },
+  ]);
 };
 
 /* Get My Coin Transactions */
@@ -98,5 +128,6 @@ export const ReferralServices = {
     generateReferralCode,
     handleReferralReward,
     getMyReferrals,
+    getAllReferralsOfAnUser,
     getMyCoins,
 };
