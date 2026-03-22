@@ -83,7 +83,7 @@ const getAllVendors = async (
 };
 
 /* Get Single Vendor */
-const getSingleVendorById = async (vendorId: string) => {
+const getSingleVendorById = async (vendorId: string,) => {
 
     const vendor = await Vendor.findById(vendorId);
 
@@ -92,6 +92,30 @@ const getSingleVendorById = async (vendorId: string) => {
     }
 
     return vendor;
+};
+
+/* Get All Products of a Vendor */
+const getAllProductsOfAVendor = async (
+  vendorId: string,
+  filters: any = {},
+  skip = 0,
+  limit = 10
+) => {
+  const query: any = {
+    addedBy: vendorId,
+  };
+
+  if (filters.status) {
+    query.status = filters.status;
+  }
+
+  if (filters.keyword) {
+    query.$text = {
+      $search: filters.keyword,
+    };
+  }
+
+  return infinitePaginate(Product, query, skip, limit, []);
 };
 
 // For vendors
@@ -189,6 +213,7 @@ export const VendorServices = {
     getPendingVendorApplications,
     getAllVendors,
     getSingleVendorById,
+    getAllProductsOfAVendor,
     getMyVendorStats,
     updateVendorStatus,
     suspendVendor,

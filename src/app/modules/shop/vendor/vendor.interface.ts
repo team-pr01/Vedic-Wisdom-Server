@@ -2,7 +2,6 @@ import { ObjectId } from "mongoose";
 
 export type TVendor = {
   userId: ObjectId;
-
   name: string;
   shopName: string;
   phoneNumber: string;

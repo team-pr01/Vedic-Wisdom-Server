@@ -79,26 +79,6 @@ const getMyProducts = catchAsync(async (req, res) => {
   });
 });
 
-// For admin
-const getVendorProducts = catchAsync(async (req, res) => {
-
-  const { userId } = req.params;
-  const { skip = "0", limit = "10" } = req.query;
-
-  const result = await ProductServices.getVendorProducts(
-    userId,
-    Number(skip),
-    Number(limit)
-  );
-
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.OK,
-    message: "Vendor products fetched successfully",
-    data: result,
-  });
-});
-
 /* Update Product */
 const updateProduct = catchAsync(async (req, res) => {
 
@@ -144,7 +124,6 @@ export const ProductControllers = {
   getAllProducts,
   getSingleProductById,
   getMyProducts,
-  getVendorProducts,
   updateProduct,
   deleteProduct,
 };

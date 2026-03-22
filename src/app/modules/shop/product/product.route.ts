@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post(
   "/add",
-  auth(UserRole.user),
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
   multerUpload.array("files", 4),
   ProductControllers.addProduct
 );
@@ -29,13 +29,6 @@ router.get(
 router.get(
   "/:productId",
   ProductControllers.getSingleProductById
-);
-
-// For admin/moderators to get vendor products
-router.get(
-  "/vendor-products/:userId",
-  auth(UserRole.admin, UserRole.moderator),
-  ProductControllers.getVendorProducts
 );
 
 router.patch(

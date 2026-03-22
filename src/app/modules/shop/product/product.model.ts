@@ -54,7 +54,7 @@ const productSchema = new Schema<TProduct>(
     },
     addedBy: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Vendor",
       required: true,
       index: true,
     },

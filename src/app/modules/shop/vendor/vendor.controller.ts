@@ -79,9 +79,33 @@ const getSingleVendorById = catchAsync(async (req, res) => {
     });
 });
 
+/* All products of a vendor */
+const getAllProductsOfAVendor = catchAsync(async (req, res) => {
+    const { vendorId, keyword, status, skip = "0", limit = "10" } = req.query;
+    console.log(vendorId);
+
+    const filters = {
+        keyword: keyword as string,
+        status: status as string,
+    };
+
+    const result = await VendorServices.getAllProductsOfAVendor(
+        vendorId as string,
+        filters,
+        Number(skip),
+        Number(limit)
+    );
+
+    sendResponse(res, {
+        success: true,
+        statusCode: httpStatus.OK,
+        message: "Vendor's product fetched successfully",
+        data: result,
+    });
+});
+
 // For vendors
 const getMyVendorStats = catchAsync(async (req, res) => {
-    console.log(req.user);
     const result = await VendorServices.getMyVendorStats(
         req.user.userId
     );
@@ -151,6 +175,7 @@ export const VendorControllers = {
     getPendingVendorApplications,
     getAllVendors,
     getSingleVendorById,
+    getAllProductsOfAVendor,
     getMyVendorStats,
     updateVendorStatus,
     suspendVendor,

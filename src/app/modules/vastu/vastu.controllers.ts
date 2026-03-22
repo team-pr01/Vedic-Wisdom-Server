@@ -40,7 +40,7 @@ const getAllVastus = catchAsync(async (req, res) => {
     success: true,
     message: "Vastus fetched successfully.",
     data: {
-      vastus: result.data,
+      vastu: result.data,
       meta: result.meta,
     },
   });

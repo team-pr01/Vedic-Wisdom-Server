@@ -44,6 +44,12 @@ router.get(
     VendorControllers.getSingleVendorById
 );
 
+/* Get All Products of a Vendor */
+router.get(
+    "/:vendorId/products",
+    auth(UserRole.admin, UserRole.moderator),
+    VendorControllers.getAllProductsOfAVendor
+);
 
 
 router.patch(

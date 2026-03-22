@@ -76,7 +76,7 @@ const getAllProducts = async (
 /* Get Single Product */
 const getSingleProductById = async (productId: string) => {
 
-    const product = await Product.findById(productId);
+    const product = await Product.findById(productId).populate("addedBy", "name role");
 
     if (!product) {
         throw new AppError(httpStatus.NOT_FOUND, "Product not found");
@@ -106,26 +106,6 @@ const getMyProducts = async (
 
     const query = {
         addedBy: userId,
-    };
-
-    return infinitePaginate(Product, query, skip, limit);
-};
-
-// For admin
-const getVendorProducts = async (
-    userId: string,
-    skip = 0,
-    limit = 10
-) => {
-
-    const vendor = await Vendor.findOne({ userId }).lean();
-
-    if (!vendor) {
-        throw new AppError(httpStatus.NOT_FOUND, "Vendor not found");
-    }
-
-    const query = {
-        addedBy: vendor.userId,
     };
 
     return infinitePaginate(Product, query, skip, limit);
@@ -234,7 +214,6 @@ export const ProductServices = {
     getAllProducts,
     getSingleProductById,
     getMyProducts,
-    getVendorProducts,
     updateProduct,
     deleteProduct,
 };
