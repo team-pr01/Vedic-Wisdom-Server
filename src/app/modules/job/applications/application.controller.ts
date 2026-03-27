@@ -6,12 +6,10 @@ import sendResponse from "../../../utils/sendResponse";
 // Apply
 const applyOnJob = catchAsync(async (req, res) => {
   const userId = req.user.userId;
-  const file = req.file;
 
   const result = await ApplicationServices.applyOnJob(
     req.body,
     userId,
-    file
   );
 
   sendResponse(res, {
@@ -64,14 +62,24 @@ const getAllApplications = catchAsync(async (req, res) => {
 });
 
 // Get  all applications By Job id
-const getApplicationsByJob = catchAsync(async (req, res) => {
+const getApplicationsByJobId = catchAsync(async (req, res) => {
   const { jobId } = req.params;
   const { userId, role } = req.user;
 
-  const result = await ApplicationServices.getApplicationsByJob(
+  const { keyword, status, skip = "0", limit = "10" } = req.query;
+
+  const filters = {
+    keyword: keyword as string,
+    status: status as string,
+  };
+
+  const result = await ApplicationServices.getApplicationsByJobId(
     jobId,
     userId,
-    role
+    role,
+    filters,
+    Number(skip),
+    Number(limit)
   );
 
   sendResponse(res, {
@@ -142,7 +150,7 @@ export const ApplicationControllers = {
   applyOnJob,
   withdrawApplication,
   getAllApplications,
-  getApplicationsByJob,
+  getApplicationsByJobId,
   getSingleApplicationById,
   updateStatus,
   deleteApplication,

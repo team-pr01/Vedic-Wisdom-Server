@@ -18,6 +18,12 @@ const getAllUsers = async (
 ) => {
   const query: any = {};
 
+  if (filters.keyword) {
+    query.$or = [
+      { email: { $regex: filters.keyword, $options: 'i' } },
+    ];
+  }
+
   /* TEXT SEARCH */
   if (filters.keyword) {
     query.$text = {
@@ -229,6 +235,25 @@ const restoreUsersDeletedAccount = async (userId: string) => {
 //   return updatedProfile;
 // };
 
+
+const assignPagesToUser = async (payload: {
+  userId: string;
+  pages: string[];
+}) => {
+  const user = await User.findById(payload.userId);
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  const result = await User.findByIdAndUpdate(
+    payload.userId,
+    { assignedPages: payload.pages },
+    { new: true, runValidators: true }
+  );
+
+  return result;
+};
+
 // Change user role (For admin)
 const saveUserPushToken = async (payload: any) => {
   const user = await User.findById(payload?.userId);
@@ -257,5 +282,6 @@ export const UserServices = {
   updateProfile,
   deleteAccount,
   restoreUsersDeletedAccount,
+  assignPagesToUser,
   saveUserPushToken
 };

@@ -9,9 +9,9 @@ const salarySchema = new Schema(
             enum: ["paid", "unpaid"],
             required: true,
         },
-        minimum: Number,
-        maximum: Number,
-        currency: String,
+        minimum: { type: Number, required: false, default: null },
+        maximum: { type: Number, required: false, default: null },
+        currency: { type: String, required: false, default: null },
     },
     { _id: false }
 );
@@ -65,7 +65,7 @@ const individualSchema = new Schema(
         email: { type: String, required: true },
         address: { type: String, required: true },
 
-        identityNumber: { type: String, required: true },
+        identityNumber: { type: String, required: false },
         identityDocument: String,
     },
     { _id: false }
@@ -99,10 +99,10 @@ const jobSchema = new Schema<TJob>(
         salary: salarySchema,
 
         responsibilities: [{ type: String, required: true }],
-        qualification: [{ type: String, required: true }],
-        benefits: [String],
+        requiredSkills: [{ type: String, required: true }],
 
         applicationDeadline: { type: Date, required: true },
+        vacancy: { type: Number, required: true },
 
         applicationCount: { type: Number, default: 0 },
         applications: [{ type: Schema.Types.ObjectId, ref: "Application" }],

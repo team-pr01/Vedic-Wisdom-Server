@@ -453,25 +453,6 @@ const changePassword = async (
   return {};
 };
 
-const assignPagesToUser = async (payload: {
-  userId: string;
-  pages: string[];
-}) => {
-  const user = await User.findById(payload.userId);
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, "User not found");
-  }
-
-  const result = await User.findByIdAndUpdate(
-    payload.userId,
-    { assignedPages: payload.pages },
-    { new: true, runValidators: true }
-  );
-
-  return result;
-};
-
-
 export const AuthServices = {
   signup,
   loginUser,
@@ -481,5 +462,4 @@ export const AuthServices = {
   resendForgotPasswordOtp,
   resetPassword,
   changePassword,
-  assignPagesToUser,
 };

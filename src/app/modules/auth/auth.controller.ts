@@ -111,19 +111,6 @@ const changePassword = catchAsync(async (req, res) => {
 
 
 
-const assignPagesToUser = catchAsync(async (req, res) => {
-  const result = await AuthServices.assignPagesToUser(req.body);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Pages assigned successfully.",
-    data: result,
-  });
-});
-
-
-
 export const AuthControllers = {
   signup,
   loginUser,
@@ -133,5 +120,4 @@ export const AuthControllers = {
   resendForgotPasswordOtp,
   resetPassword,
   changePassword,
-  assignPagesToUser,
 };

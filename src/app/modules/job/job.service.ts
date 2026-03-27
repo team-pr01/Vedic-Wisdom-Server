@@ -5,6 +5,7 @@ import AppError from "../../errors/AppError";
 import Job from "./job.model";
 import { infinitePaginate } from "../../utils/infinitePaginate";
 import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
+import Application from "./applications/application.model";
 
 /* Post Job */
 const postJob = async (
@@ -63,7 +64,7 @@ const getAllJobs = async (
     // 🔍 Text Search
     if (filters.keyword) {
         query.$text = { $search: filters.keyword };
-        
+
     }
 
     // Status
@@ -126,66 +127,69 @@ const getSingleJobById = async (jobId: string) => {
 
 /* Update Job */
 const updateJob = async (
-  jobId: string,
-  payload: any,
-  file?: Express.Multer.File
+    jobId: string,
+    payload: any,
+    file?: Express.Multer.File
 ) => {
-  const existing = await Job.findById(jobId);
-  if (!existing) throw new AppError(httpStatus.NOT_FOUND, "Job not found");
+    const existing = await Job.findById(jobId);
+    if (!existing) throw new AppError(httpStatus.NOT_FOUND, "Job not found");
 
-  let uploadedUrl: string | undefined;
+    let uploadedUrl: string | undefined;
 
-  if (file) {
-    const imageName = `job-${Date.now()}`;
-    const path = file.path;
-    const { secure_url } = await sendImageToCloudinary(imageName, path);
-    uploadedUrl = secure_url;
-  }
-
-  // ✅ Update nested image safely
-  if (uploadedUrl) {
-    if (existing.hiringType === "company") {
-      payload["company.logo"] = uploadedUrl;
+    if (file) {
+        const imageName = `job-${Date.now()}`;
+        const path = file.path;
+        const { secure_url } = await sendImageToCloudinary(imageName, path);
+        uploadedUrl = secure_url;
     }
-    if (existing.hiringType === "individual") {
-      payload["individual.identityDocument"] = uploadedUrl;
+
+    // ✅ Update nested image safely
+    if (uploadedUrl) {
+        if (existing.hiringType === "company") {
+            payload["company.logo"] = uploadedUrl;
+        }
+        if (existing.hiringType === "individual") {
+            payload["individual.identityDocument"] = uploadedUrl;
+        }
     }
-  }
 
-  const result = await Job.findByIdAndUpdate(jobId, payload, {
-    new: true,
-    runValidators: true,
-  });
+    const result = await Job.findByIdAndUpdate(jobId, payload, {
+        new: true,
+        runValidators: true,
+    });
 
-  return result;
+    return result;
 };
 
 /* Delete Job */
 const deleteJob = async (
-  jobId: string,
-  userId: string,
-  userRole: string
+    jobId: string,
+    userId: string,
+    userRole: string
 ) => {
-  const existing = await Job.findById(jobId);
+    const existing = await Job.findById(jobId);
 
-  if (!existing) {
-    throw new AppError(httpStatus.NOT_FOUND, "Job not found");
-  }
+    if (!existing) {
+        throw new AppError(httpStatus.NOT_FOUND, "Job not found");
+    }
 
-  // ✅ Admin & Moderator can delete any job
-  if (userRole === "admin" || userRole === "moderator") {
-    return await Job.findByIdAndDelete(jobId);
-  }
+    // ✅ Admin & Moderator can delete any job
+    if (userRole === "admin" || userRole === "moderator") {
+        return await Job.findByIdAndDelete(jobId);
+    }
 
-  // ✅ Normal user → only own job
-  if (existing.postedBy.toString() !== userId) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "You are not allowed to delete this job"
-    );
-  }
+    // ✅ Normal user → only own job
+    if (existing.postedBy.toString() !== userId) {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            "You are not allowed to delete this job"
+        );
+    }
 
-  return await Job.findByIdAndDelete(jobId);
+    await Application.deleteMany({ jobId });
+    await Job.findByIdAndDelete(jobId);
+
+    return {}
 };
 
 /* Update Status */

@@ -3,14 +3,12 @@ import httpStatus from "http-status";
 import Job from "../job.model";
 import AppError from "../../../errors/AppError";
 import Application from "./application.model";
-import { sendImageToCloudinary } from "../../../utils/sendImageToCloudinary";
 import { infinitePaginate } from "../../../utils/infinitePaginate";
 
 /* Apply */
 const applyOnJob = async (
   payload: any,
   userId: string,
-  file?: Express.Multer.File
 ) => {
   const jobId = payload?.jobId;
   const job = await Job.findById(jobId);
@@ -18,23 +16,12 @@ const applyOnJob = async (
 
   // Prevent duplicate apply
   const exists = await Application.findOne({ jobId, userId });
-  if (exists) throw new AppError(httpStatus.BAD_REQUEST, "Already applied");
-
-  // Upload resume
-  let resumeUrl = "";
-  if (file) {
-    const { secure_url } = await sendImageToCloudinary(
-      `resume-${Date.now()}`,
-      file.path
-    );
-    resumeUrl = secure_url;
-  }
+  if (exists) throw new AppError(httpStatus.BAD_REQUEST, "You have already applied for this job.");
 
   const application = await Application.create({
     ...payload,
     jobId,
-    userId,
-    resume: resumeUrl,
+    userId
   });
 
   // Update Job counters
@@ -93,17 +80,20 @@ const getAllApplications = async (
 };
 
 // Get  all applications By Job id
-const getApplicationsByJob = async (
+const getApplicationsByJobId = async (
   jobId: string,
   userId: string,
-  userRole: string
+  userRole: string,
+  filters: any = {},
+  skip = 0,
+  limit = 10
 ) => {
   const job = await Job.findById(jobId);
   if (!job) throw new AppError(httpStatus.NOT_FOUND, "Job not found");
 
-  // ✅ Admin & Moderator → can view any job applications
+  // Admin & Moderator → can view any job applications
   if (userRole !== "admin" && userRole !== "moderator") {
-    // ✅ Only job owner allowed
+    // Only job owner allowed
     if (job.postedBy.toString() !== userId) {
       throw new AppError(
         httpStatus.FORBIDDEN,
@@ -112,11 +102,21 @@ const getApplicationsByJob = async (
     }
   }
 
-  const applications = await Application.find({ jobId })
-    .populate("userId", "name email phoneNumber")
-    .sort({ createdAt: -1 });
+  const query: any = { jobId };
 
-  return applications;
+  // Apply text search
+  if (filters.keyword) {
+    query.$text = { $search: filters.keyword };
+  }
+
+  // Apply status filter
+  if (filters.status) {
+    query.status = filters.status;
+  }
+
+  return infinitePaginate(Application, query, skip, limit, [
+    { path: "userId", select: "name email phoneNumber" }
+  ]);
 };
 
 /* Get Single */
@@ -203,7 +203,7 @@ export const ApplicationServices = {
   applyOnJob,
   withdrawApplication,
   getAllApplications,
-  getApplicationsByJob,
+  getApplicationsByJobId,
   getSingleApplicationById,
   updateStatus,
   deleteApplication,

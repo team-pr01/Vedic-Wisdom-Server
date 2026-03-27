@@ -1,7 +1,6 @@
 import express from "express";
 import { ApplicationControllers } from "./application.controller";
 import { UserRole } from "../../auth/auth.constants";
-import { multerUpload } from "../../../config/multer.config";
 import auth from "../../../middlewares/auth";
 
 const router = express.Router();
@@ -10,7 +9,6 @@ const router = express.Router();
 router.post(
   "/apply",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
-  multerUpload.single("file"),
   ApplicationControllers.applyOnJob
 );
 
@@ -38,7 +36,7 @@ router.get(
 router.get(
   "/job/:jobId",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
-  ApplicationControllers.getApplicationsByJob
+  ApplicationControllers.getApplicationsByJobId
 );
 
 // Update Status

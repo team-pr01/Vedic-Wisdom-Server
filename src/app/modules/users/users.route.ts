@@ -67,4 +67,11 @@ router.patch(
   UserControllers.restoreUsersDeletedAccount
 );
 
+// For admin and moderator only
+router.patch(
+  "/assign-page",
+  auth(UserRole.admin, UserRole.moderator),
+  UserControllers.assignPagesToUser
+);
+
 export const UserRoutes = router;

@@ -131,6 +131,17 @@ const restoreUsersDeletedAccount = catchAsync(async (req, res) => {
   });
 });
 
+const assignPagesToUser = catchAsync(async (req, res) => {
+  const result = await UserServices.assignPagesToUser(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Pages assigned successfully.",
+    data: result,
+  });
+});
+
 // Save Push Token
 const savePushToken = catchAsync(async (req, res) => {
   const result = await UserServices.saveUserPushToken(req.body);
@@ -152,5 +163,6 @@ export const UserControllers = {
   updateProfile,
   deleteAccount,
   restoreUsersDeletedAccount,
+  assignPagesToUser,
   savePushToken,
 };

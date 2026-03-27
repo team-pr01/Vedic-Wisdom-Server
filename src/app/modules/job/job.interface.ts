@@ -50,7 +50,7 @@ export type TIndividualEmployer = {
         email: string;
         address: string;
 
-        identityNumber: string;
+        identityNumber?: string;
         identityDocument?: string;
     };
 };
@@ -75,10 +75,10 @@ export type TJobBase = {
     salary: TSalary;
 
     responsibilities: string[];
-    qualification: string[];
-    benefits?: string[];
+    requiredSkills: string[];
 
     applicationDeadline: Date;
+    vacancy: number;
 
     applicationCount?: number;
     applications ?: ObjectId[];
