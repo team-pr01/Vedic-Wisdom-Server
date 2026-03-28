@@ -23,6 +23,7 @@ import { BooksRoutes } from "../modules/book/books/books.route";
 import { BookTextRoutes } from "../modules/book/texts/bookText.route";
 import { ReportMantraRoutes } from "../modules/book/reportMantra/reportMantra.route";
 import { CategoryRoutes } from "../modules/categories/categories.route";
+import { PopupRoutes } from "../modules/popup/popup.route";
 
 const router = Router();
 
@@ -122,6 +123,10 @@ const moduleRoutes = [
   {
     path: "/category",
     route: CategoryRoutes,
+  },
+  {
+    path: "/popup",
+    route: PopupRoutes,
   },
 ];
 

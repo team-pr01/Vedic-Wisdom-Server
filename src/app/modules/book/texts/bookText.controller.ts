@@ -31,6 +31,7 @@ const getAllBookTexts = catchAsync(async (req: Request, res: Response) => {
 
 const getSingleBookText = catchAsync(async (req: Request, res: Response) => {
   const { bookTextId } = req.params;
+  console.log(bookTextId);
   const result = await BookTextService.getSingleBookText(bookTextId);
 
   sendResponse(res, {

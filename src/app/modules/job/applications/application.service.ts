@@ -4,6 +4,7 @@ import Job from "../job.model";
 import AppError from "../../../errors/AppError";
 import Application from "./application.model";
 import { infinitePaginate } from "../../../utils/infinitePaginate";
+import { Types } from "mongoose";
 
 /* Apply */
 const applyOnJob = async (
@@ -102,21 +103,92 @@ const getApplicationsByJobId = async (
     }
   }
 
-  const query: any = { jobId };
-
-  // Apply text search
-  if (filters.keyword) {
-    query.$text = { $search: filters.keyword };
-  }
+  const matchStage: any = { jobId: new Types.ObjectId(jobId) };
 
   // Apply status filter
   if (filters.status) {
-    query.status = filters.status;
+    matchStage.status = filters.status;
   }
 
-  return infinitePaginate(Application, query, skip, limit, [
-    { path: "userId", select: "name email phoneNumber" }
-  ]);
+  const pipeline: any[] = [
+    { $match: matchStage },
+    {
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "user"
+      }
+    },
+    { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+    {
+      $addFields: {
+        applicantName: "$user.name",
+        applicantEmail: "$user.email",
+        applicantPhone: "$user.phoneNumber"
+      }
+    }
+  ];
+
+  // Apply keyword search
+  if (filters.keyword) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { "user.name": { $regex: filters.keyword, $options: "i" } },
+          { "user.email": { $regex: filters.keyword, $options: "i" } },
+          { "user.phoneNumber": { $regex: filters.keyword, $options: "i" } },
+        ]
+      }
+    });
+  }
+
+  // Get total count
+  const countPipeline = [...pipeline, { $count: "total" }];
+  const countResult = await Application.aggregate(countPipeline);
+  const total = countResult[0]?.total || 0;
+
+  // Add sorting and pagination
+  pipeline.push(
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $project: {
+        _id: 1,
+        jobId: 1,
+        userId: 1,
+        status: 1,
+        resume: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        noteFromApplicant : 1,
+        applicant: {
+          _id: "$user._id",
+          name: "$user.name",
+          email: "$user.email",
+          phoneNumber: "$user.phoneNumber",
+        }
+      }
+    }
+  );
+
+  const applications = await Application.aggregate(pipeline);
+
+  const totalPages = Math.ceil(total / limit);
+  const hasMore = skip + limit < total;
+
+  return {
+    applications,
+    meta: {
+      total,
+      totalPages,
+      skip,
+      limit,
+      hasMore,
+      filteredTotal: total
+    }
+  };
 };
 
 /* Get Single */

@@ -31,6 +31,7 @@ const getAllBookTexts = async (keyword?: string) => {
 };
 
 const getSingleBookText = async (bookTextId: string) => {
+  console.log(bookTextId);
   const bookText = await BookText.findById(bookTextId).populate(
     "bookId",
     "name type structure"

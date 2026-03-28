@@ -19,11 +19,12 @@ router.get("/find-by-details", BookTextController.getBookTextByDetails);
 
 router.get("/filter", BookTextController.filterBookTexts);
 
+// Get a single book text by ID
+router.get("/single/:bookTextId", BookTextController.getSingleBookText);
+
 // Get all book texts by bookId
 router.get("/:bookId", BookTextController.getAllBookTextsByBookId);
 
-// Get a single book text by ID
-router.get("/:bookTextId", BookTextController.getSingleBookText);
 
 // Update a text translations
 router.put(
