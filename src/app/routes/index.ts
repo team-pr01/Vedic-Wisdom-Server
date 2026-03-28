@@ -24,6 +24,7 @@ import { BookTextRoutes } from "../modules/book/texts/bookText.route";
 import { ReportMantraRoutes } from "../modules/book/reportMantra/reportMantra.route";
 import { CategoryRoutes } from "../modules/categories/categories.route";
 import { PopupRoutes } from "../modules/popup/popup.route";
+import { DonationProgramRoutes } from "../modules/donationPrograms/donationPrograms.route";
 
 const router = Router();
 
@@ -127,6 +128,10 @@ const moduleRoutes = [
   {
     path: "/popup",
     route: PopupRoutes,
+  },
+  {
+    path: "/donation-program",
+    route: DonationProgramRoutes,
   },
 ];
 

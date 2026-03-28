@@ -4,6 +4,7 @@ import AppError from "../../errors/AppError";
 import Course from "./course.model";
 import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 import { infinitePaginate } from "../../utils/infinitePaginate";
+import { deleteImageFromCloudinary, extractPublicId } from "../../utils/deleteImageFromCloudinary";
 
 const addCourse = async (payload: any, file: Express.Multer.File | undefined) => {
   let thumbnail = "";
@@ -85,6 +86,11 @@ const deleteCourse = async (courseId: string) => {
   if (!existing) {
     throw new AppError(httpStatus.NOT_FOUND, "Course not found");
   }
+
+  if (existing.thumbnail) {
+      const publicId = extractPublicId(existing.thumbnail);
+      await deleteImageFromCloudinary(publicId);
+    }
 
   return await Course.findByIdAndDelete(courseId);
 };
