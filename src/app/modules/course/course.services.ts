@@ -88,9 +88,9 @@ const deleteCourse = async (courseId: string) => {
   }
 
   if (existing.thumbnail) {
-      const publicId = extractPublicId(existing.thumbnail);
-      await deleteImageFromCloudinary(publicId);
-    }
+    const publicId = extractPublicId(existing.thumbnail);
+    await deleteImageFromCloudinary(publicId);
+  }
 
   return await Course.findByIdAndDelete(courseId);
 };

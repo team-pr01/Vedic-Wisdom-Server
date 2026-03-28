@@ -25,6 +25,7 @@ import { ReportMantraRoutes } from "../modules/book/reportMantra/reportMantra.ro
 import { CategoryRoutes } from "../modules/categories/categories.route";
 import { PopupRoutes } from "../modules/popup/popup.route";
 import { DonationProgramRoutes } from "../modules/donationPrograms/donationPrograms.route";
+import { ConsultantsRoutes } from "../modules/consultants/consultants.route";
 
 const router = Router();
 
@@ -132,6 +133,10 @@ const moduleRoutes = [
   {
     path: "/donation-program",
     route: DonationProgramRoutes,
+  },
+  {
+    path: "/consultant",
+    route: ConsultantsRoutes,
   },
 ];
 
