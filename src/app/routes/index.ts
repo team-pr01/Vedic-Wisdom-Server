@@ -27,8 +27,8 @@ import { DonationProgramRoutes } from "../modules/donationPrograms/donationProgr
 import { ConsultantsRoutes } from "../modules/consultancyService/consultants/consultants.route";
 import { ConsultationRoutes } from "../modules/consultancyService/consultations/consultations.route";
 import { ReelsRoutes } from "../modules/reels/reels.route";
-import { SubscriptionPlanRoutes } from "../modules/subsccriptionPlan/subscriptionPlan.routes";
-import { SubscriptionRoutes } from "../modules/subscription/subscription.routes";
+import { SubscriptionPlanRoutes } from "../modules/subscriptionService/subsccriptionPlan/subscriptionPlan.routes";
+import { SubscriptionRoutes } from "../modules/subscriptionService/subscription/subscription.routes";
 
 const router = Router();
 

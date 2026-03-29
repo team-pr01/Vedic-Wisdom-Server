@@ -2,10 +2,10 @@
 import httpStatus from "http-status";
 import { TSubscription } from "./subscription.interface";
 import Subscription from "./subscription.model";
-import { infinitePaginate } from "../../utils/infinitePaginate";
-import AppError from "../../errors/AppError";
+import { infinitePaginate } from "../../../utils/infinitePaginate";
+import AppError from "../../../errors/AppError";
 import SubscriptionPlan from "../subsccriptionPlan/subscriptionPlan.model";
-import { sendSingleNotification } from "../../utils/sendSingleNotification";
+import { sendSingleNotification } from "../../../utils/sendSingleNotification";
 
 // Create subscription
 const createSubscription = async (payload: TSubscription, userId: string) => {

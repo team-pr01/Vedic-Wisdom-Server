@@ -3,8 +3,8 @@
 import httpStatus from "http-status";
 import { TSubscriptionPlan } from "./subscriptionPlan.interface";
 import SubscriptionPlan from "./subscriptionPlan.model";
-import { infinitePaginate } from "../../utils/infinitePaginate";
-import AppError from "../../errors/AppError";
+import { infinitePaginate } from "../../../utils/infinitePaginate";
+import AppError from "../../../errors/AppError";
 
 // Create subscription plan
 const createSubscriptionPlan = async (payload: TSubscriptionPlan) => {

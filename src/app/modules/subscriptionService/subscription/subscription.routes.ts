@@ -1,8 +1,8 @@
 // routes/subscription.routes.ts
 import express from "express";
-import auth from "../../middlewares/auth";
+import auth from "../../../middlewares/auth";
 import { SubscriptionController } from "./subscription.controller";
-import { UserRole } from "../auth/auth.constants";
+import { UserRole } from "../../auth/auth.constants";
 
 const router = express.Router();
 

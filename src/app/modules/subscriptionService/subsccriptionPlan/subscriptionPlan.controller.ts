@@ -1,8 +1,8 @@
 // controllers/subscriptionPlan.controller.ts
 import httpStatus from "http-status";
-import catchAsync from "../../utils/catchAsync";
+import catchAsync from "../../../utils/catchAsync";
 import { SubscriptionPlanServices } from "./subscriptionPlan.service";
-import sendResponse from "../../utils/sendResponse";
+import sendResponse from "../../../utils/sendResponse";
 
 // Create subscription plan
 const createSubscriptionPlan = catchAsync(async (req, res) => {

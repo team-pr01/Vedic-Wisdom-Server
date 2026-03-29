@@ -1,7 +1,7 @@
 // routes/subscriptionPlan.routes.ts
 import express from "express";
-import auth from "../../middlewares/auth";
-import { UserRole } from "../auth/auth.constants";
+import auth from "../../../middlewares/auth";
+import { UserRole } from "../../auth/auth.constants";
 import { SubscriptionPlanController } from "./subscriptionPlan.controller";
 
 const router = express.Router();
