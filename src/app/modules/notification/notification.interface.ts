@@ -8,4 +8,6 @@ export type TNotification = {
   isRead: boolean;
   createdAt: Date;
   data?: Record<string, any>;
+  deepLink?: string;
+  externalLink?: string;
 }

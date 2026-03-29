@@ -1,5 +1,5 @@
 
-export type TConsultancyService = {
+export type TConsultant = {
   imageUrl?: string;
   name: string;
   email?:string;

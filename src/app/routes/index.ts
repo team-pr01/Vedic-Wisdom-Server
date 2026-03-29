@@ -25,7 +25,8 @@ import { ReportMantraRoutes } from "../modules/book/reportMantra/reportMantra.ro
 import { CategoryRoutes } from "../modules/categories/categories.route";
 import { PopupRoutes } from "../modules/popup/popup.route";
 import { DonationProgramRoutes } from "../modules/donationPrograms/donationPrograms.route";
-import { ConsultantsRoutes } from "../modules/consultants/consultants.route";
+import { ConsultantsRoutes } from "../modules/consultancyService/consultants/consultants.route";
+import { ConsultationRoutes } from "../modules/consultancyService/consultations/consultations.route";
 
 const router = Router();
 
@@ -137,6 +138,10 @@ const moduleRoutes = [
   {
     path: "/consultant",
     route: ConsultantsRoutes,
+  },
+  {
+    path: "/consultation",
+    route: ConsultationRoutes,
   },
 ];
 

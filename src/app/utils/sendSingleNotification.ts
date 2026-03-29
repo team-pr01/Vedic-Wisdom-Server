@@ -12,7 +12,8 @@ export const sendSingleNotification = async (
     userId: mongoose.Types.ObjectId,
     title: string,
     message: string,
-    deepLink?: string
+    deepLink?: string,
+    externalLink?: string
 ) => {
     const user = await User.findById(userId).select("expoPushToken");
     if (!user) return;
@@ -26,7 +27,8 @@ export const sendSingleNotification = async (
         to: [userId],
         title,
         message,
-        deepLink
+        deepLink,
+        externalLink,
     });
 
     // Send the push
@@ -44,6 +46,7 @@ export const sendSingleNotification = async (
         title,
         message,
         deepLink,
+        externalLink,
         createdAt: Date.now(),
     });
 };

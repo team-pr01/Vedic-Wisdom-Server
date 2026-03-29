@@ -8,6 +8,8 @@ const NotificationSchema = new Schema<TNotification>(
     message: String,
     isRead: { type: Boolean, default: false },
     data: Object,
+    deepLink: { type: String, default: null },
+    externalLink: { type: String, default: null },
   },
   { timestamps: true }
 );

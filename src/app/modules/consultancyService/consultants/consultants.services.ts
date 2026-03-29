@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from "http-status";
-import AppError from "../../errors/AppError";
-import { TConsultancyService } from "./consultants.interface";
+import AppError from "../../../errors/AppError";
+import { TConsultant } from "./consultants.interface";
 import ConsultancyService from "./consultants.model";
-import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
-import { infinitePaginate } from "../../utils/infinitePaginate";
-import { deleteImageFromCloudinary, extractPublicId } from "../../utils/deleteImageFromCloudinary";
+import { sendImageToCloudinary } from "../../../utils/sendImageToCloudinary";
+import { infinitePaginate } from "../../../utils/infinitePaginate";
+import { deleteImageFromCloudinary, extractPublicId } from "../../../utils/deleteImageFromCloudinary";
 
 // Add consultant (admin only)
 const addConsultant = async (
@@ -69,7 +69,7 @@ const getSingleConsultantsById = async (id: string) => {
 // Update consultant
 const updateConsultant = async (
   id: string,
-  payload: Partial<TConsultancyService>,
+  payload: Partial<TConsultant>,
   file: any
 ) => {
   const existing = await ConsultancyService.findById(id);
@@ -88,7 +88,7 @@ const updateConsultant = async (
     imageUrl = secure_url;
   }
 
-  const updatePayload: Partial<TConsultancyService> = {
+  const updatePayload: Partial<TConsultant> = {
     ...payload,
     ...(imageUrl && { imageUrl }),
   };

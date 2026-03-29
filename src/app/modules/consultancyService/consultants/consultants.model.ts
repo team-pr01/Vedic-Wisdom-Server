@@ -1,7 +1,7 @@
 import { Schema, model } from "mongoose";
-import { TConsultancyService } from "./consultants.interface";
+import { TConsultant } from "./consultants.interface";
 
-const ConsultancyServiceSchema = new Schema<TConsultancyService>(
+const ConsultancyServiceSchema = new Schema<TConsultant>(
   {
     imageUrl: {
       type: String,
@@ -45,7 +45,7 @@ const ConsultancyServiceSchema = new Schema<TConsultancyService>(
   }
 );
 
-const ConsultancyService = model<TConsultancyService>(
+const ConsultancyService = model<TConsultant>(
   "ConsultancyService",
   ConsultancyServiceSchema
 );

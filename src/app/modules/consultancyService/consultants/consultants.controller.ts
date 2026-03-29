@@ -1,6 +1,6 @@
 import httpStatus from "http-status";
-import catchAsync from "../../utils/catchAsync";
-import sendResponse from "../../utils/sendResponse";
+import catchAsync from "../../../utils/catchAsync";
+import sendResponse from "../../../utils/sendResponse";
 import { ConsultancyServiceServices } from "./consultants.services";
 
 // Add consultancy service (For admin)
@@ -36,7 +36,7 @@ const getAllConsultants = catchAsync(async (req, res) => {
     success: true,
     message: "All consultancy services fetched successfully",
     data: {
-      consultancyServices: result.data,
+      consultants: result.data,
       meta: result.meta,
     },
   });
