@@ -6,7 +6,15 @@ import { UserRole } from "../auth/auth.constants";
 
 const router = express.Router();
 
-// Admin routes
+
+
+router.post(
+  "/subscribe",
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
+  SubscriptionController.createSubscription
+);
+
+// Admin only routes
 router.get(
   "/",
   auth(UserRole.admin, UserRole.moderator),
@@ -17,14 +25,9 @@ router.get(
 router.get(
   "/my-subscriptions",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
-  SubscriptionController.getUserSubscriptions
+  SubscriptionController.getMySubscriptions
 );
 
-router.post(
-  "/",
-  auth(UserRole.user, UserRole.admin, UserRole.moderator),
-  SubscriptionController.createSubscription
-);
 
 router.get(
   "/:id",
@@ -32,28 +35,28 @@ router.get(
   SubscriptionController.getSingleSubscription
 );
 
-router.patch(
-  "/:id",
+router.put(
+  "/update/:id",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
   SubscriptionController.updateSubscription
 );
 
 router.delete(
-  "/:id",
+  "/delete/:id",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
   SubscriptionController.deleteSubscription
 );
 
 router.patch(
-  "/:id/cancel",
+  "/cancel/:id",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
   SubscriptionController.cancelSubscription
 );
 
 router.patch(
-  "/:id/renew",
+  "/renew/:id",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
   SubscriptionController.renewSubscription
 );
 
-export default router;
+export const SubscriptionRoutes = router;

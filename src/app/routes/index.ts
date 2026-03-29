@@ -28,6 +28,7 @@ import { ConsultantsRoutes } from "../modules/consultancyService/consultants/con
 import { ConsultationRoutes } from "../modules/consultancyService/consultations/consultations.route";
 import { ReelsRoutes } from "../modules/reels/reels.route";
 import { SubscriptionPlanRoutes } from "../modules/subsccriptionPlan/subscriptionPlan.routes";
+import { SubscriptionRoutes } from "../modules/subscription/subscription.routes";
 
 const router = Router();
 
@@ -147,6 +148,10 @@ const moduleRoutes = [
   {
     path: "/subscription-plan",
     route: SubscriptionPlanRoutes,
+  },
+  {
+    path: "/subscription",
+    route: SubscriptionRoutes,
   },
 ];
 

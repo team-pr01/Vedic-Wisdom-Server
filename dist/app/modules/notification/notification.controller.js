@@ -33,7 +33,7 @@ const sendNotification = (0, catchAsync_1.default)((req, res) => __awaiter(void 
     });
 }));
 const getMyNotifications = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const data = yield notification_service_1.NotificationService.getMyNotifications(userId);
     (0, sendResponse_1.default)(res, {
         success: true,

@@ -12,7 +12,8 @@ const SubscriptionSchema = new Schema<TSubscription>(
     },
 
     plan: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "SubscriptionPlan",
       required: true,
       index: true,
     },
@@ -21,22 +22,6 @@ const SubscriptionSchema = new Schema<TSubscription>(
       type: String,
       enum: ["active", "expired", "cancelled"],
       index: true,
-    },
-
-    billingCycle: {
-      type: String,
-      enum: ["monthly", "yearly", "quarterly"],
-      required: true,
-    },
-
-    amount: {
-      type: Number,
-      required: true,
-    },
-
-    currency: {
-      type: String,
-      default: "USD",
     },
 
     startDate: {
@@ -48,11 +33,6 @@ const SubscriptionSchema = new Schema<TSubscription>(
       type: Date,
       required: true,
       index: true,
-    },
-
-    autoRenew: {
-      type: Boolean,
-      default: true,
     },
 
     cancelledAt: {

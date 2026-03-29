@@ -22,7 +22,7 @@ const sendNotification = catchAsync(async (req, res) => {
 });
 
 const getMyNotifications = catchAsync(async (req, res) => {
-  const userId = req.user._id;
+  const userId = req.user.userId;
   const data = await NotificationService.getMyNotifications(userId);
 
   sendResponse(res, {

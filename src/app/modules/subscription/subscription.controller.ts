@@ -8,7 +8,7 @@ import { SubscriptionServices } from "./subscription.service";
 const createSubscription = catchAsync(async (req, res) => {
   const result = await SubscriptionServices.createSubscription(
     req.body,
-    req.user._id
+    req.user.userId
   );
 
   sendResponse(res, {
@@ -21,12 +21,14 @@ const createSubscription = catchAsync(async (req, res) => {
 
 // Get all subscriptions (admin)
 const getAllSubscriptions = catchAsync(async (req, res) => {
-  const { keyword, status, plan, skip = "0", limit = "10" } = req.query;
+  const { keyword, skip = "0", limit = "10" } = req.query;
+
+  const filters = {
+    keyword: keyword as string,
+  };
 
   const result = await SubscriptionServices.getAllSubscriptions(
-    keyword as string,
-    status as string,
-    plan as string,
+    filters,
     Number(skip),
     Number(limit)
   );
@@ -43,11 +45,11 @@ const getAllSubscriptions = catchAsync(async (req, res) => {
 });
 
 // Get user's subscriptions
-const getUserSubscriptions = catchAsync(async (req, res) => {
+const getMySubscriptions = catchAsync(async (req, res) => {
   const { skip = "0", limit = "10" } = req.query;
 
-  const result = await SubscriptionServices.getUserSubscriptions(
-    req.user._id,
+  const result = await SubscriptionServices.getMySubscriptions(
+    req.user.userId,
     Number(skip),
     Number(limit)
   );
@@ -68,8 +70,6 @@ const getSingleSubscription = catchAsync(async (req, res) => {
   const { id } = req.params;
   const result = await SubscriptionServices.getSingleSubscription(
     id,
-    req.user._id,
-    req.user.role
   );
 
   sendResponse(res, {
@@ -86,7 +86,7 @@ const updateSubscription = catchAsync(async (req, res) => {
   const result = await SubscriptionServices.updateSubscription(
     id,
     req.body,
-    req.user._id,
+    req.user.userId,
     req.user.role
   );
 
@@ -103,8 +103,6 @@ const deleteSubscription = catchAsync(async (req, res) => {
   const { id } = req.params;
   const result = await SubscriptionServices.deleteSubscription(
     id,
-    req.user._id,
-    req.user.role
   );
 
   sendResponse(res, {
@@ -118,7 +116,7 @@ const deleteSubscription = catchAsync(async (req, res) => {
 // Cancel subscription
 const cancelSubscription = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const result = await SubscriptionServices.cancelSubscription(id, req.user._id);
+  const result = await SubscriptionServices.cancelSubscription(id, req.user.userId);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -131,7 +129,7 @@ const cancelSubscription = catchAsync(async (req, res) => {
 // Renew subscription
 const renewSubscription = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const result = await SubscriptionServices.renewSubscription(id, req.user._id);
+  const result = await SubscriptionServices.renewSubscription(id, req.user.userId);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -144,7 +142,7 @@ const renewSubscription = catchAsync(async (req, res) => {
 export const SubscriptionController = {
   createSubscription,
   getAllSubscriptions,
-  getUserSubscriptions,
+  getMySubscriptions,
   getSingleSubscription,
   updateSubscription,
   deleteSubscription,
