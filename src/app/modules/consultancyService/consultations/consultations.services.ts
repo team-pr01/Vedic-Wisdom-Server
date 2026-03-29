@@ -48,7 +48,7 @@ const getAllConsultations = async (
 
   return infinitePaginate(Consultation, query, skip, limit, [
     { path: "userId", select: "name email phoneNumber" },
-    { path: "consultantId", select: "name specialty category email phoneNumber" },
+    { path: "consultantId", select: "name email phoneNumber category" },
   ]);
 };
 

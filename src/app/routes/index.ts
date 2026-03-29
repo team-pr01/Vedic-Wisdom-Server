@@ -8,7 +8,6 @@ import { VastuRoutes } from "../modules/vastu/vastu.route";
 import { VastuTipsRoutes } from "../modules/vastuTips/vastuTips.routes";
 import { NewsRoutes } from "../modules/news/news.route";
 import { AiRoutes } from "../modules/ai/ai.route";
-import { ReelsRoutes } from "../modules/reels/reels.route";
 import { CourseRoutes } from "../modules/course/course.route";
 import { AyurvedaRoutes } from "../modules/ayurveda/ayurveda.route";
 import { JobRoutes } from "../modules/job/job.route";
@@ -27,6 +26,8 @@ import { PopupRoutes } from "../modules/popup/popup.route";
 import { DonationProgramRoutes } from "../modules/donationPrograms/donationPrograms.route";
 import { ConsultantsRoutes } from "../modules/consultancyService/consultants/consultants.route";
 import { ConsultationRoutes } from "../modules/consultancyService/consultations/consultations.route";
+import { ReelsRoutes } from "../modules/reels/reels.route";
+import { SubscriptionPlanRoutes } from "../modules/subsccriptionPlan/subscriptionPlan.routes";
 
 const router = Router();
 
@@ -142,6 +143,10 @@ const moduleRoutes = [
   {
     path: "/consultation",
     route: ConsultationRoutes,
+  },
+  {
+    path: "/subscription-plan",
+    route: SubscriptionPlanRoutes,
   },
 ];
 
