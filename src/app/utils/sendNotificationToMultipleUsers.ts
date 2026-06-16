@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { User } from "../modules/auth/auth.model";
 import { Notification } from "../modules/notification/notification.model";
-import { io } from "../../server";
+import { io } from "../socket";
 
 export const sendNotificationToMultipleUsers = async (
   userIds: any[],

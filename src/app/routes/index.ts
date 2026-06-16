@@ -29,6 +29,9 @@ import { ConsultationRoutes } from "../modules/consultancyService/consultations/
 import { ReelsRoutes } from "../modules/reels/reels.route";
 import { SubscriptionPlanRoutes } from "../modules/subscriptionService/subsccriptionPlan/subscriptionPlan.routes";
 import { SubscriptionRoutes } from "../modules/subscriptionService/subscription/subscription.routes";
+import { QuizRoutes } from "../modules/quiz/quiz.route";
+import { MessageRoutes } from "../modules/message/message.route";
+import { ChatRoutes } from "../modules/chat/chat.route";
 
 const router = Router();
 
@@ -152,6 +155,18 @@ const moduleRoutes = [
   {
     path: "/subscription",
     route: SubscriptionRoutes,
+  },
+  {
+    path: "/quiz",
+    route: QuizRoutes,
+  },
+  {
+    path: "/chat",
+    route: ChatRoutes,
+  },
+  {
+    path: "/message",
+    route: MessageRoutes,
   },
 ];
 

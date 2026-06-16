@@ -5,7 +5,6 @@ import AppError from "../../errors/AppError";
 import { Notification } from "./notification.model";
 import Expo from "expo-server-sdk";
 import { User } from "../auth/auth.model";
-import { io } from "../../../server";
 
 const expo = new Expo();
 
@@ -68,14 +67,14 @@ const sendNotification = async (payload: any) => {
   );
 
   // 🔥 REAL-TIME SOCKET EMIT (THIS WAS MISSING)
-  users.forEach((user) => {
-    io.to(user._id.toString()).emit("new-notification", {
-      _id: createdNotification._id,
-      title,
-      message,
-      createdAt: createdNotification.createdAt,
-    });
-  });
+  // users.forEach((user) => {
+  //   io.to(user._id.toString()).emit("new-notification", {
+  //     _id: createdNotification._id,
+  //     title,
+  //     message,
+  //     createdAt: createdNotification.createdAt,
+  //   });
+  // });
 
   return {
     notificationId: createdNotification._id,
