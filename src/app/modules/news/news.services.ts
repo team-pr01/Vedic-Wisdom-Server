@@ -46,8 +46,8 @@ const getAllNews = async (
 
   // CATEGORY FILTER
   if (filters.category) {
-  query.category = { $regex: `^${filters.category.trim()}$`, $options: "i" };
-}
+    query.category = { $regex: `^${filters.category.trim()}$`, $options: "i" };
+  }
 
   // KEYWORD SEARCH (title + content + tags)
   if (filters.keyword) {

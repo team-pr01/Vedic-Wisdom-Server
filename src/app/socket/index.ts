@@ -2,10 +2,11 @@
 import { Server as SocketIOserver } from "socket.io";
 import Message from "../modules/message/message.model";
 import { Server } from "http";
-import { Chat } from "../modules/chat/chat.model";
+import Chat from "../modules/chat/chat.model";
 import { ChatServices } from "../modules/chat/chat.service";
 
 export let io: SocketIOserver;
+export const userSocketMap = new Map();
 const setupSocket = (server: Server) => {
     const io = new SocketIOserver(server, {
         cors: {
@@ -14,8 +15,6 @@ const setupSocket = (server: Server) => {
             credentials: true,
         },
     });
-
-    const userSocketMap = new Map();
 
     const sendMessage = async (message: any) => {
         const senderId = typeof message.sender === 'string'
@@ -78,9 +77,10 @@ const setupSocket = (server: Server) => {
             if (receiverSocketId) {
                 io.to(receiverSocketId).emit("receiveMessage", populatedMessage);
                 console.log("📤 Sent to receiver:", receiverId);
-                
+
                 // ✅ Update receiver's chat list in real-time
                 const receiverChatList = await ChatServices.getChatList(receiverId);
+                console.log("Receiver chat list", receiverChatList);
                 io.to(receiverSocketId).emit("updateChatList", receiverChatList);
             }
 
@@ -88,9 +88,10 @@ const setupSocket = (server: Server) => {
             if (senderSocketId) {
                 io.to(senderSocketId).emit("messageSent", responseMessage);
                 console.log("📤 Sent confirmation to sender:", senderId);
-                
+
                 // ✅ Update sender's chat list in real-time
                 const senderChatList = await ChatServices.getChatList(senderId);
+                console.log("Sender chat list", senderChatList);
                 io.to(senderSocketId).emit("updateChatList", senderChatList);
             }
 

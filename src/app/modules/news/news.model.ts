@@ -4,6 +4,7 @@ import { TNews, TNewsTranslation } from "./news.interface";
 const NewsTranslationSchema = new Schema<TNewsTranslation>(
   {
     title: { type: String, required: true },
+    overview : { type: String, required: true },
     content: { type: String, required: true },
     tags: { type: [String], default: [] },
   },
@@ -23,6 +24,7 @@ const NewsSchema = new Schema<TNews>(
     likedBy: [{ type: Types.ObjectId, ref: "User" }],
     views: { type: Number, default: 0, required: false },
     viewedBy: [{ type: Types.ObjectId, ref: "User" }],
+    isTrending : { type: Boolean, default: false },
   },
   { timestamps: true }
 );

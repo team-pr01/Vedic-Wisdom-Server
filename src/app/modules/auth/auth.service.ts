@@ -15,7 +15,6 @@ import { ReferralServices } from "../referral/referral.service";
 
 // Signup
 const signup = async (payload: Partial<TUser>) => {
-
   const { mode, referralCode, ...restPayload } = payload as any;
 
   /* CHECK DELETED ACCOUNT */
@@ -29,7 +28,6 @@ const signup = async (payload: Partial<TUser>) => {
 
   /* CASE 1: DELETED ACCOUNT FOUND */
   if (deletedUser) {
-
     if (!mode) {
       return {
         restoreAccount: true,
@@ -40,22 +38,51 @@ const signup = async (payload: Partial<TUser>) => {
 
     /* RESTORE ACCOUNT */
     if (mode === "restore") {
-
       deletedUser.isDeleted = false;
       deletedUser.isSuspended = false;
-
+      deletedUser.lastLoggedIn = new Date();
       await deletedUser.save();
+
+      // Generate tokens for restored user
+      const jwtPayload = {
+        userId: deletedUser._id.toString(),
+        name: deletedUser.name,
+        email: deletedUser.email || "",
+        phoneNumber: deletedUser.phoneNumber,
+        role: deletedUser.role,
+      };
+
+      const accessToken = createToken(
+        jwtPayload,
+        config.jwt_access_secret as string,
+        config.jwt_access_expires_in as string
+      );
+
+      const refreshToken = createToken(
+        jwtPayload,
+        config.jwt_refresh_secret as string,
+        config.jwt_refresh_expires_in as string
+      );
 
       return {
         restoreAccount: false,
         message: "Account restored successfully",
-        user: deletedUser
+        user: {
+          _id: deletedUser._id,
+          name: deletedUser.name,
+          email: deletedUser.email,
+          phoneNumber: deletedUser.phoneNumber,
+          role: deletedUser.role,
+          profilePicture: deletedUser.profilePicture,
+        },
+        accessToken,
+        refreshToken,
+        isNewUser: false,
       };
     }
 
     /* CREATE NEW ACCOUNT */
     if (mode === "createNew") {
-
       await User.findByIdAndDelete(deletedUser._id);
 
       const userId = await customUserIdGenerator();
@@ -67,6 +94,7 @@ const signup = async (payload: Partial<TUser>) => {
         isDeleted: false,
         isSuspended: false,
         isVerified: false,
+        lastLoggedIn: new Date(),
       };
 
       const newUser = await User.create(payloadData);
@@ -78,10 +106,41 @@ const signup = async (payload: Partial<TUser>) => {
         );
       }
 
+      // Generate tokens for new user
+      const jwtPayload = {
+        userId: newUser._id.toString(),
+        name: newUser.name,
+        email: newUser.email || "",
+        phoneNumber: newUser.phoneNumber,
+        role: newUser.role,
+      };
+
+      const accessToken = createToken(
+        jwtPayload,
+        config.jwt_access_secret as string,
+        config.jwt_access_expires_in as string
+      );
+
+      const refreshToken = createToken(
+        jwtPayload,
+        config.jwt_refresh_secret as string,
+        config.jwt_refresh_expires_in as string
+      );
+
       return {
         restoreAccount: false,
         message: "New account created successfully",
-        user: newUser
+        user: {
+          _id: newUser._id,
+          name: newUser.name,
+          email: newUser.email,
+          phoneNumber: newUser.phoneNumber,
+          role: newUser.role,
+          profilePicture: newUser.profilePicture,
+        },
+        accessToken,
+        refreshToken,
+        isNewUser: true,
       };
     }
   }
@@ -121,20 +180,53 @@ const signup = async (payload: Partial<TUser>) => {
     isDeleted: false,
     isSuspended: false,
     isVerified: false,
+    lastLoggedIn: new Date(),
   };
 
-  const result = await User.create(payloadData);
+  const newUser = await User.create(payloadData);
 
   if (referralCode) {
     await ReferralServices.handleReferralReward(
-      result._id.toString(),
+      newUser._id.toString(),
       referralCode
     );
   }
 
+  // Generate tokens for new user
+  const jwtPayload = {
+    userId: newUser._id.toString(),
+    name: newUser.name,
+    email: newUser.email || "",
+    phoneNumber: newUser.phoneNumber,
+    role: newUser.role,
+  };
+
+  const accessToken = createToken(
+    jwtPayload,
+    config.jwt_access_secret as string,
+    config.jwt_access_expires_in as string
+  );
+
+  const refreshToken = createToken(
+    jwtPayload,
+    config.jwt_refresh_secret as string,
+    config.jwt_refresh_expires_in as string
+  );
+
   return {
     restoreAccount: false,
-    user: result
+    message: "Account created successfully",
+    user: {
+      _id: newUser._id,
+      name: newUser.name,
+      email: newUser.email,
+      phoneNumber: newUser.phoneNumber,
+      role: newUser.role,
+      profilePicture: newUser.profilePicture,
+    },
+    accessToken,
+    refreshToken,
+    isNewUser: true,
   };
 };
 
@@ -349,47 +441,38 @@ const resendForgotPasswordOtp = async (email: string) => {
 
 const resetPassword = async (payload: {
   email: string;
-  otp: string;
   newPassword: string;
 }) => {
-  const { email, otp, newPassword } = payload;
+  const { email, newPassword } = payload;
 
   const user = await User.findOne({ email });
 
-  if (
-    !user ||
-    !user.resetPasswordOtp ||
-    !user.resetPasswordOtpExpiresAt
-  ) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Invalid request.");
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found.");
   }
 
-  // Expiry check
-  if (new Date(user.resetPasswordOtpExpiresAt) < new Date()) {
-    throw new AppError(httpStatus.BAD_REQUEST, "OTP expired.");
+  // Check if user is deleted or suspended
+  if (user.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, "Account has been deleted.");
   }
 
-  // OTP match check
-  if (user.resetPasswordOtp !== otp) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Invalid OTP.");
+  if (user.isSuspended) {
+    throw new AppError(httpStatus.FORBIDDEN, "Account is suspended.");
   }
 
+  // Hash the new password
   const hashedPassword = await bcrypt.hash(
     newPassword,
     Number(config.bcrypt_salt_round)
   );
 
+  // Update password
   await User.updateOne(
     { _id: user._id },
     {
       $set: {
         password: hashedPassword,
         passwordChangedAt: new Date(),
-      },
-      $unset: {
-        resetPasswordOtp: "",
-        resetPasswordOtpExpiresAt: "",
-        resetPasswordOtpAttempts: "",
       },
     }
   );

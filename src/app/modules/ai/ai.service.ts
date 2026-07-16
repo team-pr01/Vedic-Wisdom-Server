@@ -236,10 +236,11 @@ const translateNews = async (payload: any) => {
 
   const englishTranslatedNews = news.translations.get("en");
 
-  const { title, content, tags } = englishTranslatedNews || {};
+  const { title, overview, content, tags } = englishTranslatedNews || {};
 
   // Input text for GPT
   const inputText = `Title: ${title}
+Overview: ${overview}
 Content: ${content}
 Tags: ${tags!.join(", ")}`;
 
@@ -261,7 +262,7 @@ Output JSON in the following format:
 ${batchLanguages
       .map(
         (lang: any) =>
-          `  "${lang.code}": { "title": "...", "content": "...", "tags": [...], "category": "..." }`
+          `  "${lang.code}": { "title": "...", "overview": "...",  "content": "...", "tags": [...], "category": "..." }`
       )
       .join(",\n")}
 }
@@ -308,12 +309,14 @@ ${batchLanguages.map((lang: any) => `${lang.code} (${lang.name})`).join(", ")}
   for (const [code, value] of Object.entries(translations)) {
     const v = value as {
       title?: string;
+      overview?: string;
       content?: string;
       tags?: string[];
       category?: string;
     };
     setObj[`translations.${code}`] = {
       title: v.title || "",
+      overview: v.overview || "",
       content: v.content || "",
       tags: v.tags || [],
     };

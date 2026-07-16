@@ -27,4 +27,6 @@ const ChatSchema = new Schema<TChat>(
 // Ensure unique participants combination
 ChatSchema.index({ participants: 1 });
 
-export const Chat = model<TChat>("Chat", ChatSchema);
+const Chat = model<TChat>("Chat", ChatSchema);
+
+export default Chat;

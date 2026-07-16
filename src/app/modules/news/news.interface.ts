@@ -2,6 +2,7 @@ import { ObjectId } from "mongoose";
 
 export type TNewsTranslation = {
   title: string;
+  overview: string;
   content: string;
   tags: string[];
 };
@@ -14,6 +15,7 @@ export type TNews = {
   likedBy?: ObjectId[];
   views?: number;
   viewedBy?: ObjectId[];
+  isTrending : boolean;
   createdAt?: Date;
   updatedAt?: Date;
 };

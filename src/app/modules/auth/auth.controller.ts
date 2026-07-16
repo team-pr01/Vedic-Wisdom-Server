@@ -87,13 +87,13 @@ const resendForgotPasswordOtp = catchAsync(async (req, res) => {
 });
 
 const resetPassword = catchAsync(async (req, res) => {
-  await AuthServices.resetPassword(req.body);
+ const result = await AuthServices.resetPassword(req.body);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Password reset successfully.",
-    data: {},
+    data: result,
   });
 });
 

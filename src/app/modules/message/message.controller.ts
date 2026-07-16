@@ -26,36 +26,38 @@ const getMessages = catchAsync(async (req, res) => {
     });
 });
 
-/* Get Unread Count */
-const getUnreadCount = catchAsync(async (req, res) => {
+// message.controller.ts
+const markMessagesAsRead = catchAsync(async (req, res) => {
     const userId = req.user.userId;
-    const result = await MessageServices.getUnreadCount(userId);
+    const { otherUserId } = req.params;
+
+    const result = await MessageServices.markMessagesAsRead(userId, otherUserId);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Messages marked as read",
+        data: result,
+    });
+});
+
+/* Get Unread Count with Specific User */
+const getUnreadCountWithUser = catchAsync(async (req, res) => {
+    const userId = req.user.userId;
+    const { otherUserId } = req.params;
+
+    const count = await MessageServices.getUnreadCountWithUser(userId, otherUserId);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "Unread count fetched successfully",
-        data: { unreadCount: result },
-    });
-});
-
-/* Mark Single Message as Read */
-const markSingleMessageAsRead = catchAsync(async (req, res) => {
-    const userId = req.user.userId;
-    const { messageId } = req.params;
-
-    const result = await MessageServices.markSingleMessageAsRead(userId, messageId);
-
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: result.message,
-        data: result.data,
+        data: { unreadCount: count },
     });
 });
 
 export const MessageControllers = {
     getMessages,
-    getUnreadCount,
-    markSingleMessageAsRead
+    markMessagesAsRead,
+    getUnreadCountWithUser
 };

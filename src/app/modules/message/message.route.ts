@@ -12,8 +12,8 @@ router.use(auth(UserRole.user, UserRole.admin, UserRole.moderator));
 router.get("/:otherUserId", MessageControllers.getMessages);
 
 // Get unread count
-router.get("/unread/count", MessageControllers.getUnreadCount);
+router.get("/unread/count/:otherUserId", MessageControllers.getUnreadCountWithUser);
 
-router.patch("/read/single/:messageId", MessageControllers.markSingleMessageAsRead);
+router.patch("/read/:otherUserId", MessageControllers.markMessagesAsRead);
 
 export const MessageRoutes = router;
