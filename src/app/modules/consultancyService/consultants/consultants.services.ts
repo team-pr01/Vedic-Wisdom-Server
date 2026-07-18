@@ -57,6 +57,33 @@ const getAllConsultants = async (
   return infinitePaginate(ConsultancyService, query, skip, limit, []);
 };
 
+const getConsultantsByCategory = async (
+  category: string,
+  keyword?: string,
+  skip = 0,
+  limit = 10
+) => {
+  const query: any = {};
+
+  console.log(category);
+
+  // Category filter (required)
+  if (category) {
+    query.category = { $regex: `^${category}$`, $options: "i" };
+  }
+
+  // Keyword search (optional)
+  if (keyword) {
+    query.$or = [
+      { name: { $regex: keyword, $options: "i" } },
+      { specialty: { $regex: keyword, $options: "i" } },
+      { description: { $regex: keyword, $options: "i" } },
+    ];
+  }
+
+  return infinitePaginate(ConsultancyService, query, skip, limit, []);
+};
+
 // Get single consultant by ID
 const getSingleConsultantsById = async (id: string) => {
   const result = await ConsultancyService.findById(id);
@@ -118,6 +145,7 @@ const deleteConsultant = async (id: string) => {
 export const ConsultancyServiceServices = {
   addConsultant,
   getAllConsultants,
+  getConsultantsByCategory,
   getSingleConsultantsById,
   updateConsultant,
   deleteConsultant,

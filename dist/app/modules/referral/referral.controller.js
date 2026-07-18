@@ -28,8 +28,20 @@ const generateReferralCode = (0, catchAsync_1.default)((req, res) => __awaiter(v
     });
 }));
 const getMyReferrals = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { skip = "0", limit = "10" } = req.query;
     const userId = req.user.userId;
-    const result = yield referral_service_1.ReferralServices.getMyReferrals(userId);
+    const result = yield referral_service_1.ReferralServices.getMyReferrals(userId, Number(skip), Number(limit));
+    (0, sendResponse_1.default)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Referral list fetched successfully",
+        data: result,
+    });
+}));
+const getAllReferralsOfAnUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { skip = "0", limit = "10" } = req.query;
+    const { userId } = req.params;
+    const result = yield referral_service_1.ReferralServices.getAllReferralsOfAnUser(userId, Number(skip), Number(limit));
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
@@ -50,5 +62,6 @@ const getMyCoins = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, voi
 exports.ReferralControllers = {
     generateReferralCode,
     getMyReferrals,
+    getAllReferralsOfAnUser,
     getMyCoins,
 };

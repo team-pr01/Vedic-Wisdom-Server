@@ -5,7 +5,7 @@ import { FoodService } from "./food.service";
 
 /* ---------------- ADD FOOD ---------------- */
 const addFood = catchAsync(async (req, res) => {
-    const result = await FoodService.addFood(req.user, req.body);
+    const result = await FoodService.addFood(req.body);
 
     sendResponse(res, {
         statusCode: httpStatus.CREATED,

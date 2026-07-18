@@ -40,6 +40,7 @@ const getAllBookTexts = (keyword) => __awaiter(void 0, void 0, void 0, function*
     return yield bookText_model_1.default.find(query).populate("bookId", "name type structure");
 });
 const getSingleBookText = (bookTextId) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(bookTextId);
     const bookText = yield bookText_model_1.default.findById(bookTextId).populate("bookId", "name type structure");
     if (!bookText) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Book text not found");

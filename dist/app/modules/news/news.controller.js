@@ -30,10 +30,11 @@ const addNews = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0
 }));
 // Get All
 const getAllNews = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { keyword, category, skip = "0", limit = "10", } = req.query;
+    const { keyword, category, languageCode = "en", skip = "0", limit = "10", } = req.query;
     const filters = {
         keyword: keyword,
         category: category,
+        languageCode: languageCode,
     };
     const result = yield news_services_1.NewsServices.getAllNews(filters, Number(skip), Number(limit));
     (0, sendResponse_1.default)(res, {
@@ -46,10 +47,25 @@ const getAllNews = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, voi
         },
     });
 }));
+const getAllTrendingNews = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { keyword, category, languageCode, skip = "0", limit = "10" } = req.query;
+    const filters = {
+        keyword: keyword,
+        category: category,
+        languageCode: languageCode || "en",
+    };
+    const result = yield news_services_1.NewsServices.getAllTrendingNews(filters, Number(skip), Number(limit));
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Trending news fetched successfully.",
+        data: result,
+    });
+}));
 // Get Single
 const getSingleNewsById = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { newsId } = req.params;
-    const result = yield news_services_1.NewsServices.getSingleNewsById(newsId);
+    const { newsId, languageCode } = req.params;
+    const result = yield news_services_1.NewsServices.getSingleNewsById(newsId, languageCode);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -109,12 +125,24 @@ const viewNews = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 
         },
     });
 }));
+const toggleIsTrendingNews = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { newsId } = req.params;
+    const result = yield news_services_1.NewsServices.toggleIsTrendingNews(newsId);
+    (0, sendResponse_1.default)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: result.message,
+        data: {},
+    });
+}));
 exports.NewsControllers = {
     addNews,
     getAllNews,
+    getAllTrendingNews,
     getSingleNewsById,
     updateNews,
     deleteNews,
     toggleLikeNewsController,
-    viewNews
+    viewNews,
+    toggleIsTrendingNews
 };

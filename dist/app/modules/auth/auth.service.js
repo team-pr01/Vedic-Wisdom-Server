@@ -60,26 +60,67 @@ const signup = (payload) => __awaiter(void 0, void 0, void 0, function* () {
         if (mode === "restore") {
             deletedUser.isDeleted = false;
             deletedUser.isSuspended = false;
+            deletedUser.lastLoggedIn = new Date();
             yield deletedUser.save();
+            // Generate tokens for restored user
+            const jwtPayload = {
+                userId: deletedUser._id.toString(),
+                name: deletedUser.name,
+                email: deletedUser.email || "",
+                phoneNumber: deletedUser.phoneNumber,
+                role: deletedUser.role,
+            };
+            const accessToken = (0, auth_utils_1.createToken)(jwtPayload, config_1.default.jwt_access_secret, config_1.default.jwt_access_expires_in);
+            const refreshToken = (0, auth_utils_1.createToken)(jwtPayload, config_1.default.jwt_refresh_secret, config_1.default.jwt_refresh_expires_in);
             return {
                 restoreAccount: false,
                 message: "Account restored successfully",
-                user: deletedUser
+                user: {
+                    _id: deletedUser._id,
+                    name: deletedUser.name,
+                    email: deletedUser.email,
+                    phoneNumber: deletedUser.phoneNumber,
+                    role: deletedUser.role,
+                    profilePicture: deletedUser.profilePicture,
+                },
+                accessToken,
+                refreshToken,
+                isNewUser: false,
             };
         }
         /* CREATE NEW ACCOUNT */
         if (mode === "createNew") {
             yield auth_model_1.User.findByIdAndDelete(deletedUser._id);
             const userId = yield (0, customUserIdGenerator_1.customUserIdGenerator)();
-            const payloadData = Object.assign(Object.assign({}, restPayload), { role: payload.role || "user", userId, isDeleted: false, isSuspended: false, isVerified: false });
+            const payloadData = Object.assign(Object.assign({}, restPayload), { role: payload.role || "user", userId, isDeleted: false, isSuspended: false, isVerified: false, lastLoggedIn: new Date() });
             const newUser = yield auth_model_1.User.create(payloadData);
             if (referralCode) {
                 yield referral_service_1.ReferralServices.handleReferralReward(newUser._id.toString(), referralCode);
             }
+            // Generate tokens for new user
+            const jwtPayload = {
+                userId: newUser._id.toString(),
+                name: newUser.name,
+                email: newUser.email || "",
+                phoneNumber: newUser.phoneNumber,
+                role: newUser.role,
+            };
+            const accessToken = (0, auth_utils_1.createToken)(jwtPayload, config_1.default.jwt_access_secret, config_1.default.jwt_access_expires_in);
+            const refreshToken = (0, auth_utils_1.createToken)(jwtPayload, config_1.default.jwt_refresh_secret, config_1.default.jwt_refresh_expires_in);
             return {
                 restoreAccount: false,
                 message: "New account created successfully",
-                user: newUser
+                user: {
+                    _id: newUser._id,
+                    name: newUser.name,
+                    email: newUser.email,
+                    phoneNumber: newUser.phoneNumber,
+                    role: newUser.role,
+                    profilePicture: newUser.profilePicture,
+                },
+                accessToken,
+                refreshToken,
+                isNewUser: true,
             };
         }
     }
@@ -100,14 +141,35 @@ const signup = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     }
     /* CREATE NEW USER */
     const userId = yield (0, customUserIdGenerator_1.customUserIdGenerator)();
-    const payloadData = Object.assign(Object.assign({}, restPayload), { role: payload.role || "user", userId, isDeleted: false, isSuspended: false, isVerified: false });
-    const result = yield auth_model_1.User.create(payloadData);
+    const payloadData = Object.assign(Object.assign({}, restPayload), { role: payload.role || "user", userId, isDeleted: false, isSuspended: false, isVerified: false, lastLoggedIn: new Date() });
+    const newUser = yield auth_model_1.User.create(payloadData);
     if (referralCode) {
-        yield referral_service_1.ReferralServices.handleReferralReward(result._id.toString(), referralCode);
+        yield referral_service_1.ReferralServices.handleReferralReward(newUser._id.toString(), referralCode);
     }
+    // Generate tokens for new user
+    const jwtPayload = {
+        userId: newUser._id.toString(),
+        name: newUser.name,
+        email: newUser.email || "",
+        phoneNumber: newUser.phoneNumber,
+        role: newUser.role,
+    };
+    const accessToken = (0, auth_utils_1.createToken)(jwtPayload, config_1.default.jwt_access_secret, config_1.default.jwt_access_expires_in);
+    const refreshToken = (0, auth_utils_1.createToken)(jwtPayload, config_1.default.jwt_refresh_secret, config_1.default.jwt_refresh_expires_in);
     return {
         restoreAccount: false,
-        user: result
+        message: "Account created successfully",
+        user: {
+            _id: newUser._id,
+            name: newUser.name,
+            email: newUser.email,
+            phoneNumber: newUser.phoneNumber,
+            role: newUser.role,
+            profilePicture: newUser.profilePicture,
+        },
+        accessToken,
+        refreshToken,
+        isNewUser: true,
     };
 });
 // Login
@@ -247,31 +309,25 @@ const resendForgotPasswordOtp = (email) => __awaiter(void 0, void 0, void 0, fun
   `, "Resend Reset Password OTP");
 });
 const resetPassword = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, otp, newPassword } = payload;
+    const { email, newPassword } = payload;
     const user = yield auth_model_1.User.findOne({ email });
-    if (!user ||
-        !user.resetPasswordOtp ||
-        !user.resetPasswordOtpExpiresAt) {
-        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Invalid request.");
+    if (!user) {
+        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found.");
     }
-    // Expiry check
-    if (new Date(user.resetPasswordOtpExpiresAt) < new Date()) {
-        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "OTP expired.");
+    // Check if user is deleted or suspended
+    if (user.isDeleted) {
+        throw new AppError_1.default(http_status_1.default.FORBIDDEN, "Account has been deleted.");
     }
-    // OTP match check
-    if (user.resetPasswordOtp !== otp) {
-        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Invalid OTP.");
+    if (user.isSuspended) {
+        throw new AppError_1.default(http_status_1.default.FORBIDDEN, "Account is suspended.");
     }
+    // Hash the new password
     const hashedPassword = yield bcrypt_1.default.hash(newPassword, Number(config_1.default.bcrypt_salt_round));
+    // Update password
     yield auth_model_1.User.updateOne({ _id: user._id }, {
         $set: {
             password: hashedPassword,
             passwordChangedAt: new Date(),
-        },
-        $unset: {
-            resetPasswordOtp: "",
-            resetPasswordOtpExpiresAt: "",
-            resetPasswordOtpAttempts: "",
         },
     });
     return {};
@@ -304,14 +360,6 @@ const changePassword = (userId, payload) => __awaiter(void 0, void 0, void 0, fu
     });
     return {};
 });
-const assignPagesToUser = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield auth_model_1.User.findById(payload.userId);
-    if (!user) {
-        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
-    }
-    const result = yield auth_model_1.User.findByIdAndUpdate(payload.userId, { assignedPages: payload.pages }, { new: true, runValidators: true });
-    return result;
-});
 exports.AuthServices = {
     signup,
     loginUser,
@@ -321,5 +369,4 @@ exports.AuthServices = {
     resendForgotPasswordOtp,
     resetPassword,
     changePassword,
-    assignPagesToUser,
 };

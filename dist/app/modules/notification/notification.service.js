@@ -20,7 +20,6 @@ const AppError_1 = __importDefault(require("../../errors/AppError"));
 const notification_model_1 = require("./notification.model");
 const expo_server_sdk_1 = __importDefault(require("expo-server-sdk"));
 const auth_model_1 = require("../auth/auth.model");
-const server_1 = require("../../../server");
 const expo = new expo_server_sdk_1.default();
 const sendNotification = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const { userIds, title, message } = payload;
@@ -68,14 +67,14 @@ const sendNotification = (payload) => __awaiter(void 0, void 0, void 0, function
     const overallStatus = successCount === 0 ? "failed" : failCount > 0 ? "partial" : "sent";
     yield notification_model_1.Notification.updateOne({ _id: createdNotification._id }, { $set: { deliveryStatus: overallStatus } });
     // 🔥 REAL-TIME SOCKET EMIT (THIS WAS MISSING)
-    users.forEach((user) => {
-        server_1.io.to(user._id.toString()).emit("new-notification", {
-            _id: createdNotification._id,
-            title,
-            message,
-            createdAt: createdNotification.createdAt,
-        });
-    });
+    // users.forEach((user) => {
+    //   io.to(user._id.toString()).emit("new-notification", {
+    //     _id: createdNotification._id,
+    //     title,
+    //     message,
+    //     createdAt: createdNotification.createdAt,
+    //   });
+    // });
     return {
         notificationId: createdNotification._id,
         createdNotificationsCount: 1,

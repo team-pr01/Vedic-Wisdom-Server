@@ -20,6 +20,7 @@ const AppError_1 = __importDefault(require("../../errors/AppError"));
 const job_model_1 = __importDefault(require("./job.model"));
 const infinitePaginate_1 = require("../../utils/infinitePaginate");
 const sendImageToCloudinary_1 = require("../../utils/sendImageToCloudinary");
+const application_model_1 = __importDefault(require("./applications/application.model"));
 /* Post Job */
 const postJob = (payload, user, file) => __awaiter(void 0, void 0, void 0, function* () {
     if (typeof (payload === null || payload === void 0 ? void 0 : payload.individual) === "string") {
@@ -137,7 +138,9 @@ const deleteJob = (jobId, userId, userRole) => __awaiter(void 0, void 0, void 0,
     if (existing.postedBy.toString() !== userId) {
         throw new AppError_1.default(http_status_1.default.FORBIDDEN, "You are not allowed to delete this job");
     }
-    return yield job_model_1.default.findByIdAndDelete(jobId);
+    yield application_model_1.default.deleteMany({ jobId });
+    yield job_model_1.default.findByIdAndDelete(jobId);
+    return {};
 });
 /* Update Status */
 const updateStatus = (jobId, status) => __awaiter(void 0, void 0, void 0, function* () {

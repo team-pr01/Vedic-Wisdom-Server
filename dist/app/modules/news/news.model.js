@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = require("mongoose");
 const NewsTranslationSchema = new mongoose_1.Schema({
     title: { type: String, required: true },
+    overview: { type: String, required: true },
     content: { type: String, required: true },
     tags: { type: [String], default: [] },
 }, { _id: false });
@@ -18,13 +19,14 @@ const NewsSchema = new mongoose_1.Schema({
     likedBy: [{ type: mongoose_1.Types.ObjectId, ref: "User" }],
     views: { type: Number, default: 0, required: false },
     viewedBy: [{ type: mongoose_1.Types.ObjectId, ref: "User" }],
+    isTrending: { type: Boolean, default: false },
 }, { timestamps: true });
 // TEXT INDEX
 NewsSchema.index({
-    title: "text",
-    description: "text",
+    "translations.en.title": "text",
+    "translations.en.content": "text",
+    "translations.en.tags": "text",
     category: "text",
-    tags: "text",
 });
 // Sorting optimization
 NewsSchema.index({ createdAt: -1 });

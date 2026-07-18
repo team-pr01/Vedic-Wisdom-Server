@@ -19,7 +19,7 @@ const EmergencySchema = new mongoose_1.Schema({
     },
     status: {
         type: String,
-        enum: ["pending", "processing", "resolved"],
+        enum: ["pending", "processing", "forwarded", "resolved"],
         default: "pending",
     },
     resolvedAt: {

@@ -21,7 +21,6 @@ export interface TLocation {
     city: string;
     state: string;
     country: string;
-    area?: string;
     googleMapUrl?: string;
 }
 

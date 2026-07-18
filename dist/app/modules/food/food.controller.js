@@ -19,7 +19,7 @@ const sendResponse_1 = __importDefault(require("../../utils/sendResponse"));
 const food_service_1 = require("./food.service");
 /* ---------------- ADD FOOD ---------------- */
 const addFood = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield food_service_1.FoodService.addFood(req.user, req.body);
+    const result = yield food_service_1.FoodService.addFood(req.body);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.CREATED,
         success: true,

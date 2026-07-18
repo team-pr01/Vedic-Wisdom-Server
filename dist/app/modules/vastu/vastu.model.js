@@ -15,10 +15,6 @@ const VastuSchema = new mongoose_1.Schema({
         lowercase: true,
         index: true
     },
-    videoSource: {
-        type: String,
-        required: true,
-    },
     videoUrl: {
         type: String,
         required: true,

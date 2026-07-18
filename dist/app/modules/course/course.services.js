@@ -19,6 +19,7 @@ const AppError_1 = __importDefault(require("../../errors/AppError"));
 const course_model_1 = __importDefault(require("./course.model"));
 const sendImageToCloudinary_1 = require("../../utils/sendImageToCloudinary");
 const infinitePaginate_1 = require("../../utils/infinitePaginate");
+const deleteImageFromCloudinary_1 = require("../../utils/deleteImageFromCloudinary");
 const addCourse = (payload, file) => __awaiter(void 0, void 0, void 0, function* () {
     let thumbnail = "";
     if (file) {
@@ -73,6 +74,10 @@ const deleteCourse = (courseId) => __awaiter(void 0, void 0, void 0, function* (
     const existing = yield course_model_1.default.findById(courseId);
     if (!existing) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Course not found");
+    }
+    if (existing.thumbnail) {
+        const publicId = (0, deleteImageFromCloudinary_1.extractPublicId)(existing.thumbnail);
+        yield (0, deleteImageFromCloudinary_1.deleteImageFromCloudinary)(publicId);
     }
     return yield course_model_1.default.findByIdAndDelete(courseId);
 });

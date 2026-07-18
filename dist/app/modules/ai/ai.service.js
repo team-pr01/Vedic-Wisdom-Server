@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AiServices = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
+const http_status_1 = __importDefault(require("http-status"));
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const openai_1 = require("../../utils/openai");
 const bookText_model_1 = __importDefault(require("../book/texts/bookText.model"));
@@ -205,25 +206,40 @@ const generateRecipe = (query) => __awaiter(void 0, void 0, void 0, function* ()
 // };
 const translateNews = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
-    const { newsId, title, content, tags, category, batchLanguages } = payload;
+    const { newsId, batchLanguages } = payload;
+    const news = yield news_model_1.default.findById(newsId);
+    if (!news) {
+        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "News not found");
+    }
+    ;
+    const englishTranslatedNews = news.translations.get("en");
+    const { title, overview, content, tags } = englishTranslatedNews || {};
     // Input text for GPT
     const inputText = `Title: ${title}
+Overview: ${overview}
 Content: ${content}
-Tags: ${tags.join(", ")}
-Category: ${category}`;
+Tags: ${tags.join(", ")}`;
     // GPT prompt
     const systemMessage = `
 You are a professional translator.
-Translate the following news into exactly ${batchLanguages.length} languages provided.
+
+Translate ALL fields including title, content, AND tags.
+
+IMPORTANT:
+- Tags MUST be translated to the target language.
+- Tags must remain an array of strings.
+- Do NOT keep tags in English.
+- Do NOT return original tags.
+
 Output JSON in the following format:
 
 {
 ${batchLanguages
-        .map((lang) => `  "${lang.code}": { "title": "...", "content": "...", "tags": [...], "category": "..." }`)
+        .map((lang) => `  "${lang.code}": { "title": "...", "overview": "...",  "content": "...", "tags": [...], "category": "..." }`)
         .join(",\n")}
 }
 
-Only include the languages listed in this fixed list:
+Only include the languages listed:
 ${batchLanguages.map((lang) => `${lang.code} (${lang.name})`).join(", ")}
 `;
     // Call GPT
@@ -255,9 +271,9 @@ ${batchLanguages.map((lang) => `${lang.code} (${lang.name})`).join(", ")}
         const v = value;
         setObj[`translations.${code}`] = {
             title: v.title || "",
+            overview: v.overview || "",
             content: v.content || "",
             tags: v.tags || [],
-            category: v.category || category,
         };
     }
     // Update News safely

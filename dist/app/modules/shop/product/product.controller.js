@@ -64,18 +64,6 @@ const getMyProducts = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
         data: result,
     });
 }));
-// For admin
-const getVendorProducts = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId } = req.params;
-    const { skip = "0", limit = "10" } = req.query;
-    const result = yield product_service_1.ProductServices.getVendorProducts(userId, Number(skip), Number(limit));
-    (0, sendResponse_1.default)(res, {
-        success: true,
-        statusCode: http_status_1.default.OK,
-        message: "Vendor products fetched successfully",
-        data: result,
-    });
-}));
 /* Update Product */
 const updateProduct = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { productId } = req.params;
@@ -103,7 +91,6 @@ exports.ProductControllers = {
     getAllProducts,
     getSingleProductById,
     getMyProducts,
-    getVendorProducts,
     updateProduct,
     deleteProduct,
 };

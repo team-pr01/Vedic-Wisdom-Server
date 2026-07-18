@@ -20,4 +20,6 @@ router.patch("/save-push-token", (0, auth_1.default)(auth_constants_1.UserRole.u
 router.patch("/delete-account", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.moderator, auth_constants_1.UserRole.user), users_controller_1.UserControllers.deleteAccount);
 // For admin and moderator only
 router.patch("/account/restore/:userId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), users_controller_1.UserControllers.restoreUsersDeletedAccount);
+// For admin and moderator only
+router.patch("/assign-page", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), users_controller_1.UserControllers.assignPagesToUser);
 exports.UserRoutes = router;

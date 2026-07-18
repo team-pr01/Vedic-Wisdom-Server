@@ -20,8 +20,7 @@ const sendResponse_1 = __importDefault(require("../../../utils/sendResponse"));
 // Apply
 const applyOnJob = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = req.user.userId;
-    const file = req.file;
-    const result = yield application_service_1.ApplicationServices.applyOnJob(req.body, userId, file);
+    const result = yield application_service_1.ApplicationServices.applyOnJob(req.body, userId);
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
@@ -57,10 +56,15 @@ const getAllApplications = (0, catchAsync_1.default)((req, res) => __awaiter(voi
     });
 }));
 // Get  all applications By Job id
-const getApplicationsByJob = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getApplicationsByJobId = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { jobId } = req.params;
     const { userId, role } = req.user;
-    const result = yield application_service_1.ApplicationServices.getApplicationsByJob(jobId, userId, role);
+    const { keyword, status, skip = "0", limit = "10" } = req.query;
+    const filters = {
+        keyword: keyword,
+        status: status,
+    };
+    const result = yield application_service_1.ApplicationServices.getApplicationsByJobId(jobId, userId, role, filters, Number(skip), Number(limit));
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
@@ -108,7 +112,7 @@ exports.ApplicationControllers = {
     applyOnJob,
     withdrawApplication,
     getAllApplications,
-    getApplicationsByJob,
+    getApplicationsByJobId,
     getSingleApplicationById,
     updateStatus,
     deleteApplication,

@@ -14,18 +14,25 @@ const addTemple = async (
         throw new AppError(httpStatus.BAD_REQUEST, "Invalid payload");
     }
 
-    if (!payload.basicInfo) {
-        throw new AppError(
-            httpStatus.BAD_REQUEST,
-            "basicInfo is required"
-        );
-    }
+    /* ---------------- PARSE VIDEO URLS ---------------- */
+    let videoUrls: string[] = [];
+    if (payload.videoUrls) {
+        try {
+            const parsedVideoUrls = typeof payload.videoUrls === 'string'
+                ? JSON.parse(payload.videoUrls)
+                : payload.videoUrls;
 
-    if (!payload.location) {
-        throw new AppError(
-            httpStatus.BAD_REQUEST,
-            "location is required"
-        );
+            // Convert YouTube URLs to embed URLs
+            if (Array.isArray(parsedVideoUrls)) {
+                videoUrls = parsedVideoUrls.map((url: string) => {
+                    return convertToEmbedUrl(url);
+                });
+            } else {
+                videoUrls = [];
+            }
+        } catch (error) {
+            videoUrls = [];
+        }
     }
 
     /* ---------------- IMAGE VALIDATION ---------------- */
@@ -41,8 +48,7 @@ const addTemple = async (
 
     if (files.length > 0) {
         const uploadPromises = files.map(async (file, index) => {
-            const imageName = `${payload.basicInfo.templeName || "temple"
-                }-${Date.now()}-${index}`;
+            const imageName = `${payload.templeName || "temple"}-${Date.now()}-${index}`;
 
             const { secure_url } = await sendImageToCloudinary(
                 imageName,
@@ -56,22 +62,83 @@ const addTemple = async (
     }
 
     /* ---------------- STATUS ---------------- */
-    const status =
-        user.role === "admin" ? "approved" : "pending";
+    const status = user.role === "admin" ? "approved" : "pending";
 
     /* ---------------- FINAL DATA ---------------- */
     const templeData = {
-        ...payload,
+        basicInfo: {
+            templeName: payload.templeName,
+            mainDeity: payload.mainDeity,
+            description: payload.description
+        },
+        socialMedia: {
+            facebook: payload.facebook || "",
+            youtube: payload.youtube || "",
+            instagram: payload.instagram || "",
+            linkedin: payload.linkedin || ""
+        },
+        location: {
+            address: payload.address,
+            city: payload.city,
+            state: payload.state,
+            country: payload.country,
+            googleMapUrl: payload.googleMapUrl || ""
+        },
+        otherInfo: {
+            establishedYear: payload.establishedYear ? Number(payload.establishedYear) : null,
+            visitingHours: payload.visitingHours || "",
+            phoneNumber: payload.phoneNumber || "",
+            email: payload.email || "",
+            website: payload.website || ""
+        },
+        category: payload.category,
         media: {
-            ...(payload.media || {}),
-            imageUrls,
+            imageUrls: imageUrls || [],
+            videoUrls: videoUrls || []
         },
         createdBy: user.userId,
         status,
     };
 
+    console.log("Final Temple Data:", JSON.stringify(templeData, null, 2));
+
     return Temple.create(templeData);
 };
+
+// Helper function to convert YouTube URLs to embed URLs
+function convertToEmbedUrl(url: string): string {
+    // If it's already an embed URL, return as is
+    if (url.includes('youtube.com/embed/')) {
+        return url;
+    }
+
+    // Extract video ID from various YouTube URL formats
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=)([\w-]+)/,
+        /(?:youtu\.be\/)([\w-]+)/,
+        /(?:youtube\.com\/shorts\/)([\w-]+)/,
+        /(?:youtube\.com\/v\/)([\w-]+)/,
+        /(?:youtube\.com\/embed\/)([\w-]+)/,
+    ];
+
+    let videoId: string | null = null;
+
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) {
+            videoId = match[1];
+            break;
+        }
+    }
+
+    // If no video ID found, return original URL
+    if (!videoId) {
+        return url;
+    }
+
+    // Return embed URL
+    return `https://www.youtube.com/embed/${videoId}`;
+}
 
 
 const splitMulti = (value?: string) =>
@@ -113,20 +180,6 @@ const getAllTemples = async (
                 : {
                     $in: cities.map(
                         (c) => new RegExp(`^${c}$`, "i")
-                    ),
-                };
-    }
-
-    /* -------- AREA -------- */
-    if (filters.area) {
-        const areas = splitMulti(filters.area);
-
-        filteredQuery["location.area"] =
-            areas.length === 1
-                ? { $regex: `^${areas[0]}$`, $options: "i" }
-                : {
-                    $in: areas.map(
-                        (a) => new RegExp(`^${a}$`, "i")
                     ),
                 };
     }

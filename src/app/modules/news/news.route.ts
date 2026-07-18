@@ -14,6 +14,7 @@ router.post(
 );
 
 router.get("/", NewsControllers.getAllNews);
+router.get("/trending", NewsControllers.getAllTrendingNews); 
 router.get("/:newsId/:languageCode", NewsControllers.getSingleNewsById);
 
 router.put(
@@ -28,7 +29,7 @@ router.delete(
   NewsControllers.deleteNews
 );
 router.patch(
-  "/like/:newsId",
+  "/toggle-like/:newsId",
   auth(UserRole.admin, UserRole.moderator, UserRole.user),
   NewsControllers.toggleLikeNewsController
 );
@@ -37,6 +38,12 @@ router.patch(
   "/view/:newsId",
   auth(UserRole.admin, UserRole.moderator, UserRole.user),
   NewsControllers.viewNews
+);
+
+router.patch(
+  "/toggle-trending/:newsId",
+  auth(UserRole.admin, UserRole.moderator),
+  NewsControllers.toggleIsTrendingNews,
 );
 
 export const NewsRoutes = router;

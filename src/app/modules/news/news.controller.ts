@@ -49,6 +49,29 @@ const getAllNews = catchAsync(async (req, res) => {
   });
 });
 
+const getAllTrendingNews = catchAsync(async (req, res) => {
+  const { keyword, category, languageCode, skip = "0", limit = "10" } = req.query;
+
+  const filters = {
+    keyword: keyword as string,
+    category: category as string,
+    languageCode: languageCode as string || "en",
+  };
+
+  const result = await NewsServices.getAllTrendingNews(
+    filters,
+    Number(skip),
+    Number(limit)
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Trending news fetched successfully.",
+    data: result,
+  });
+});
+
 // Get Single
 const getSingleNewsById = catchAsync(async (req, res) => {
   const { newsId, languageCode } = req.params;
@@ -125,12 +148,27 @@ const viewNews = catchAsync(async (req, res) => {
   });
 });
 
+const toggleIsTrendingNews = catchAsync(async (req, res) => {
+  const { newsId } = req.params;
+
+  const result = await NewsServices.toggleIsTrendingNews(newsId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: result.message,
+    data: {},
+  });
+});
+
 export const NewsControllers = {
   addNews,
   getAllNews,
+  getAllTrendingNews,
   getSingleNewsById,
   updateNews,
   deleteNews,
   toggleLikeNewsController,
-  viewNews
+  viewNews,
+  toggleIsTrendingNews
 };

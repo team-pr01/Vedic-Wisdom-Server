@@ -19,7 +19,6 @@ const TempleSchema = new mongoose_1.Schema({
         city: { type: String, required: true, index: true },
         state: { type: String, required: true },
         country: { type: String, required: true, index: true },
-        area: { type: String },
         googleMapUrl: String,
     },
     otherInfo: {

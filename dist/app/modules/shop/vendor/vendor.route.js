@@ -18,6 +18,8 @@ router.get("/", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_consta
 router.get("/my-stats", (0, auth_1.default)(auth_constants_1.UserRole.user), vendor_controller_1.VendorControllers.getMyVendorStats);
 /* Get Single Vendor */
 router.get("/:vendorId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), vendor_controller_1.VendorControllers.getSingleVendorById);
+/* Get All Products of a Vendor */
+router.get("/:vendorId/products", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), vendor_controller_1.VendorControllers.getAllProductsOfAVendor);
 router.patch("/update-status/:vendorId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), vendor_controller_1.VendorControllers.updateVendorStatus);
 /* Suspend Vendor */
 router.patch("/suspend/:vendorId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), vendor_controller_1.VendorControllers.suspendVendor);

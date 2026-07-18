@@ -13,6 +13,8 @@ const router = express_1.default.Router();
 router.post("/generate", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.moderator, auth_constants_1.UserRole.admin), referral_controller_1.ReferralControllers.generateReferralCode);
 /* Get My Referrals */
 router.get("/my-referrals", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.moderator, auth_constants_1.UserRole.admin), referral_controller_1.ReferralControllers.getMyReferrals);
+/* Get All Referrals of An User */
+router.get("/user/:userId", (0, auth_1.default)(auth_constants_1.UserRole.moderator, auth_constants_1.UserRole.admin), referral_controller_1.ReferralControllers.getAllReferralsOfAnUser);
 /* Get Coin History */
 router.get("/coins", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.moderator, auth_constants_1.UserRole.admin), referral_controller_1.ReferralControllers.getMyCoins);
 exports.ReferralRoutes = router;

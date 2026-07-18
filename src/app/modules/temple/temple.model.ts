@@ -21,7 +21,6 @@ const TempleSchema = new Schema<TTemple>(
             city: { type: String, required: true, index: true },
             state: { type: String, required: true },
             country: { type: String, required: true, index: true },
-            area: { type: String },
             googleMapUrl: String,
         },
 

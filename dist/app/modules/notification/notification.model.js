@@ -8,5 +8,7 @@ const NotificationSchema = new mongoose_1.Schema({
     message: String,
     isRead: { type: Boolean, default: false },
     data: Object,
+    deepLink: { type: String, default: null },
+    externalLink: { type: String, default: null },
 }, { timestamps: true });
 exports.Notification = (0, mongoose_1.model)("Notification", NotificationSchema);

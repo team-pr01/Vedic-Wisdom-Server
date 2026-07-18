@@ -15,10 +15,10 @@ router.post("/add", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_co
 router.get("/", bookText_controller_1.BookTextController.getAllBookTexts);
 router.get("/find-by-details", bookText_controller_1.BookTextController.getBookTextByDetails);
 router.get("/filter", bookText_controller_1.BookTextController.filterBookTexts);
+// Get a single book text by ID
+router.get("/single/:bookTextId", bookText_controller_1.BookTextController.getSingleBookText);
 // Get all book texts by bookId
 router.get("/:bookId", bookText_controller_1.BookTextController.getAllBookTextsByBookId);
-// Get a single book text by ID
-router.get("/:bookTextId", bookText_controller_1.BookTextController.getSingleBookText);
 // Update a text translations
 router.put("/update/:bookTextId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), bookText_controller_1.BookTextController.updateTranslations);
 // Update a book text by ID

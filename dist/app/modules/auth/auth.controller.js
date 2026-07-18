@@ -84,12 +84,12 @@ const resendForgotPasswordOtp = (0, catchAsync_1.default)((req, res) => __awaite
     });
 }));
 const resetPassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    yield auth_service_1.AuthServices.resetPassword(req.body);
+    const result = yield auth_service_1.AuthServices.resetPassword(req.body);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
         message: "Password reset successfully.",
-        data: {},
+        data: result,
     });
 }));
 const changePassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -102,15 +102,6 @@ const changePassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0,
         data: result,
     });
 }));
-const assignPagesToUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield auth_service_1.AuthServices.assignPagesToUser(req.body);
-    (0, sendResponse_1.default)(res, {
-        statusCode: http_status_1.default.OK,
-        success: true,
-        message: "Pages assigned successfully.",
-        data: result,
-    });
-}));
 exports.AuthControllers = {
     signup,
     loginUser,
@@ -120,5 +111,4 @@ exports.AuthControllers = {
     resendForgotPasswordOtp,
     resetPassword,
     changePassword,
-    assignPagesToUser,
 };

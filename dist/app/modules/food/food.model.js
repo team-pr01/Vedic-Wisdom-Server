@@ -14,11 +14,6 @@ const FoodSchema = new mongoose_1.Schema({
         required: true,
         index: true,
     },
-    videoSource: {
-        type: String,
-        enum: ["youtube", "facebook"],
-        required: true,
-    },
     videoUrl: {
         type: String,
         required: true,

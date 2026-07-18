@@ -10,7 +10,6 @@ const vastu_route_1 = require("../modules/vastu/vastu.route");
 const vastuTips_routes_1 = require("../modules/vastuTips/vastuTips.routes");
 const news_route_1 = require("../modules/news/news.route");
 const ai_route_1 = require("../modules/ai/ai.route");
-const reels_route_1 = require("../modules/reels/reels.route");
 const course_route_1 = require("../modules/course/course.route");
 const ayurveda_route_1 = require("../modules/ayurveda/ayurveda.route");
 const job_route_1 = require("../modules/job/job.route");
@@ -25,6 +24,16 @@ const books_route_1 = require("../modules/book/books/books.route");
 const bookText_route_1 = require("../modules/book/texts/bookText.route");
 const reportMantra_route_1 = require("../modules/book/reportMantra/reportMantra.route");
 const categories_route_1 = require("../modules/categories/categories.route");
+const popup_route_1 = require("../modules/popup/popup.route");
+const donationPrograms_route_1 = require("../modules/donationPrograms/donationPrograms.route");
+const consultants_route_1 = require("../modules/consultancyService/consultants/consultants.route");
+const consultations_route_1 = require("../modules/consultancyService/consultations/consultations.route");
+const reels_route_1 = require("../modules/reels/reels.route");
+const subscriptionPlan_routes_1 = require("../modules/subscriptionService/subsccriptionPlan/subscriptionPlan.routes");
+const subscription_routes_1 = require("../modules/subscriptionService/subscription/subscription.routes");
+const quiz_route_1 = require("../modules/quiz/quiz.route");
+const message_route_1 = require("../modules/message/message.route");
+const chat_route_1 = require("../modules/chat/chat.route");
 const router = (0, express_1.Router)();
 const moduleRoutes = [
     {
@@ -122,6 +131,42 @@ const moduleRoutes = [
     {
         path: "/category",
         route: categories_route_1.CategoryRoutes,
+    },
+    {
+        path: "/popup",
+        route: popup_route_1.PopupRoutes,
+    },
+    {
+        path: "/donation-program",
+        route: donationPrograms_route_1.DonationProgramRoutes,
+    },
+    {
+        path: "/consultant",
+        route: consultants_route_1.ConsultantsRoutes,
+    },
+    {
+        path: "/consultation",
+        route: consultations_route_1.ConsultationRoutes,
+    },
+    {
+        path: "/subscription-plan",
+        route: subscriptionPlan_routes_1.SubscriptionPlanRoutes,
+    },
+    {
+        path: "/subscription",
+        route: subscription_routes_1.SubscriptionRoutes,
+    },
+    {
+        path: "/quiz",
+        route: quiz_route_1.QuizRoutes,
+    },
+    {
+        path: "/chat",
+        route: chat_route_1.ChatRoutes,
+    },
+    {
+        path: "/message",
+        route: message_route_1.MessageRoutes,
     },
 ];
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

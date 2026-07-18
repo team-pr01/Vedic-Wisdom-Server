@@ -27,6 +27,11 @@ const sendImageToCloudinary_1 = require("../../utils/sendImageToCloudinary");
 // import { calculateProfileSections } from "../../utils/calculateTutorProfileSections";
 const getAllUsers = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (filters = {}, skip = 0, limit = 10) {
     const query = {};
+    if (filters.keyword) {
+        query.$or = [
+            { email: { $regex: filters.keyword, $options: 'i' } },
+        ];
+    }
     /* TEXT SEARCH */
     if (filters.keyword) {
         query.$text = {
@@ -44,8 +49,12 @@ const getAllUsers = (...args_1) => __awaiter(void 0, [...args_1], void 0, functi
         query.city = filters.city;
     if (filters.area)
         query.area = filters.area;
-    if (filters.premiumUnlocked !== undefined) {
-        query.premiumUnlocked = filters.premiumUnlocked;
+    /* STATUS LOGIC */
+    if (filters.status && filters.status !== "all") {
+        query.isSuspended = filters.status === "true";
+    }
+    if (filters.premiumUnlocked && filters.premiumUnlocked !== "all") {
+        query.premiumUnlocked = filters.premiumUnlocked === "true";
     }
     return (0, infinitePaginate_1.infinitePaginate)(auth_model_1.User, query, skip, limit);
 });
@@ -104,7 +113,7 @@ const deleteAccount = (userId, payload) => __awaiter(void 0, void 0, void 0, fun
 });
 // Activate user back
 const restoreUsersDeletedAccount = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield auth_model_1.User.findByIdAndUpdate(userId, { isDeleted: false });
+    const user = yield auth_model_1.User.findByIdAndUpdate(userId, { isDeleted: false, accountDeleteReason: null });
     if (!user)
         throw new Error("User not found");
     return user;
@@ -182,6 +191,14 @@ const restoreUsersDeletedAccount = (userId) => __awaiter(void 0, void 0, void 0,
 //   );
 //   return updatedProfile;
 // };
+const assignPagesToUser = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield auth_model_1.User.findById(payload.userId);
+    if (!user) {
+        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
+    }
+    const result = yield auth_model_1.User.findByIdAndUpdate(payload.userId, { assignedPages: payload.pages }, { new: true, runValidators: true });
+    return result;
+});
 // Change user role (For admin)
 const saveUserPushToken = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield auth_model_1.User.findById(payload === null || payload === void 0 ? void 0 : payload.userId);
@@ -203,5 +220,6 @@ exports.UserServices = {
     updateProfile,
     deleteAccount,
     restoreUsersDeletedAccount,
+    assignPagesToUser,
     saveUserPushToken
 };

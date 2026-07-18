@@ -18,7 +18,18 @@ const sendResponse_1 = __importDefault(require("../../utils/sendResponse"));
 const http_status_1 = __importDefault(require("http-status"));
 const catchAsync_1 = __importDefault(require("../../utils/catchAsync"));
 const getAllUsers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield users_services_1.UserServices.getAllUsers();
+    const { keyword, role, country, state, city, area, premiumUnlocked, status, skip = "0", limit = "10", } = req.query;
+    const filters = {
+        keyword: keyword,
+        role: role,
+        country: country,
+        state: state,
+        city: city,
+        area: area,
+        premiumUnlocked: premiumUnlocked,
+        status: status,
+    };
+    const result = yield users_services_1.UserServices.getAllUsers(filters, Number(skip), Number(limit));
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -101,6 +112,15 @@ const restoreUsersDeletedAccount = (0, catchAsync_1.default)((req, res) => __awa
         data: result,
     });
 }));
+const assignPagesToUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield users_services_1.UserServices.assignPagesToUser(req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Pages assigned successfully.",
+        data: result,
+    });
+}));
 // Save Push Token
 const savePushToken = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield users_services_1.UserServices.saveUserPushToken(req.body);
@@ -120,5 +140,6 @@ exports.UserControllers = {
     updateProfile,
     deleteAccount,
     restoreUsersDeletedAccount,
+    assignPagesToUser,
     savePushToken,
 };

@@ -14,11 +14,6 @@ const ayurvedaSchema = new Schema<TAyurveda>(
       lowercase: true,
       trim: true,
     },
-    videoSource: {
-      type: String,
-      required: true,
-      trim: true,
-    },
     videoUrl: {
       type: String,
       required: true,

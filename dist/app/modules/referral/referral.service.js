@@ -13,12 +13,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReferralServices = void 0;
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const http_status_1 = __importDefault(require("http-status"));
 const auth_model_1 = require("../auth/auth.model");
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const referral_model_1 = __importDefault(require("./referral.model"));
 const coinTransaction_model_1 = __importDefault(require("./coinTransaction/coinTransaction.model"));
 const generateReferralCode_1 = require("../../utils/generateReferralCode");
+const infinitePaginate_1 = require("../../utils/infinitePaginate");
+const mongoose_1 = require("mongoose");
 /* Generate Referral Code */
 const generateReferralCode = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield auth_model_1.User.findById(userId);
@@ -73,11 +76,28 @@ const handleReferralReward = (newUserId, referralCode) => __awaiter(void 0, void
     return referral;
 });
 /* Get My Referrals */
-const getMyReferrals = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const referrals = yield referral_model_1.default.find({ referrer: userId })
-        .populate("referredUser", "name profilePicture")
-        .sort({ rank: 1 });
-    return referrals;
+const getMyReferrals = (userId_1, ...args_1) => __awaiter(void 0, [userId_1, ...args_1], void 0, function* (userId, skip = 0, limit = 10) {
+    const query = {
+        referrer: new mongoose_1.Types.ObjectId(userId),
+    };
+    return (0, infinitePaginate_1.infinitePaginate)(referral_model_1.default, query, skip, limit, [
+        {
+            path: "referredUser",
+            select: "name profilePicture",
+        },
+    ]);
+});
+/* Get All Referrals of An User */
+const getAllReferralsOfAnUser = (userId_1, ...args_1) => __awaiter(void 0, [userId_1, ...args_1], void 0, function* (userId, skip = 0, limit = 10) {
+    const query = {
+        referrer: new mongoose_1.Types.ObjectId(userId),
+    };
+    return (0, infinitePaginate_1.infinitePaginate)(referral_model_1.default, query, skip, limit, [
+        {
+            path: "referredUser",
+            select: "name profilePicture",
+        },
+    ]);
 });
 /* Get My Coin Transactions */
 const getMyCoins = (userId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -87,5 +107,6 @@ exports.ReferralServices = {
     generateReferralCode,
     handleReferralReward,
     getMyReferrals,
+    getAllReferralsOfAnUser,
     getMyCoins,
 };

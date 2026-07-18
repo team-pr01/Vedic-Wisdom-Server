@@ -18,11 +18,6 @@ const VastuSchema = new Schema<TVastu>(
       index: true
     },
 
-    videoSource: {
-      type: String,
-      required: true,
-    },
-
     videoUrl: {
       type: String,
       required: true,

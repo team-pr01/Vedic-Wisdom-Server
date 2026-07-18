@@ -61,7 +61,7 @@ const getAllProducts = (...args_1) => __awaiter(void 0, [...args_1], void 0, fun
 });
 /* Get Single Product */
 const getSingleProductById = (productId) => __awaiter(void 0, void 0, void 0, function* () {
-    const product = yield product_model_1.default.findById(productId);
+    const product = yield product_model_1.default.findById(productId).populate("addedBy", "name role");
     if (!product) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Product not found");
     }
@@ -78,17 +78,6 @@ const getMyProducts = (userId_1, ...args_1) => __awaiter(void 0, [userId_1, ...a
     }
     const query = {
         addedBy: userId,
-    };
-    return (0, infinitePaginate_1.infinitePaginate)(product_model_1.default, query, skip, limit);
-});
-// For admin
-const getVendorProducts = (userId_1, ...args_1) => __awaiter(void 0, [userId_1, ...args_1], void 0, function* (userId, skip = 0, limit = 10) {
-    const vendor = yield vendor_model_1.default.findOne({ userId }).lean();
-    if (!vendor) {
-        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Vendor not found");
-    }
-    const query = {
-        addedBy: vendor.userId,
     };
     return (0, infinitePaginate_1.infinitePaginate)(product_model_1.default, query, skip, limit);
 });
@@ -152,7 +141,6 @@ exports.ProductServices = {
     getAllProducts,
     getSingleProductById,
     getMyProducts,
-    getVendorProducts,
     updateProduct,
     deleteProduct,
 };

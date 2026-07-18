@@ -19,18 +19,9 @@ const AppError_1 = __importDefault(require("../../errors/AppError"));
 const food_model_1 = require("./food.model");
 const infinitePaginate_1 = require("../../utils/infinitePaginate");
 /* ---------------- ADD FOOD ---------------- */
-const addFood = (user, payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const { videoSource, videoUrl } = payload;
-    // Validate video source match
-    if (videoSource === "youtube" &&
-        !/youtube\.com|youtu\.be/.test(videoUrl)) {
-        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Invalid YouTube URL");
-    }
-    if (videoSource === "facebook" &&
-        !/facebook\.com/.test(videoUrl)) {
-        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Invalid Facebook URL");
-    }
-    return food_model_1.Food.create(Object.assign({}, payload));
+const addFood = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const response = yield food_model_1.Food.create(payload);
+    return response;
 });
 /* ---------------- GET ALL (INFINITE SCROLL) ---------------- */
 const getAllFoods = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (filters = {}, skip = 0, limit = 10) {
@@ -61,10 +52,6 @@ const updateFood = (foodId, user, payload) => __awaiter(void 0, void 0, void 0, 
     const food = yield food_model_1.Food.findById(foodId);
     if (!food) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Food not found");
-    }
-    if (food.createdBy !== user.userId &&
-        user.role !== "admin") {
-        throw new AppError_1.default(http_status_1.default.FORBIDDEN, "Not authorized");
     }
     return food_model_1.Food.findByIdAndUpdate(foodId, payload, {
         new: true,

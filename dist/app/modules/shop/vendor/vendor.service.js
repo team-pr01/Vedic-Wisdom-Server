@@ -69,6 +69,21 @@ const getSingleVendorById = (vendorId) => __awaiter(void 0, void 0, void 0, func
     }
     return vendor;
 });
+/* Get All Products of a Vendor */
+const getAllProductsOfAVendor = (vendorId_1, ...args_1) => __awaiter(void 0, [vendorId_1, ...args_1], void 0, function* (vendorId, filters = {}, skip = 0, limit = 10) {
+    const query = {
+        addedBy: vendorId,
+    };
+    if (filters.status) {
+        query.status = filters.status;
+    }
+    if (filters.keyword) {
+        query.$text = {
+            $search: filters.keyword,
+        };
+    }
+    return (0, infinitePaginate_1.infinitePaginate)(product_model_1.default, query, skip, limit, []);
+});
 // For vendors
 const getMyVendorStats = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
@@ -141,6 +156,7 @@ exports.VendorServices = {
     getPendingVendorApplications,
     getAllVendors,
     getSingleVendorById,
+    getAllProductsOfAVendor,
     getMyVendorStats,
     updateVendorStatus,
     suspendVendor,

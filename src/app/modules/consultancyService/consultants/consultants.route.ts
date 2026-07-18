@@ -15,6 +15,7 @@ router.post(
 );
 
 router.get("/", ConsultantControllers.getAllConsultants);
+router.get("/category/:category", ConsultantControllers.getConsultantsByCategory);
 router.get("/:consultantId", ConsultantControllers.getSingleConsultantsById);
 
 router.put(

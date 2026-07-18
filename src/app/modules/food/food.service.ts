@@ -5,33 +5,9 @@ import { Food } from "./food.model";
 import { infinitePaginate } from "../../utils/infinitePaginate";
 
 /* ---------------- ADD FOOD ---------------- */
-const addFood = async (user: any, payload: any) => {
-    const { videoSource, videoUrl } = payload;
-
-    // Validate video source match
-    if (
-        videoSource === "youtube" &&
-        !/youtube\.com|youtu\.be/.test(videoUrl)
-    ) {
-        throw new AppError(
-            httpStatus.BAD_REQUEST,
-            "Invalid YouTube URL"
-        );
-    }
-
-    if (
-        videoSource === "facebook" &&
-        !/facebook\.com/.test(videoUrl)
-    ) {
-        throw new AppError(
-            httpStatus.BAD_REQUEST,
-            "Invalid Facebook URL"
-        );
-    }
-
-    return Food.create({
-        ...payload,
-    });
+const addFood = async (payload: any) => {
+    const response = await Food.create(payload);
+    return response;
 };
 
 /* ---------------- GET ALL (INFINITE SCROLL) ---------------- */
@@ -85,13 +61,6 @@ const updateFood = async (
 
     if (!food) {
         throw new AppError(httpStatus.NOT_FOUND, "Food not found");
-    }
-
-    if (
-        food.createdBy !== user.userId &&
-        user.role !== "admin"
-    ) {
-        throw new AppError(httpStatus.FORBIDDEN, "Not authorized");
     }
 
     return Food.findByIdAndUpdate(foodId, payload, {

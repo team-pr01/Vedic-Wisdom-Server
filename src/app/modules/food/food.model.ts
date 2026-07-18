@@ -16,12 +16,6 @@ const FoodSchema = new Schema<TFood>(
             index: true,
         },
 
-        videoSource: {
-            type: String,
-            enum: ["youtube", "facebook"],
-            required: true,
-        },
-
         videoUrl: {
             type: String,
             required: true,

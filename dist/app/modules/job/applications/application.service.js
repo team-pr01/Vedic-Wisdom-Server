@@ -18,10 +18,10 @@ const http_status_1 = __importDefault(require("http-status"));
 const job_model_1 = __importDefault(require("../job.model"));
 const AppError_1 = __importDefault(require("../../../errors/AppError"));
 const application_model_1 = __importDefault(require("./application.model"));
-const sendImageToCloudinary_1 = require("../../../utils/sendImageToCloudinary");
 const infinitePaginate_1 = require("../../../utils/infinitePaginate");
+const mongoose_1 = require("mongoose");
 /* Apply */
-const applyOnJob = (payload, userId, file) => __awaiter(void 0, void 0, void 0, function* () {
+const applyOnJob = (payload, userId) => __awaiter(void 0, void 0, void 0, function* () {
     const jobId = payload === null || payload === void 0 ? void 0 : payload.jobId;
     const job = yield job_model_1.default.findById(jobId);
     if (!job)
@@ -29,15 +29,9 @@ const applyOnJob = (payload, userId, file) => __awaiter(void 0, void 0, void 0, 
     // Prevent duplicate apply
     const exists = yield application_model_1.default.findOne({ jobId, userId });
     if (exists)
-        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Already applied");
-    // Upload resume
-    let resumeUrl = "";
-    if (file) {
-        const { secure_url } = yield (0, sendImageToCloudinary_1.sendImageToCloudinary)(`resume-${Date.now()}`, file.path);
-        resumeUrl = secure_url;
-    }
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "You have already applied for this job.");
     const application = yield application_model_1.default.create(Object.assign(Object.assign({}, payload), { jobId,
-        userId, resume: resumeUrl }));
+        userId }));
     // Update Job counters
     yield job_model_1.default.findByIdAndUpdate(jobId, {
         $inc: { applicationCount: 1 },
@@ -77,21 +71,91 @@ const getAllApplications = (...args_1) => __awaiter(void 0, [...args_1], void 0,
     ]);
 });
 // Get  all applications By Job id
-const getApplicationsByJob = (jobId, userId, userRole) => __awaiter(void 0, void 0, void 0, function* () {
+const getApplicationsByJobId = (jobId_1, userId_1, userRole_1, ...args_1) => __awaiter(void 0, [jobId_1, userId_1, userRole_1, ...args_1], void 0, function* (jobId, userId, userRole, filters = {}, skip = 0, limit = 10) {
+    var _a;
     const job = yield job_model_1.default.findById(jobId);
     if (!job)
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Job not found");
-    // ✅ Admin & Moderator → can view any job applications
+    // Admin & Moderator → can view any job applications
     if (userRole !== "admin" && userRole !== "moderator") {
-        // ✅ Only job owner allowed
+        // Only job owner allowed
         if (job.postedBy.toString() !== userId) {
             throw new AppError_1.default(http_status_1.default.FORBIDDEN, "You are not allowed to view these applications");
         }
     }
-    const applications = yield application_model_1.default.find({ jobId })
-        .populate("userId", "name email phoneNumber")
-        .sort({ createdAt: -1 });
-    return applications;
+    const matchStage = { jobId: new mongoose_1.Types.ObjectId(jobId) };
+    // Apply status filter
+    if (filters.status) {
+        matchStage.status = filters.status;
+    }
+    const pipeline = [
+        { $match: matchStage },
+        {
+            $lookup: {
+                from: "users",
+                localField: "userId",
+                foreignField: "_id",
+                as: "user"
+            }
+        },
+        { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+        {
+            $addFields: {
+                applicantName: "$user.name",
+                applicantEmail: "$user.email",
+                applicantPhone: "$user.phoneNumber"
+            }
+        }
+    ];
+    // Apply keyword search
+    if (filters.keyword) {
+        pipeline.push({
+            $match: {
+                $or: [
+                    { "user.name": { $regex: filters.keyword, $options: "i" } },
+                    { "user.email": { $regex: filters.keyword, $options: "i" } },
+                    { "user.phoneNumber": { $regex: filters.keyword, $options: "i" } },
+                ]
+            }
+        });
+    }
+    // Get total count
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = yield application_model_1.default.aggregate(countPipeline);
+    const total = ((_a = countResult[0]) === null || _a === void 0 ? void 0 : _a.total) || 0;
+    // Add sorting and pagination
+    pipeline.push({ $sort: { createdAt: -1 } }, { $skip: skip }, { $limit: limit }, {
+        $project: {
+            _id: 1,
+            jobId: 1,
+            userId: 1,
+            status: 1,
+            resume: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            noteFromApplicant: 1,
+            applicant: {
+                _id: "$user._id",
+                name: "$user.name",
+                email: "$user.email",
+                phoneNumber: "$user.phoneNumber",
+            }
+        }
+    });
+    const applications = yield application_model_1.default.aggregate(pipeline);
+    const totalPages = Math.ceil(total / limit);
+    const hasMore = skip + limit < total;
+    return {
+        applications,
+        meta: {
+            total,
+            totalPages,
+            skip,
+            limit,
+            hasMore,
+            filteredTotal: total
+        }
+    };
 });
 /* Get Single */
 const getSingleApplicationById = (id) => __awaiter(void 0, void 0, void 0, function* () {
@@ -152,7 +216,7 @@ exports.ApplicationServices = {
     applyOnJob,
     withdrawApplication,
     getAllApplications,
-    getApplicationsByJob,
+    getApplicationsByJobId,
     getSingleApplicationById,
     updateStatus,
     deleteApplication,

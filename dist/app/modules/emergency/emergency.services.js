@@ -37,6 +37,7 @@ const forwardMessageToOthers = (payload) => __awaiter(void 0, void 0, void 0, fu
         phoneNumber: (emergencyMessage === null || emergencyMessage === void 0 ? void 0 : emergencyMessage.phoneNumber) || ((_b = emergencyMessage === null || emergencyMessage === void 0 ? void 0 : emergencyMessage.userId) === null || _b === void 0 ? void 0 : _b.phoneNumber) || "",
     };
     yield (0, sendNotificationToMultipleUsers_1.sendNotificationToMultipleUsers)(userIds, title, message, data);
+    yield emergency_model_2.default.updateOne({ _id: emergencyMessageId }, { $set: { status: "forwarded" } });
     return {};
 });
 // Create emergency post (For user)

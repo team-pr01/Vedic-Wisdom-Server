@@ -13,7 +13,7 @@ exports.sendNotificationToMultipleUsers = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const auth_model_1 = require("../modules/auth/auth.model");
 const notification_model_1 = require("../modules/notification/notification.model");
-const server_1 = require("../../server");
+const socket_1 = require("../socket");
 const sendNotificationToMultipleUsers = (userIds, title, message, data) => __awaiter(void 0, void 0, void 0, function* () {
     if (!userIds.length)
         return;
@@ -30,7 +30,7 @@ const sendNotificationToMultipleUsers = (userIds, title, message, data) => __awa
     });
     // 3️⃣ Emit socket event ONLY to intended users
     users.forEach((user) => {
-        server_1.io.to(user._id.toString()).emit("new-notification", {
+        socket_1.io.to(user._id.toString()).emit("new-notification", {
             _id: createdNotification._id,
             title,
             message,
