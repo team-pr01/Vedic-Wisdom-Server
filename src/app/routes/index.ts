@@ -23,7 +23,7 @@ import { BookTextRoutes } from "../modules/book/texts/bookText.route";
 import { ReportMantraRoutes } from "../modules/book/reportMantra/reportMantra.route";
 import { CategoryRoutes } from "../modules/categories/categories.route";
 import { PopupRoutes } from "../modules/popup/popup.route";
-import { DonationProgramRoutes } from "../modules/donationPrograms/donationPrograms.route";
+import { ProjectRoutes } from "../modules/project/project.route";
 import { ConsultantsRoutes } from "../modules/consultancyService/consultants/consultants.route";
 import { ConsultationRoutes } from "../modules/consultancyService/consultations/consultations.route";
 import { ReelsRoutes } from "../modules/reels/reels.route";
@@ -137,8 +137,8 @@ const moduleRoutes = [
     route: PopupRoutes,
   },
   {
-    path: "/donation-program",
-    route: DonationProgramRoutes,
+    path: "/project",
+    route: ProjectRoutes,
   },
   {
     path: "/consultant",

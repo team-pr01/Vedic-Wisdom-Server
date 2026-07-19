@@ -2,14 +2,14 @@
 import httpStatus from "http-status";
 import AppError from "../../errors/AppError";
 import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
-import { TDonationPrograms } from "./donationPrograms.interface";
-import DonationPrograms from "./donationPrograms.model";
+import { TProject } from "./project.interface";
+import Project from "./project.model";
 import { infinitePaginate } from "../../utils/infinitePaginate";
 import { deleteImageFromCloudinary, extractPublicId } from "../../utils/deleteImageFromCloudinary";
 
-// Create donation program (admin only)
-const addDonationProgram = async (
-  payload: TDonationPrograms,
+// Create project (admin only)
+const addProject = async (
+  payload: TProject,
   file: Express.Multer.File | undefined
 ) => {
   let imageUrl = "";
@@ -25,15 +25,17 @@ const addDonationProgram = async (
   const payloadData = {
     ...payload,
     amountNeeded: Number(payload.amountNeeded),
+    amountRaised: 0,
+    donors: [],
     imageUrl,
   };
 
-  const result = await DonationPrograms.create(payloadData);
+  const result = await Project.create(payloadData);
   return result;
 };
 
-// Get all donation programs (with optional keyword & category)
-const getAllDonationPrograms = async (
+// Get all projects (with optional keyword & category)
+const getAllProjects = async (
   keyword?: string,
   skip = 0,
   limit = 10
@@ -48,28 +50,28 @@ const getAllDonationPrograms = async (
     ];
   }
 
-  return infinitePaginate(DonationPrograms, query, skip, limit, []);
+  return infinitePaginate(Project, query, skip, limit, []);
 };
 
-// Get a single donation program by ID
-const getSingleDonationProgramById = async (id: string) => {
-  const result = await DonationPrograms.findById(id);
+// Get a single project by ID
+const getSingleProjectById = async (id: string) => {
+  const result = await Project.findById(id);
   if (!result) {
-    throw new AppError(httpStatus.NOT_FOUND, "Donation program not found");
+    throw new AppError(httpStatus.NOT_FOUND, "Project not found");
   }
   return result;
 };
 
-// Update donation program by ID
-const updateDonationProgram = async (
+// Update project by ID
+const updateProject = async (
   id: string,
-  payload: Partial<TDonationPrograms>,
+  payload: Partial<TProject>,
   file: Express.Multer.File | undefined
 ) => {
-  const existing = await DonationPrograms.findById(id);
+  const existing = await Project.findById(id);
 
   if (!existing) {
-    throw new AppError(httpStatus.NOT_FOUND, "Donation program not found");
+    throw new AppError(httpStatus.NOT_FOUND, "Project not found");
   }
 
   let imageUrl: string | undefined;
@@ -82,12 +84,12 @@ const updateDonationProgram = async (
     imageUrl = secure_url;
   }
 
-  const updatePayload: Partial<TDonationPrograms> = {
+  const updatePayload: Partial<TProject> = {
     ...payload,
     ...(imageUrl && { imageUrl }),
   };
 
-  const result = await DonationPrograms.findByIdAndUpdate(id, updatePayload, {
+  const result = await Project.findByIdAndUpdate(id, updatePayload, {
     new: true,
     runValidators: true,
   });
@@ -95,11 +97,11 @@ const updateDonationProgram = async (
   return result;
 };
 
-// Delete donation program by ID
-const deleteDonationProgram = async (id: string) => {
-  const result = await DonationPrograms.findByIdAndDelete(id);
+// Delete project by ID
+const deleteProject = async (id: string) => {
+  const result = await Project.findByIdAndDelete(id);
   if (!result) {
-    throw new AppError(httpStatus.NOT_FOUND, "Donation program not found");
+    throw new AppError(httpStatus.NOT_FOUND, "Project not found");
   }
 
   if (result.imageUrl) {
@@ -109,10 +111,10 @@ const deleteDonationProgram = async (id: string) => {
   return result;
 };
 
-export const DonationProgramsService = {
-  addDonationProgram,
-  getAllDonationPrograms,
-  getSingleDonationProgramById,
-  updateDonationProgram,
-  deleteDonationProgram,
+export const ProjectServices = {
+  addProject,
+  getAllProjects,
+  getSingleProjectById,
+  updateProject,
+  deleteProject,
 };

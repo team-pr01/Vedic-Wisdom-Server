@@ -54,6 +54,8 @@ const postJob = async (
 };
 
 /* Get All Jobs */
+// job.service.ts
+
 const getAllJobs = async (
     filters: any = {},
     skip = 0,
@@ -64,7 +66,6 @@ const getAllJobs = async (
     // 🔍 Text Search
     if (filters.keyword) {
         query.$text = { $search: filters.keyword };
-
     }
 
     // Status
@@ -74,32 +75,69 @@ const getAllJobs = async (
 
     // City
     if (filters.city) {
-        query["location.city"] = filters.city.trim();
+        query["location.city"] = { $regex: filters.city.trim(), $options: "i" };
     }
 
     // State
     if (filters.state) {
-        query["location.state"] = filters.state.trim();
+        query["location.state"] = { $regex: filters.state.trim(), $options: "i" };
     }
 
     // Country
     if (filters.country) {
-        query["location.country"] = filters.country.trim();
+        query["location.country"] = { $regex: filters.country.trim(), $options: "i" };
     }
 
-    // Job Type
+    // Job Type (handle array or single value)
     if (filters.jobType) {
-        query.jobType = filters.jobType;
+        const jobTypes = typeof filters.jobType === 'string' 
+            ? filters.jobType.split(',').map((item: string) => item.trim())
+            : filters.jobType;
+        
+        if (jobTypes.length === 1) {
+            query.jobType = jobTypes[0];
+        } else if (jobTypes.length > 1) {
+            query.jobType = { $in: jobTypes };
+        }
     }
 
-    // Work Mode
+    // Work Mode (handle array or single value)
     if (filters.workMode) {
-        query.workMode = filters.workMode;
+        const workModes = typeof filters.workMode === 'string' 
+            ? filters.workMode.split(',').map((item: string) => item.trim())
+            : filters.workMode;
+        
+        if (workModes.length === 1) {
+            query.workMode = workModes[0];
+        } else if (workModes.length > 1) {
+            query.workMode = { $in: workModes };
+        }
     }
 
-    // Experience Level
+    // Experience Level (handle array or single value)
     if (filters.experienceLevel) {
-        query.experienceLevel = filters.experienceLevel;
+        const experienceLevels = typeof filters.experienceLevel === 'string' 
+            ? filters.experienceLevel.split(',').map((item: string) => item.trim())
+            : filters.experienceLevel;
+        
+        if (experienceLevels.length === 1) {
+            query.experienceLevel = experienceLevels[0];
+        } else if (experienceLevels.length > 1) {
+            query.experienceLevel = { $in: experienceLevels };
+        }
+    }
+
+    // Category (handle array or single value)
+    if (filters.category) {
+        const categories = typeof filters.category === 'string' 
+            ? filters.category.split(',').map((item: string) => item.trim())
+            : filters.category;
+        
+        if (categories.length === 1) {
+            query.category = categories[0];
+        } else if (categories.length > 1) {
+            query.category = { $in: categories };
+        }
     }
 
     return infinitePaginate(

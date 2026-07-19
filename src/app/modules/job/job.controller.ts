@@ -29,6 +29,7 @@ const getAllJobs = catchAsync(async (req, res) => {
         jobType,
         workMode,
         experienceLevel,
+        category,
         skip = "0",
         limit = "10",
     } = req.query;
@@ -42,6 +43,7 @@ const getAllJobs = catchAsync(async (req, res) => {
         jobType: jobType as string,
         workMode: workMode as string,
         experienceLevel: experienceLevel as string,
+        category: category as string,
     };
 
     const result = await JobServices.getAllJobs(
@@ -98,17 +100,17 @@ const updateJob = catchAsync(async (req, res) => {
 
 // Delete Job
 const deleteJob = catchAsync(async (req, res) => {
-  const { jobId } = req.params;
-  const { userId, role } = req.user;
+    const { jobId } = req.params;
+    const { userId, role } = req.user;
 
-  const result = await JobServices.deleteJob(jobId, userId, role);
+    const result = await JobServices.deleteJob(jobId, userId, role);
 
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.OK,
-    message: "Job deleted successfully",
-    data: result,
-  });
+    sendResponse(res, {
+        success: true,
+        statusCode: httpStatus.OK,
+        message: "Job deleted successfully",
+        data: result,
+    });
 });
 
 // Update Status
