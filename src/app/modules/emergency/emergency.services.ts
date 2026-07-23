@@ -51,21 +51,21 @@ const postEmergency = async (payload: TEmergency) => {
   const result = await Emergency.create(payload);
 
   //FInding Admins and Moderators
-  const adminsAndModerators = await User.find({
-    role: { $in: ["admin", "moderator"] },
-  }).select("_id");
+  // const adminsAndModerators = await User.find({
+  //   role: { $in: ["admin", "moderator"] },
+  // }).select("_id");
 
   // Sending Notification
-  const notificationPromises = adminsAndModerators.map((admin) =>
-    sendSingleNotification(
-      admin._id as unknown as Types.ObjectId,
-      "Emergency Alert 🚨",
-      `A new emergency has been reported from ${payload?.location || ""}.`,
-      `/dashboard/emergency/${result._id}`
-    )
-  );
+  // const notificationPromises = adminsAndModerators.map((admin) =>
+  //   sendSingleNotification(
+  //     admin._id as unknown as Types.ObjectId,
+  //     "Emergency Alert 🚨",
+  //     `A new emergency has been reported from ${payload?.location || ""}.`,
+  //     `/dashboard/emergency/${result._id}`
+  //   )
+  // );
 
-  await Promise.all(notificationPromises);
+  // await Promise.all(notificationPromises);
 
   return result;
 };

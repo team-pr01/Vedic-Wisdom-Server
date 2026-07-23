@@ -7,6 +7,10 @@ const EmergencySchema = new Schema<TEmergency>(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    name : {
+      type: String,
+      required: true,
+    },
     phoneNumber: {
       type: String,
       required: true,
