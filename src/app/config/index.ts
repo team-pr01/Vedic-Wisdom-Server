@@ -17,4 +17,9 @@ export default {
   smtp_email: process.env.SMTP_EMAIL,
   smtp_pass: process.env.SMTP_PASS,
   chat_gpt_api : process.env.chat_gpt_api,
+  cloudflare_account_id : process.env.CLOUDFLARE_ACCOUNT_ID,
+  r2_access_key_id : process.env.R2_ACCESS_KEY_ID,
+  r2_secret_access_key : process.env.R2_SECRET_ACCESS_KEY,
+  r2_bucket_name : process.env.R2_BUCKET_NAME,
+  r2_public_url : process.env.R2_PUBLIC_URL,
 };

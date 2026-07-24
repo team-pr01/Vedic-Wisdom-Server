@@ -15,9 +15,21 @@ const audioBookSchema = new Schema<TAudioBook>(
       index: true,
     },
 
+    category: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true,
+    },
+
     description: {
       type: String,
       required: true,
+    },
+
+    soldCount : {
+      type: Number,
+      default: 0,
     },
 
     isPremium: {
@@ -30,7 +42,6 @@ const audioBookSchema = new Schema<TAudioBook>(
 );
 
 /* TEXT SEARCH */
-
 audioBookSchema.index({
   name: "text",
   description: "text",

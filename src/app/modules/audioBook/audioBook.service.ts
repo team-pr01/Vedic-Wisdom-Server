@@ -32,25 +32,147 @@ const addAudioBook = async (
     return audioBook;
 };
 
-/* GET ALL AUDIOBOOKS */
+/* GET ALL AUDIOBOOKS (Excluding New Arrivals & Most Popular) */
 const getAllAudioBooks = async (
     filters: any = {},
     skip = 0,
     limit = 10
 ) => {
-
     const query: any = {};
 
+    // Exclude books that are in "new arrivals" (last 15 days)
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
+    // Exclude new arrivals (created within last 15 days)
+    query.$and = [
+        { createdAt: { $lt: fifteenDaysAgo } }, // Not new arrival
+        {
+            $or: [
+                { soldCount: { $eq: 0 } } // Or soldCount is 0
+            ]
+        }
+    ];
+
+    // Text search
     if (filters.keyword) {
         query.$text = { $search: filters.keyword };
     }
 
+    // Premium filter
     if (filters.isPremium !== undefined) {
         query.isPremium = filters.isPremium;
     }
 
+    // Category filter
+    if (filters.category) {
+        query.category = filters.category;
+    }
+
     return infinitePaginate(AudioBook, query, skip, limit);
 };
+
+/* GET NEW ARRIVALS - Books added in the last 15 days */
+const getNewArrivals = async (
+    filters: any = {},
+    skip = 0,
+    limit = 10
+) => {
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
+    const query: any = {
+        createdAt: { $gte: fifteenDaysAgo }, // Only books from last 15 days
+    };
+
+    // Text search
+    if (filters.keyword) {
+        query.$text = { $search: filters.keyword };
+    }
+
+    // Premium filter
+    if (filters.isPremium !== undefined) {
+        query.isPremium = filters.isPremium;
+    }
+
+    // Category filter
+    if (filters.category) {
+        query.category = filters.category;
+    }
+
+    // Sort by newest first
+    return infinitePaginate(AudioBook, query, skip, limit, []);
+};
+
+/* GET MOST POPULAR AUDIOBOOKS - Based on soldCount */
+const getMostPopularAudioBooks = async (
+    filters: any = {},
+    skip = 0,
+    limit = 10
+) => {
+    const query: any = {
+        soldCount: { $gt: 0 }, // Only books with at least 1 sale
+    };
+
+    // Text search
+    if (filters.keyword) {
+        query.$text = { $search: filters.keyword };
+    }
+
+    // Premium filter
+    if (filters.isPremium !== undefined) {
+        query.isPremium = filters.isPremium;
+    }
+
+    // Category filter
+    if (filters.category) {
+        query.category = filters.category;
+    }
+
+    // Sort by soldCount descending (most sold first)
+    return infinitePaginate(AudioBook, query, skip, limit, []);
+};
+
+/* GET RECOMMENDED AUDIOBOOKS - Based on user's purchase history or preferences */
+// const getRecommendedAudioBooks = async (
+//     userId: string,
+//     filters: any = {},
+//     skip = 0,
+//     limit = 10
+// ) => {
+//     const user = await User.findById(userId).populate('purchasedBooks');
+
+//     if (!user) {
+//         throw new AppError(httpStatus.NOT_FOUND, "User not found");
+//     }
+
+//     const purchasedCategories = user.purchasedBooks?.map(
+//         (book: any) => book.category
+//     ) || [];
+
+//     const purchasedAuthors = user.purchasedBooks?.map(
+//         (book: any) => book.author
+//     ) || [];
+
+//     const query: any = {
+//         $or: [
+//             { category: { $in: purchasedCategories } },
+//             { author: { $in: purchasedAuthors } },
+//         ],
+//         _id: { $nin: user.purchasedBooks?.map((b: any) => b._id) || [] }, 
+//     };
+
+//     if (filters.keyword) {
+//         query.$text = { $search: filters.keyword };
+//     }
+
+//     if (filters.isPremium !== undefined) {
+//         query.isPremium = filters.isPremium;
+//     }
+
+//     return infinitePaginate(AudioBook, query, skip, limit, []);
+// };
+
 
 /* GET SINGLE AUDIOBOOK */
 const getSingleAudioBook = async (audioBookId: string) => {
@@ -131,6 +253,8 @@ const deleteAudioBook = async (audioBookId: string) => {
 export const AudioBookServices = {
     addAudioBook,
     getAllAudioBooks,
+    getNewArrivals,
+    getMostPopularAudioBooks,
     getSingleAudioBook,
     updateAudioBook,
     deleteAudioBook,

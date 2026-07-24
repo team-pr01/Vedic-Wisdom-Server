@@ -14,7 +14,9 @@ router.post(
     AudioBookControllers.addAudioBook
 );
 
-router.get("/", AudioBookControllers.getAllAudioBooks);
+router.get("/other", AudioBookControllers.getAllAudioBooks);
+router.get("/new-arrivals", AudioBookControllers.getNewArrivals);
+router.get("/popular", AudioBookControllers.getMostPopularAudioBooks);
 
 router.get("/:audioBookId", AudioBookControllers.getSingleAudioBook);
 

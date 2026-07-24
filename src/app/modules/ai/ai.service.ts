@@ -156,13 +156,7 @@ const generateRecipe = async (query: string) => {
     messages: [
       {
         role: "system",
-        content: `You are a professional chef with expertise in global cuisines. 
-                 Provide detailed recipes with:
-                 - Clear instructions
-                 - Preparation time
-                 - Cooking time
-                 - Serving size
-                 - Tips/variations when applicable`,
+        content: `You are a Vedic chef specializing in traditional Vedic and Ayurvedic recipes...`,
       },
       {
         role: "user",
@@ -172,8 +166,11 @@ const generateRecipe = async (query: string) => {
     temperature: 0.7,
     max_tokens: 1000,
   });
+  
+  const message = response.choices[0]?.message?.content;
 
-  return response.choices[0]?.message?.content || "Could not generate recipe";
+
+  return message || "Could not generate recipe";
 };
 
 // const generateQuiz = async (title: string) => {

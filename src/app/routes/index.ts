@@ -105,11 +105,11 @@ const moduleRoutes = [
     route: VendorRoutes,
   },
   {
-    path: "/audioBook",
+    path: "/audio-book",
     route: AudioBookRoutes,
   },
   {
-    path: "/audioTracks",
+    path: "/audio-track",
     route: AudioTracksRoutes,
   },
   {
