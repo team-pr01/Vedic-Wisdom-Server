@@ -3,7 +3,6 @@ import httpStatus from "http-status";
 import { User } from "../auth/auth.model";
 import AppError from "../../errors/AppError";
 import Referral from "./referral.model";
-import CoinTransaction from "./coinTransaction/coinTransaction.model";
 import { generateUniqueReferralCode } from "../../utils/generateReferralCode";
 import { infinitePaginate } from "../../utils/infinitePaginate";
 import { Types } from "mongoose";
@@ -67,16 +66,16 @@ const handleReferralReward = async (
         coins = 5;
     }
 
-    if (coins > 0) {
-        referrer.coins += coins;
+    // if (coins > 0) {
+    //     referrer.coins += coins;
 
-        await CoinTransaction.create({
-            userId: referrer._id,
-            coins,
-            type: "REFERRAL",
-            referenceId: referral._id,
-        });
-    }
+    //     await CoinTransaction.create({
+    //         userId: referrer._id,
+    //         coins,
+    //         type: "REFERRAL",
+    //         referenceId: referral._id,
+    //     });
+    // }
 
     await referrer.save();
 
@@ -121,7 +120,7 @@ const getAllReferralsOfAnUser = async (
 
 /* Get My Coin Transactions */
 const getMyCoins = async (userId: string) => {
-    return CoinTransaction.find({ userId }).sort({ createdAt: -1 });
+    // return CoinTransaction.find({ userId }).sort({ createdAt: -1 });
 };
 
 export const ReferralServices = {

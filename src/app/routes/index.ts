@@ -33,6 +33,7 @@ import { QuizRoutes } from "../modules/quiz/quiz.route";
 import { MessageRoutes } from "../modules/message/message.route";
 import { ChatRoutes } from "../modules/chat/chat.route";
 import { CoinPackageRoutes } from "../modules/coin/coinPackage/coinPackage.route";
+import { CoinTransactionRoutes } from "../modules/coin/coinTransaction/coinTransaction.route";
 
 const router = Router();
 
@@ -172,6 +173,10 @@ const moduleRoutes = [
   {
     path: "/coin-package",
     route: CoinPackageRoutes,
+  },
+  {
+    path: "/coin-transaction",
+    route: CoinTransactionRoutes,
   },
 ];
 

@@ -19,9 +19,6 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://brighttuitioncare.com",
-      "https://www.brighttuitioncare.com",
-      "https://bright-tuition-care.vercel.app",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -31,7 +28,7 @@ app.use(
 
 // Root route
 app.get("/", (req, res) => {
-  res.send("Welcome to Bright Tuition Care! Api is up and running.");
+  res.send("Welcome to Vedic Wisdom! Api is up and running.");
 });
 
 // Application routes
