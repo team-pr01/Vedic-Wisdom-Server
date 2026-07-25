@@ -118,6 +118,7 @@ const getAllAudioTracksOfABook = async (
 
   return {
     audioBookName: audioBook?.name,
+    isPremium : audioBook?.isPremium,
     tracks,
   };
 };

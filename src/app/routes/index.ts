@@ -32,6 +32,7 @@ import { SubscriptionRoutes } from "../modules/subscriptionService/subscription/
 import { QuizRoutes } from "../modules/quiz/quiz.route";
 import { MessageRoutes } from "../modules/message/message.route";
 import { ChatRoutes } from "../modules/chat/chat.route";
+import { CoinPackageRoutes } from "../modules/coin/coinPackage/coinPackage.route";
 
 const router = Router();
 
@@ -167,6 +168,10 @@ const moduleRoutes = [
   {
     path: "/message",
     route: MessageRoutes,
+  },
+  {
+    path: "/coin-package",
+    route: CoinPackageRoutes,
   },
 ];
 
