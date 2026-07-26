@@ -48,6 +48,7 @@ export type TUser = {
   referralCount: number;
   premiumUnlocked: boolean;
   coins: number;
+  preferredLanguage?: string;
 };
 
 export interface UserModel extends Model<TUser> {

@@ -34,6 +34,7 @@ import { MessageRoutes } from "../modules/message/message.route";
 import { ChatRoutes } from "../modules/chat/chat.route";
 import { CoinPackageRoutes } from "../modules/coin/coinPackage/coinPackage.route";
 import { CoinTransactionRoutes } from "../modules/coin/coinTransaction/coinTransaction.route";
+import { SavedItemRoutes } from "../modules/savedItem/savedBook.routes";
 
 const router = Router();
 
@@ -177,6 +178,10 @@ const moduleRoutes = [
   {
     path: "/coin-transaction",
     route: CoinTransactionRoutes,
+  },
+  {
+    path: "/saved-item",
+    route: SavedItemRoutes,
   },
 ];
 

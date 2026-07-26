@@ -106,7 +106,7 @@ const userSchema = new Schema<TUser, UserModel>(
       required: false,
     },
 
-    plan : {
+    plan: {
       type: String,
       default: "free",
     },
@@ -134,6 +134,9 @@ const userSchema = new Schema<TUser, UserModel>(
     premiumUnlocked: {
       type: Boolean,
       default: false,
+    },
+    preferredLanguage: {
+      type: String
     },
     coins: {
       type: Number,
