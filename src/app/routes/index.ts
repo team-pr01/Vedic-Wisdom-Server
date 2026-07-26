@@ -35,6 +35,7 @@ import { ChatRoutes } from "../modules/chat/chat.route";
 import { CoinPackageRoutes } from "../modules/coin/coinPackage/coinPackage.route";
 import { CoinTransactionRoutes } from "../modules/coin/coinTransaction/coinTransaction.route";
 import { SavedItemRoutes } from "../modules/savedItem/savedBook.routes";
+import { AudioBookPurchaseRoutes } from "../modules/audioBookPurchase/audioBookPurchase.routes";
 
 const router = Router();
 
@@ -114,6 +115,10 @@ const moduleRoutes = [
   {
     path: "/audio-track",
     route: AudioTracksRoutes,
+  },
+  {
+    path: "/audio-book-purchase",
+    route: AudioBookPurchaseRoutes,
   },
   {
     path: "/book",

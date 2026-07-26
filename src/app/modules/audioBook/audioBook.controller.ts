@@ -129,8 +129,6 @@ const getSingleAudioBook = catchAsync(async (req, res) => {
   });
 });
 
-
-
 /* UPDATE */
 const updateAudioBook = catchAsync(async (req, res) => {
 
@@ -149,7 +147,6 @@ const updateAudioBook = catchAsync(async (req, res) => {
     data: result,
   });
 });
-
 
 
 /* DELETE */

@@ -5,6 +5,7 @@ export type TAudioBook = {
   description: string;
   soldCount : number;
   isPremium: boolean;
+  coinPrice: number;
 
   createdAt?: Date;
   updatedAt?: Date;

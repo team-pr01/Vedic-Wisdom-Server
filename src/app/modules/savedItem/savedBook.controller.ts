@@ -59,11 +59,9 @@ const getMySavedItems = catchAsync(async (req, res) => {
 // Get all saved items count
 const getSavedCount = catchAsync(async (req, res) => {
     const userId = req.user.userId;
-    const { itemType } = req.params;
 
     const result = await SavedItemServices.getSavedCount(
-        userId,
-        itemType as string,
+        userId
     );
 
     sendResponse(res, {

@@ -27,7 +27,7 @@ const audioBookSchema = new Schema<TAudioBook>(
       required: true,
     },
 
-    soldCount : {
+    soldCount: {
       type: Number,
       default: 0,
     },
@@ -36,6 +36,14 @@ const audioBookSchema = new Schema<TAudioBook>(
       type: Boolean,
       default: false,
       index: true,
+    },
+
+    coinPrice: {
+      type: Number,
+      required: function (this: TAudioBook) {
+        return this.isPremium === true;
+      },
+      min: 0,
     },
   },
   { timestamps: true }

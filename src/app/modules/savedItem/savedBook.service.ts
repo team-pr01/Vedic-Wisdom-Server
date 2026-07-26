@@ -54,7 +54,7 @@ const unsaveItem = async (userId: string, itemId: string, itemType: string) => {
 // Get all saved items of a user
 const getMySavedItems = async (userId: string, itemType?: string, skip = 0, limit = 10) => {
     const query: any = { userId };
-    if (itemType) {
+    if (itemType && itemType !== "") {
         query.itemType = itemType;
     }
 
@@ -98,8 +98,14 @@ const getMySavedItems = async (userId: string, itemType?: string, skip = 0, limi
 };
 
 // Get saved count for an item
-const getSavedCount = async (userId: string, itemType: string) => {
-    return await SavedItem.countDocuments({ userId, itemType });
+const getSavedCount = async (userId: string) => {
+    const savedBooksCount = await SavedItem.countDocuments({ userId, itemType: "book" });
+    const savedAudioBooksCount = await SavedItem.countDocuments({ userId, itemType: "audioBook" });
+
+    return {
+        savedBooksCount,
+        savedAudioBooksCount,
+    };
 };
 
 export const SavedItemServices = {

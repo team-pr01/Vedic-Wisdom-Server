@@ -24,7 +24,7 @@ router.get(
 );
 
 router.get(
-  "/saved-item-count/:itemType",
+  "/saved-item-count",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
   SavedItemControllers.getSavedCount
 );
