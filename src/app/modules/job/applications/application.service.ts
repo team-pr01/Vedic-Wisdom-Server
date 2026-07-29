@@ -28,7 +28,7 @@ const applyOnJob = async (
   // Update Job counters
   await Job.findByIdAndUpdate(jobId, {
     $inc: { applicationCount: 1 },
-    $push: { applications: application._id },
+    $push: { applications: userId },
   });
 
   return application;
@@ -200,6 +200,23 @@ const getSingleApplicationById = async (id: string) => {
   return result;
 };
 
+const getMyApplications = async (userId: string, skip = 0, limit = 10) => {
+  const query = { userId };
+
+  const result = await infinitePaginate(Application, query, skip, limit, [
+    {
+      path: "jobId",
+      select: "title company location jobType salary status",
+      populate: {
+        path: "company",
+        select: "name logo",
+      },
+    },
+  ]);
+
+  return result;
+};
+
 /* Update Status */
 const updateStatus = async (
   applicationId: string,
@@ -277,6 +294,7 @@ export const ApplicationServices = {
   getAllApplications,
   getApplicationsByJobId,
   getSingleApplicationById,
+  getMyApplications,
   updateStatus,
   deleteApplication,
 };

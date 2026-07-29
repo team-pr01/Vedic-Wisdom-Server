@@ -36,6 +36,7 @@ import { CoinPackageRoutes } from "../modules/coin/coinPackage/coinPackage.route
 import { CoinTransactionRoutes } from "../modules/coin/coinTransaction/coinTransaction.route";
 import { SavedItemRoutes } from "../modules/savedItem/savedBook.routes";
 import { AudioBookPurchaseRoutes } from "../modules/audioBookPurchase/audioBookPurchase.routes";
+import { VedicKnowledgeRoutes } from "../modules/rag/vedicKnowledge/vedicKnowledge.routes";
 
 const router = Router();
 
@@ -187,6 +188,10 @@ const moduleRoutes = [
   {
     path: "/saved-item",
     route: SavedItemRoutes,
+  },
+  {
+    path: "/vedic-knowledge",
+    route: VedicKnowledgeRoutes,
   },
 ];
 

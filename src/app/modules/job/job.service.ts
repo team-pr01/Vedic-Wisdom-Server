@@ -13,12 +13,12 @@ const postJob = async (
     user: any,
     file: Express.Multer.File | undefined,
 ) => {
-    if (typeof payload?.individual === "string") {
-        payload.individual = JSON.parse(payload?.individual);
-    }
-
     if (typeof payload?.company === "string") {
         payload.company = JSON.parse(payload?.company);
+    }
+
+    if (typeof payload?.salary === "string") {
+        payload.salary = JSON.parse(payload?.salary);
     }
 
     let uploadedUrl = "";
@@ -33,17 +33,10 @@ const postJob = async (
     }
 
     // Attach file based on hiring type
-    if (payload.hiringType === "company") {
+    if (payload.company) {
         payload.company = {
             ...payload.company,
             logo: uploadedUrl,
-        };
-    }
-
-    if (payload.hiringType === "individual") {
-        payload.individual = {
-            ...payload.individual,
-            identityDocument: uploadedUrl,
         };
     }
 
@@ -54,8 +47,6 @@ const postJob = async (
 };
 
 /* Get All Jobs */
-// job.service.ts
-
 const getAllJobs = async (
     filters: any = {},
     skip = 0,
@@ -90,10 +81,10 @@ const getAllJobs = async (
 
     // Job Type (handle array or single value)
     if (filters.jobType) {
-        const jobTypes = typeof filters.jobType === 'string' 
+        const jobTypes = typeof filters.jobType === 'string'
             ? filters.jobType.split(',').map((item: string) => item.trim())
             : filters.jobType;
-        
+
         if (jobTypes.length === 1) {
             query.jobType = jobTypes[0];
         } else if (jobTypes.length > 1) {
@@ -103,10 +94,10 @@ const getAllJobs = async (
 
     // Work Mode (handle array or single value)
     if (filters.workMode) {
-        const workModes = typeof filters.workMode === 'string' 
+        const workModes = typeof filters.workMode === 'string'
             ? filters.workMode.split(',').map((item: string) => item.trim())
             : filters.workMode;
-        
+
         if (workModes.length === 1) {
             query.workMode = workModes[0];
         } else if (workModes.length > 1) {
@@ -116,10 +107,10 @@ const getAllJobs = async (
 
     // Experience Level (handle array or single value)
     if (filters.experienceLevel) {
-        const experienceLevels = typeof filters.experienceLevel === 'string' 
+        const experienceLevels = typeof filters.experienceLevel === 'string'
             ? filters.experienceLevel.split(',').map((item: string) => item.trim())
             : filters.experienceLevel;
-        
+
         if (experienceLevels.length === 1) {
             query.experienceLevel = experienceLevels[0];
         } else if (experienceLevels.length > 1) {
@@ -129,10 +120,10 @@ const getAllJobs = async (
 
     // Category (handle array or single value)
     if (filters.category) {
-        const categories = typeof filters.category === 'string' 
+        const categories = typeof filters.category === 'string'
             ? filters.category.split(',').map((item: string) => item.trim())
             : filters.category;
-        
+
         if (categories.length === 1) {
             query.category = categories[0];
         } else if (categories.length > 1) {
@@ -181,14 +172,8 @@ const updateJob = async (
         uploadedUrl = secure_url;
     }
 
-    // ✅ Update nested image safely
     if (uploadedUrl) {
-        if (existing.hiringType === "company") {
-            payload["company.logo"] = uploadedUrl;
-        }
-        if (existing.hiringType === "individual") {
-            payload["individual.identityDocument"] = uploadedUrl;
-        }
+        payload["company.logo"] = uploadedUrl;
     }
 
     const result = await Job.findByIdAndUpdate(jobId, payload, {

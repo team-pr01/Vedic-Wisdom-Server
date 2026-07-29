@@ -106,6 +106,28 @@ const getSingleApplicationById = catchAsync(async (req, res) => {
   });
 });
 
+// Get My Applications
+const getMyApplications = catchAsync(async (req, res) => {
+  const userId = req.user.userId;
+  const { skip = "0", limit = "10" } = req.query;
+
+  const result = await ApplicationServices.getMyApplications(
+    userId,
+    Number(skip),
+    Number(limit)
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "My applications fetched successfully",
+    data: {
+      applications: result.data,
+      meta: result.meta,
+    },
+  });
+});
+
 // Update Status
 const updateStatus = catchAsync(async (req, res) => {
   const { applicationId } = req.params;
@@ -152,6 +174,7 @@ export const ApplicationControllers = {
   getAllApplications,
   getApplicationsByJobId,
   getSingleApplicationById,
+  getMyApplications,
   updateStatus,
   deleteApplication,
 };

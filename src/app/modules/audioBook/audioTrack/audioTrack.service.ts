@@ -118,7 +118,8 @@ const getAllAudioTracksOfABook = async (
 
   return {
     audioBookName: audioBook?.name,
-    isPremium : audioBook?.isPremium,
+    isPremium: audioBook?.isPremium,
+    coinPrice: audioBook?.coinPrice,
     tracks,
   };
 };

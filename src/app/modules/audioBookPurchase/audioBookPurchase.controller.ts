@@ -83,9 +83,27 @@ const getPurchaseById = catchAsync(async (req, res) => {
   });
 });
 
+// Check if user owns an audio book
+const checkOwnership = catchAsync(async (req, res) => {
+  const { audioBookId } = req.params;
+  const userId = req.user.userId;
+
+  const hasPurchased = await AudioBookPurchaseServices.checkOwnership(
+    userId,
+    audioBookId
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    data: { hasPurchased },
+  });
+});
+
 export const AudioBookPurchaseControllers = {
   purchaseAudioBook,
   getMyPurchasedAudioBooks,
   getAllPurchases,
   getPurchaseById,
+  checkOwnership,
 };

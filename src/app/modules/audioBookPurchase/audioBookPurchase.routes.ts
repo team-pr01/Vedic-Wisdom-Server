@@ -25,6 +25,12 @@ router.get(
 );
 
 router.get(
+    "/check/:audioBookId",
+    auth(UserRole.user, UserRole.admin, UserRole.moderator),
+    AudioBookPurchaseControllers.checkOwnership
+);
+
+router.get(
     "/:purchaseId",
     auth(UserRole.admin, UserRole.moderator),
     AudioBookPurchaseControllers.getPurchaseById

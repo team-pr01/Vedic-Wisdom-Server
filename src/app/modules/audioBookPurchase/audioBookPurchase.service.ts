@@ -68,7 +68,7 @@ const getMyPurchasedAudioBooks = async (userId: string, skip = 0, limit = 10) =>
     const result = await infinitePaginate(AudioBookPurchase, query, skip, limit, [
         {
             path: "audioBookId",
-            select: "name thumbnailUrl category description",
+            select: "name thumbnailUrl category description coinPrice",
         },
     ]);
 
@@ -106,9 +106,15 @@ const getPurchaseById = async (purchaseId: string) => {
     return result;
 };
 
+const checkOwnership = async (userId: string, audioBookId: string) => {
+  const purchase = await AudioBookPurchase.findOne({ userId, audioBookId });
+  return !!purchase;
+};
+
 export const AudioBookPurchaseServices = {
     purchaseAudioBook,
     getMyPurchasedAudioBooks,
     getAllPurchases,
     getPurchaseById,
+    checkOwnership
 };

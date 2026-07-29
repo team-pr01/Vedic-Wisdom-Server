@@ -26,6 +26,13 @@ router.get(
   ApplicationControllers.getAllApplications
 );
 
+// Get My Applications
+router.get(
+  "/my",
+  auth(UserRole.user),
+  ApplicationControllers.getMyApplications
+);
+
 // Get Single
 router.get(
   "/:applicationId",
