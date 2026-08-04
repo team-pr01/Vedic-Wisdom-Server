@@ -144,6 +144,9 @@ const userSchema = new mongoose_1.Schema({
         type: Boolean,
         default: false,
     },
+    preferredLanguage: {
+        type: String
+    },
     coins: {
         type: Number,
         default: 0,

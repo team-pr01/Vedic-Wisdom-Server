@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/modules/rag/vedicKnowledge/vedicKnowledge.controller.ts
-
 import httpStatus from "http-status";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
@@ -8,13 +6,8 @@ import { VedicKnowledgeServices } from "./vedicKnowledge.service";
 import { IRAGQuery } from "../rag.types";
 import { validateRAGFile } from "../../../config/multerRAG.config";
 
-// ==================== DOCUMENT MANAGEMENT ====================
-
-/**
- * Upload and process a new Vedic document
- */
+//Upload and process a new Vedic document
 const uploadDocument = catchAsync(async (req, res) => {
-    const userId = req.user.userId;
     const file = req.file;
 
     // Validate file
@@ -83,7 +76,7 @@ const uploadDocument = catchAsync(async (req, res) => {
         return sendResponse(res, {
             statusCode: httpStatus.BAD_REQUEST,
             success: false,
-            message: "Category is required. Choose from: scriptures, vedic_recipes, ayurveda, vedic_books, spiritual_discourses, puranas, upanishads, mantras, yoga, meditation, vedic_astrology",
+            message: "Category is required.",
             data: null,
         });
     }
@@ -93,7 +86,6 @@ const uploadDocument = catchAsync(async (req, res) => {
         payload,
         file.buffer,
         file.mimetype,
-        userId
     );
 
     sendResponse(res, {
@@ -104,9 +96,7 @@ const uploadDocument = catchAsync(async (req, res) => {
     });
 });
 
-/**
- * Get all documents with filters
- */
+//Get all documents with filters
 const getAllDocuments = catchAsync(async (req, res) => {
     const {
         category,
@@ -136,9 +126,7 @@ const getAllDocuments = catchAsync(async (req, res) => {
     });
 });
 
-/**
- * Get single document by ID
- */
+//Get single document by ID
 const getDocumentById = catchAsync(async (req, res) => {
     const { documentId } = req.params;
     const result = await VedicKnowledgeServices.getDocumentById(documentId);
@@ -151,9 +139,7 @@ const getDocumentById = catchAsync(async (req, res) => {
     });
 });
 
-/**
- * Update document
- */
+//Update document
 const updateDocument = catchAsync(async (req, res) => {
     const { documentId } = req.params;
     const payload = req.body;
@@ -168,9 +154,7 @@ const updateDocument = catchAsync(async (req, res) => {
     });
 });
 
-/**
- * Delete document
- */
+//Delete document
 const deleteDocument = catchAsync(async (req, res) => {
     const { documentId } = req.params;
     const result = await VedicKnowledgeServices.deleteDocument(documentId);
@@ -183,11 +167,7 @@ const deleteDocument = catchAsync(async (req, res) => {
     });
 });
 
-// ==================== RAG QUERY ====================
-
-/**
- * Ask a question to the Vedic knowledge base
- */
+//Ask a question to the Vedic knowledge base
 const askQuestion = catchAsync(async (req, res) => {
     const query: IRAGQuery = {
         question: req.body.question,
@@ -216,9 +196,7 @@ const askQuestion = catchAsync(async (req, res) => {
     });
 });
 
-/**
- * Rate the helpfulness of an answer
- */
+//Rate the helpfulness of an answer
 const rateAnswer = catchAsync(async (req, res) => {
     const { documentId } = req.params;
     const { rating } = req.body;
@@ -232,8 +210,6 @@ const rateAnswer = catchAsync(async (req, res) => {
         data: {},
     });
 });
-
-// ==================== EXPORTS ====================
 
 export const VedicKnowledgeControllers = {
     uploadDocument,

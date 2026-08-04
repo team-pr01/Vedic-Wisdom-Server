@@ -12,14 +12,31 @@ const audioBookSchema = new mongoose_1.Schema({
         trim: true,
         index: true,
     },
+    category: {
+        type: String,
+        required: true,
+        trim: true,
+        index: true,
+    },
     description: {
         type: String,
         required: true,
+    },
+    soldCount: {
+        type: Number,
+        default: 0,
     },
     isPremium: {
         type: Boolean,
         default: false,
         index: true,
+    },
+    coinPrice: {
+        type: Number,
+        required: function () {
+            return this.isPremium === true;
+        },
+        min: 0,
     },
 }, { timestamps: true });
 /* TEXT SEARCH */

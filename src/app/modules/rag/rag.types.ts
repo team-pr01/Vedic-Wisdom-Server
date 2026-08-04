@@ -1,11 +1,14 @@
-// src/modules/rag/rag.types.ts
 
 export interface IRAGQuery {
   question: string;
-  language?: "en" | "hi" | "sa";
+  language?: string;
   category?: string;
   maxResults?: number;
   minRelevanceScore?: number;
+  history?: {
+    role: "user" | "assistant";
+    content: string;
+  }[];
 }
 
 export interface IRAGResponse {
@@ -25,6 +28,7 @@ export interface IRAGSource {
   chapter?: string;
   verseNumber?: string;
   source?: string;
+  url?: string;
 }
 
 export interface IDocumentProcessingResult {

@@ -18,7 +18,6 @@ const http_status_1 = __importDefault(require("http-status"));
 const auth_model_1 = require("../auth/auth.model");
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const referral_model_1 = __importDefault(require("./referral.model"));
-const coinTransaction_model_1 = __importDefault(require("./coinTransaction/coinTransaction.model"));
 const generateReferralCode_1 = require("../../utils/generateReferralCode");
 const infinitePaginate_1 = require("../../utils/infinitePaginate");
 const mongoose_1 = require("mongoose");
@@ -63,15 +62,15 @@ const handleReferralReward = (newUserId, referralCode) => __awaiter(void 0, void
     else if (referrer.referralCount > 2) {
         coins = 5;
     }
-    if (coins > 0) {
-        referrer.coins += coins;
-        yield coinTransaction_model_1.default.create({
-            userId: referrer._id,
-            coins,
-            type: "REFERRAL",
-            referenceId: referral._id,
-        });
-    }
+    // if (coins > 0) {
+    //     referrer.coins += coins;
+    //     await CoinTransaction.create({
+    //         userId: referrer._id,
+    //         coins,
+    //         type: "REFERRAL",
+    //         referenceId: referral._id,
+    //     });
+    // }
     yield referrer.save();
     return referral;
 });
@@ -101,7 +100,7 @@ const getAllReferralsOfAnUser = (userId_1, ...args_1) => __awaiter(void 0, [user
 });
 /* Get My Coin Transactions */
 const getMyCoins = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    return coinTransaction_model_1.default.find({ userId }).sort({ createdAt: -1 });
+    // return CoinTransaction.find({ userId }).sort({ createdAt: -1 });
 });
 exports.ReferralServices = {
     generateReferralCode,

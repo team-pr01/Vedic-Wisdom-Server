@@ -85,6 +85,8 @@ const getAllAudioTracksOfABook = (audioBookId) => __awaiter(void 0, void 0, void
         .sort({ order: 1 });
     return {
         audioBookName: audioBook === null || audioBook === void 0 ? void 0 : audioBook.name,
+        isPremium: audioBook === null || audioBook === void 0 ? void 0 : audioBook.isPremium,
+        coinPrice: audioBook === null || audioBook === void 0 ? void 0 : audioBook.coinPrice,
         tracks,
     };
 });

@@ -1,5 +1,3 @@
-// src/modules/rag/vedicKnowledge/vedicKnowledge.routes.ts
-
 import express from "express";
 import auth from "../../../middlewares/auth";
 import { VedicKnowledgeControllers } from "./vedicKnowledge.controller";
@@ -64,7 +62,7 @@ router.post(
 
 // Rate answer helpfulness
 router.post(
-    "/:documentId/rate",
+    "/rate/:documentId",
     auth(UserRole.admin, UserRole.moderator, UserRole.user),
     VedicKnowledgeControllers.rateAnswer
 );

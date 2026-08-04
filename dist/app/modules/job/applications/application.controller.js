@@ -83,6 +83,21 @@ const getSingleApplicationById = (0, catchAsync_1.default)((req, res) => __await
         data: result,
     });
 }));
+// Get My Applications
+const getMyApplications = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = req.user.userId;
+    const { skip = "0", limit = "10" } = req.query;
+    const result = yield application_service_1.ApplicationServices.getMyApplications(userId, Number(skip), Number(limit));
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "My applications fetched successfully",
+        data: {
+            applications: result.data,
+            meta: result.meta,
+        },
+    });
+}));
 // Update Status
 const updateStatus = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { applicationId } = req.params;
@@ -114,6 +129,7 @@ exports.ApplicationControllers = {
     getAllApplications,
     getApplicationsByJobId,
     getSingleApplicationById,
+    getMyApplications,
     updateStatus,
     deleteApplication,
 };

@@ -30,21 +30,65 @@ const addAudioBook = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
 }));
 /* GET ALL */
 const getAllAudioBooks = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { keyword, isPremium, skip = "0", limit = "10", } = req.query;
-    const filters = {
-        keyword,
-        isPremium: isPremium === undefined
-            ? undefined
-            : isPremium === "true",
-    };
-    const result = yield audioBook_service_1.AudioBookServices.getAllAudioBooks(filters, Number(skip), Number(limit));
+    const { keyword, isPremium, category, skip = "0", limit = "10" } = req.query;
+    const result = yield audioBook_service_1.AudioBookServices.getAllAudioBooks({ keyword, isPremium, category }, Number(skip), Number(limit));
     (0, sendResponse_1.default)(res, {
-        success: true,
         statusCode: http_status_1.default.OK,
-        message: "AudioBooks fetched successfully",
-        data: result,
+        success: true,
+        message: "All audio books fetched successfully",
+        data: {
+            audioBooks: result.data,
+            meta: result.meta,
+        },
     });
 }));
+/* GET NEW ARRIVALS */
+const getNewArrivals = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { keyword, isPremium, category, skip = "0", limit = "10" } = req.query;
+    const result = yield audioBook_service_1.AudioBookServices.getNewArrivals({ keyword, isPremium, category }, Number(skip), Number(limit));
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "New arrivals fetched successfully",
+        data: {
+            audioBooks: result.data,
+            meta: result.meta,
+        },
+    });
+}));
+/* GET MOST POPULAR AUDIOBOOKS */
+const getMostPopularAudioBooks = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { keyword, isPremium, category, skip = "0", limit = "10" } = req.query;
+    const result = yield audioBook_service_1.AudioBookServices.getMostPopularAudioBooks({ keyword, isPremium, category }, Number(skip), Number(limit));
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Most popular audio books fetched successfully",
+        data: {
+            audioBooks: result.data,
+            meta: result.meta,
+        },
+    });
+}));
+/* GET RECOMMENDED AUDIOBOOKS */
+// const getRecommendedAudioBooks = catchAsync(async (req, res) => {
+//   const { keyword, isPremium, skip = "0", limit = "10" } = req.query;
+//   const result = await AudioBookServices.getRecommendedAudioBooks(
+//     req.user._id,
+//     { keyword, isPremium },
+//     Number(skip),
+//     Number(limit)
+//   );
+//   sendResponse(res, {
+//     statusCode: httpStatus.OK,
+//     success: true,
+//     message: "Recommended audio books fetched successfully",
+//     data: {
+//       audioBooks: result.data,
+//       meta: result.meta,
+//     },
+//   });
+// });
 /* GET SINGLE */
 const getSingleAudioBook = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield audioBook_service_1.AudioBookServices.getSingleAudioBook(req.params.audioBookId);
@@ -79,6 +123,8 @@ const deleteAudioBook = (0, catchAsync_1.default)((req, res) => __awaiter(void 0
 exports.AudioBookControllers = {
     addAudioBook,
     getAllAudioBooks,
+    getNewArrivals,
+    getMostPopularAudioBooks,
     getSingleAudioBook,
     updateAudioBook,
     deleteAudioBook,

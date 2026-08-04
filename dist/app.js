@@ -13,15 +13,12 @@ const app = (0, express_1.default)();
 // Enable cookie parsing
 app.use((0, cookie_parser_1.default)());
 // Middleware for parsing JSON bodies
-app.use(express_1.default.json({ limit: "10mb" }));
-app.use(express_1.default.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express_1.default.json({ limit: "50mb" }));
+app.use(express_1.default.urlencoded({ extended: true, limit: "50mb" }));
 // app.use(express.static("./uploads"));
 app.use((0, cors_1.default)({
     origin: [
         "http://localhost:5173",
-        "https://brighttuitioncare.com",
-        "https://www.brighttuitioncare.com",
-        "https://bright-tuition-care.vercel.app",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -29,7 +26,7 @@ app.use((0, cors_1.default)({
 }));
 // Root route
 app.get("/", (req, res) => {
-    res.send("Welcome to Bright Tuition Care! Api is up and running.");
+    res.send("Welcome to Vedic Wisdom! Api is up and running.");
 });
 // Application routes
 app.use("/api/v1", routes_1.default);

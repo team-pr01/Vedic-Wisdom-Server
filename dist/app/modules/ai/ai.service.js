@@ -143,13 +143,7 @@ const generateRecipe = (query) => __awaiter(void 0, void 0, void 0, function* ()
         messages: [
             {
                 role: "system",
-                content: `You are a professional chef with expertise in global cuisines. 
-                 Provide detailed recipes with:
-                 - Clear instructions
-                 - Preparation time
-                 - Cooking time
-                 - Serving size
-                 - Tips/variations when applicable`,
+                content: `You are a Vedic chef specializing in traditional Vedic and Ayurvedic recipes...`,
             },
             {
                 role: "user",
@@ -159,7 +153,8 @@ const generateRecipe = (query) => __awaiter(void 0, void 0, void 0, function* ()
         temperature: 0.7,
         max_tokens: 1000,
     });
-    return ((_b = (_a = response.choices[0]) === null || _a === void 0 ? void 0 : _a.message) === null || _b === void 0 ? void 0 : _b.content) || "Could not generate recipe";
+    const message = (_b = (_a = response.choices[0]) === null || _a === void 0 ? void 0 : _a.message) === null || _b === void 0 ? void 0 : _b.content;
+    return message || "Could not generate recipe";
 });
 // const generateQuiz = async (title: string) => {
 //   const response = await openai.chat.completions.create({

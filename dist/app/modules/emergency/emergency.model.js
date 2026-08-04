@@ -6,6 +6,10 @@ const EmergencySchema = new mongoose_1.Schema({
         type: mongoose_1.Schema.Types.ObjectId,
         ref: "User",
     },
+    name: {
+        type: String,
+        required: true,
+    },
     phoneNumber: {
         type: String,
         required: true,

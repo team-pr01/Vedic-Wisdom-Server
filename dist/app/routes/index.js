@@ -25,7 +25,7 @@ const bookText_route_1 = require("../modules/book/texts/bookText.route");
 const reportMantra_route_1 = require("../modules/book/reportMantra/reportMantra.route");
 const categories_route_1 = require("../modules/categories/categories.route");
 const popup_route_1 = require("../modules/popup/popup.route");
-const donationPrograms_route_1 = require("../modules/donationPrograms/donationPrograms.route");
+const project_route_1 = require("../modules/project/project.route");
 const consultants_route_1 = require("../modules/consultancyService/consultants/consultants.route");
 const consultations_route_1 = require("../modules/consultancyService/consultations/consultations.route");
 const reels_route_1 = require("../modules/reels/reels.route");
@@ -34,6 +34,12 @@ const subscription_routes_1 = require("../modules/subscriptionService/subscripti
 const quiz_route_1 = require("../modules/quiz/quiz.route");
 const message_route_1 = require("../modules/message/message.route");
 const chat_route_1 = require("../modules/chat/chat.route");
+const coinPackage_route_1 = require("../modules/coin/coinPackage/coinPackage.route");
+const coinTransaction_route_1 = require("../modules/coin/coinTransaction/coinTransaction.route");
+const savedBook_routes_1 = require("../modules/savedItem/savedBook.routes");
+const audioBookPurchase_routes_1 = require("../modules/audioBookPurchase/audioBookPurchase.routes");
+const vedicKnowledge_routes_1 = require("../modules/rag/vedicKnowledge/vedicKnowledge.routes");
+const chat_routes_1 = require("../modules/rag/chat/chat.routes");
 const router = (0, express_1.Router)();
 const moduleRoutes = [
     {
@@ -105,12 +111,16 @@ const moduleRoutes = [
         route: vendor_route_1.VendorRoutes,
     },
     {
-        path: "/audioBook",
+        path: "/audio-book",
         route: audioBook_route_1.AudioBookRoutes,
     },
     {
-        path: "/audioTracks",
+        path: "/audio-track",
         route: audiotracks_route_1.AudioTracksRoutes,
+    },
+    {
+        path: "/audio-book-purchase",
+        route: audioBookPurchase_routes_1.AudioBookPurchaseRoutes,
     },
     {
         path: "/book",
@@ -137,8 +147,8 @@ const moduleRoutes = [
         route: popup_route_1.PopupRoutes,
     },
     {
-        path: "/donation-program",
-        route: donationPrograms_route_1.DonationProgramRoutes,
+        path: "/project",
+        route: project_route_1.ProjectRoutes,
     },
     {
         path: "/consultant",
@@ -167,6 +177,26 @@ const moduleRoutes = [
     {
         path: "/message",
         route: message_route_1.MessageRoutes,
+    },
+    {
+        path: "/coin-package",
+        route: coinPackage_route_1.CoinPackageRoutes,
+    },
+    {
+        path: "/coin-transaction",
+        route: coinTransaction_route_1.CoinTransactionRoutes,
+    },
+    {
+        path: "/saved-item",
+        route: savedBook_routes_1.SavedItemRoutes,
+    },
+    {
+        path: "/ai-chat",
+        route: chat_routes_1.AIChatRoutes,
+    },
+    {
+        path: "/vedic-knowledge",
+        route: vedicKnowledge_routes_1.VedicKnowledgeRoutes,
     },
 ];
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

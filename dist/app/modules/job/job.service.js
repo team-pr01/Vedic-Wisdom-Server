@@ -23,11 +23,11 @@ const sendImageToCloudinary_1 = require("../../utils/sendImageToCloudinary");
 const application_model_1 = __importDefault(require("./applications/application.model"));
 /* Post Job */
 const postJob = (payload, user, file) => __awaiter(void 0, void 0, void 0, function* () {
-    if (typeof (payload === null || payload === void 0 ? void 0 : payload.individual) === "string") {
-        payload.individual = JSON.parse(payload === null || payload === void 0 ? void 0 : payload.individual);
-    }
     if (typeof (payload === null || payload === void 0 ? void 0 : payload.company) === "string") {
         payload.company = JSON.parse(payload === null || payload === void 0 ? void 0 : payload.company);
+    }
+    if (typeof (payload === null || payload === void 0 ? void 0 : payload.salary) === "string") {
+        payload.salary = JSON.parse(payload === null || payload === void 0 ? void 0 : payload.salary);
     }
     let uploadedUrl = "";
     // Upload to Cloudinary
@@ -38,11 +38,8 @@ const postJob = (payload, user, file) => __awaiter(void 0, void 0, void 0, funct
         uploadedUrl = secure_url;
     }
     // Attach file based on hiring type
-    if (payload.hiringType === "company") {
+    if (payload.company) {
         payload.company = Object.assign(Object.assign({}, payload.company), { logo: uploadedUrl });
-    }
-    if (payload.hiringType === "individual") {
-        payload.individual = Object.assign(Object.assign({}, payload.individual), { identityDocument: uploadedUrl });
     }
     payload.postedBy = user === null || user === void 0 ? void 0 : user.userId;
     const result = yield job_model_1.default.create(payload);
@@ -61,27 +58,63 @@ const getAllJobs = (...args_1) => __awaiter(void 0, [...args_1], void 0, functio
     }
     // City
     if (filters.city) {
-        query["location.city"] = filters.city.trim();
+        query["location.city"] = { $regex: filters.city.trim(), $options: "i" };
     }
     // State
     if (filters.state) {
-        query["location.state"] = filters.state.trim();
+        query["location.state"] = { $regex: filters.state.trim(), $options: "i" };
     }
     // Country
     if (filters.country) {
-        query["location.country"] = filters.country.trim();
+        query["location.country"] = { $regex: filters.country.trim(), $options: "i" };
     }
-    // Job Type
+    // Job Type (handle array or single value)
     if (filters.jobType) {
-        query.jobType = filters.jobType;
+        const jobTypes = typeof filters.jobType === 'string'
+            ? filters.jobType.split(',').map((item) => item.trim())
+            : filters.jobType;
+        if (jobTypes.length === 1) {
+            query.jobType = jobTypes[0];
+        }
+        else if (jobTypes.length > 1) {
+            query.jobType = { $in: jobTypes };
+        }
     }
-    // Work Mode
+    // Work Mode (handle array or single value)
     if (filters.workMode) {
-        query.workMode = filters.workMode;
+        const workModes = typeof filters.workMode === 'string'
+            ? filters.workMode.split(',').map((item) => item.trim())
+            : filters.workMode;
+        if (workModes.length === 1) {
+            query.workMode = workModes[0];
+        }
+        else if (workModes.length > 1) {
+            query.workMode = { $in: workModes };
+        }
     }
-    // Experience Level
+    // Experience Level (handle array or single value)
     if (filters.experienceLevel) {
-        query.experienceLevel = filters.experienceLevel;
+        const experienceLevels = typeof filters.experienceLevel === 'string'
+            ? filters.experienceLevel.split(',').map((item) => item.trim())
+            : filters.experienceLevel;
+        if (experienceLevels.length === 1) {
+            query.experienceLevel = experienceLevels[0];
+        }
+        else if (experienceLevels.length > 1) {
+            query.experienceLevel = { $in: experienceLevels };
+        }
+    }
+    // Category (handle array or single value)
+    if (filters.category) {
+        const categories = typeof filters.category === 'string'
+            ? filters.category.split(',').map((item) => item.trim())
+            : filters.category;
+        if (categories.length === 1) {
+            query.category = categories[0];
+        }
+        else if (categories.length > 1) {
+            query.category = { $in: categories };
+        }
     }
     return (0, infinitePaginate_1.infinitePaginate)(job_model_1.default, query, skip, limit, [] // populate array if needed later
     );
@@ -109,14 +142,8 @@ const updateJob = (jobId, payload, file) => __awaiter(void 0, void 0, void 0, fu
         const { secure_url } = yield (0, sendImageToCloudinary_1.sendImageToCloudinary)(imageName, path);
         uploadedUrl = secure_url;
     }
-    // ✅ Update nested image safely
     if (uploadedUrl) {
-        if (existing.hiringType === "company") {
-            payload["company.logo"] = uploadedUrl;
-        }
-        if (existing.hiringType === "individual") {
-            payload["individual.identityDocument"] = uploadedUrl;
-        }
+        payload["company.logo"] = uploadedUrl;
     }
     const result = yield job_model_1.default.findByIdAndUpdate(jobId, payload, {
         new: true,

@@ -37,6 +37,7 @@ import { CoinTransactionRoutes } from "../modules/coin/coinTransaction/coinTrans
 import { SavedItemRoutes } from "../modules/savedItem/savedBook.routes";
 import { AudioBookPurchaseRoutes } from "../modules/audioBookPurchase/audioBookPurchase.routes";
 import { VedicKnowledgeRoutes } from "../modules/rag/vedicKnowledge/vedicKnowledge.routes";
+import { AIChatRoutes } from "../modules/rag/chat/chat.routes";
 
 const router = Router();
 
@@ -188,6 +189,10 @@ const moduleRoutes = [
   {
     path: "/saved-item",
     route: SavedItemRoutes,
+  },
+  {
+    path: "/ai-chat",
+    route: AIChatRoutes,
   },
   {
     path: "/vedic-knowledge",

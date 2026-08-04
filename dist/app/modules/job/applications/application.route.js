@@ -15,6 +15,8 @@ router.post("/apply", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_c
 router.patch("/withdraw/:applicationId", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), application_controller_1.ApplicationControllers.withdrawApplication);
 // Get All
 router.get("/", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), application_controller_1.ApplicationControllers.getAllApplications);
+// Get My Applications
+router.get("/my", (0, auth_1.default)(auth_constants_1.UserRole.user), application_controller_1.ApplicationControllers.getMyApplications);
 // Get Single
 router.get("/:applicationId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator, auth_constants_1.UserRole.user), application_controller_1.ApplicationControllers.getSingleApplicationById);
 router.get("/job/:jobId", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), application_controller_1.ApplicationControllers.getApplicationsByJobId);

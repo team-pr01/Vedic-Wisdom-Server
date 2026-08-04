@@ -35,7 +35,7 @@ const applyOnJob = (payload, userId) => __awaiter(void 0, void 0, void 0, functi
     // Update Job counters
     yield job_model_1.default.findByIdAndUpdate(jobId, {
         $inc: { applicationCount: 1 },
-        $push: { applications: application._id },
+        $push: { applications: userId },
     });
     return application;
 });
@@ -165,6 +165,20 @@ const getSingleApplicationById = (id) => __awaiter(void 0, void 0, void 0, funct
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Not found");
     return result;
 });
+const getMyApplications = (userId_1, ...args_1) => __awaiter(void 0, [userId_1, ...args_1], void 0, function* (userId, skip = 0, limit = 10) {
+    const query = { userId };
+    const result = yield (0, infinitePaginate_1.infinitePaginate)(application_model_1.default, query, skip, limit, [
+        {
+            path: "jobId",
+            select: "title company location jobType salary status",
+            populate: {
+                path: "company",
+                select: "name logo",
+            },
+        },
+    ]);
+    return result;
+});
 /* Update Status */
 const updateStatus = (applicationId, status, userId, userRole) => __awaiter(void 0, void 0, void 0, function* () {
     const app = yield application_model_1.default.findById(applicationId);
@@ -218,6 +232,7 @@ exports.ApplicationServices = {
     getAllApplications,
     getApplicationsByJobId,
     getSingleApplicationById,
+    getMyApplications,
     updateStatus,
     deleteApplication,
 };

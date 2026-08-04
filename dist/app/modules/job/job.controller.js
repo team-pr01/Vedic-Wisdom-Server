@@ -31,7 +31,7 @@ const postJob = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0
 }));
 // Get All Jobs
 const getAllJobs = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { keyword, status, city, state, country, jobType, workMode, experienceLevel, skip = "0", limit = "10", } = req.query;
+    const { keyword, status, city, state, country, jobType, workMode, experienceLevel, category, skip = "0", limit = "10", } = req.query;
     const filters = {
         keyword: keyword,
         status: status,
@@ -41,6 +41,7 @@ const getAllJobs = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, voi
         jobType: jobType,
         workMode: workMode,
         experienceLevel: experienceLevel,
+        category: category,
     };
     const result = yield job_service_1.JobServices.getAllJobs(filters, Number(skip), Number(limit));
     (0, sendResponse_1.default)(res, {

@@ -31,17 +31,109 @@ const addAudioBook = (payload, file) => __awaiter(void 0, void 0, void 0, functi
     const audioBook = yield audioBook_model_1.default.create(Object.assign(Object.assign({}, payload), { thumbnailUrl }));
     return audioBook;
 });
-/* GET ALL AUDIOBOOKS */
+/* GET ALL AUDIOBOOKS (Excluding New Arrivals & Most Popular) */
 const getAllAudioBooks = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (filters = {}, skip = 0, limit = 10) {
     const query = {};
+    // Exclude books that are in "new arrivals" (last 15 days)
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+    // Exclude new arrivals (created within last 15 days)
+    query.$and = [
+        { createdAt: { $lt: fifteenDaysAgo } }, // Not new arrival
+        {
+            $or: [
+                { soldCount: { $eq: 0 } } // Or soldCount is 0
+            ]
+        }
+    ];
+    // Text search
     if (filters.keyword) {
         query.$text = { $search: filters.keyword };
     }
+    // Premium filter
     if (filters.isPremium !== undefined) {
         query.isPremium = filters.isPremium;
     }
+    // Category filter
+    if (filters.category) {
+        query.category = filters.category;
+    }
     return (0, infinitePaginate_1.infinitePaginate)(audioBook_model_1.default, query, skip, limit);
 });
+/* GET NEW ARRIVALS - Books added in the last 15 days */
+const getNewArrivals = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (filters = {}, skip = 0, limit = 10) {
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+    const query = {
+        createdAt: { $gte: fifteenDaysAgo }, // Only books from last 15 days
+    };
+    // Text search
+    if (filters.keyword) {
+        query.$text = { $search: filters.keyword };
+    }
+    // Premium filter
+    if (filters.isPremium !== undefined) {
+        query.isPremium = filters.isPremium;
+    }
+    // Category filter
+    if (filters.category) {
+        query.category = filters.category;
+    }
+    // Sort by newest first
+    return (0, infinitePaginate_1.infinitePaginate)(audioBook_model_1.default, query, skip, limit, []);
+});
+/* GET MOST POPULAR AUDIOBOOKS - Based on soldCount */
+const getMostPopularAudioBooks = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (filters = {}, skip = 0, limit = 10) {
+    const query = {
+        soldCount: { $gt: 0 }, // Only books with at least 1 sale
+    };
+    // Text search
+    if (filters.keyword) {
+        query.$text = { $search: filters.keyword };
+    }
+    // Premium filter
+    if (filters.isPremium !== undefined) {
+        query.isPremium = filters.isPremium;
+    }
+    // Category filter
+    if (filters.category) {
+        query.category = filters.category;
+    }
+    // Sort by soldCount descending (most sold first)
+    return (0, infinitePaginate_1.infinitePaginate)(audioBook_model_1.default, query, skip, limit, []);
+});
+/* GET RECOMMENDED AUDIOBOOKS - Based on user's purchase history or preferences */
+// const getRecommendedAudioBooks = async (
+//     userId: string,
+//     filters: any = {},
+//     skip = 0,
+//     limit = 10
+// ) => {
+//     const user = await User.findById(userId).populate('purchasedBooks');
+//     if (!user) {
+//         throw new AppError(httpStatus.NOT_FOUND, "User not found");
+//     }
+//     const purchasedCategories = user.purchasedBooks?.map(
+//         (book: any) => book.category
+//     ) || [];
+//     const purchasedAuthors = user.purchasedBooks?.map(
+//         (book: any) => book.author
+//     ) || [];
+//     const query: any = {
+//         $or: [
+//             { category: { $in: purchasedCategories } },
+//             { author: { $in: purchasedAuthors } },
+//         ],
+//         _id: { $nin: user.purchasedBooks?.map((b: any) => b._id) || [] }, 
+//     };
+//     if (filters.keyword) {
+//         query.$text = { $search: filters.keyword };
+//     }
+//     if (filters.isPremium !== undefined) {
+//         query.isPremium = filters.isPremium;
+//     }
+//     return infinitePaginate(AudioBook, query, skip, limit, []);
+// };
 /* GET SINGLE AUDIOBOOK */
 const getSingleAudioBook = (audioBookId) => __awaiter(void 0, void 0, void 0, function* () {
     const book = yield audioBook_model_1.default.findById(audioBookId);
@@ -85,6 +177,8 @@ const deleteAudioBook = (audioBookId) => __awaiter(void 0, void 0, void 0, funct
 exports.AudioBookServices = {
     addAudioBook,
     getAllAudioBooks,
+    getNewArrivals,
+    getMostPopularAudioBooks,
     getSingleAudioBook,
     updateAudioBook,
     deleteAudioBook,

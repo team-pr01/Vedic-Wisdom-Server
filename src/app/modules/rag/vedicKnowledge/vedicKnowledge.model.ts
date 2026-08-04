@@ -4,7 +4,7 @@
 // ==================== IMPORTS ====================
 import { Schema, Types, model } from "mongoose";
 import { IVedicDocument, IVedicTranslation } from "./vedicKnowledge.interface";
-import crypto from "crypto"; // ✅ Import crypto properly at top
+import crypto from "crypto";
 
 // ==================== TRANSLATION SCHEMA ====================
 const VedicTranslationSchema = new Schema<IVedicTranslation>(
@@ -12,10 +12,9 @@ const VedicTranslationSchema = new Schema<IVedicTranslation>(
     title: { type: String, required: true },
     content: { type: String, required: true },
     summary: { type: String },
-    language: { 
-      type: String, 
-      enum: ["en", "hi", "sa"], 
-      required: true 
+    language: {
+      type: String,
+      required: true
     },
   },
   { _id: false }
@@ -24,80 +23,69 @@ const VedicTranslationSchema = new Schema<IVedicTranslation>(
 // ==================== MAIN DOCUMENT SCHEMA ====================
 const VedicDocumentSchema = new Schema<IVedicDocument>(
   {
-    title: { 
-      type: String, 
-      required: true, 
-      index: true,
-      trim: true 
-    },
-    category: { 
-      type: String, 
-      enum: [
-        "scriptures", "vedic_recipes", "ayurveda", "vedic_books",
-        "spiritual_discourses", "puranas", "upanishads", "mantras",
-        "yoga", "meditation", "vedic_astrology"
-      ],
+    title: {
+      type: String,
       required: true,
-      index: true 
+      index: true,
+      trim: true
+    },
+    category: {
+      type: String,
+      required: true,
+      index: true
     },
     subCategory: { type: String, trim: true },
-    
-    content: { 
-      type: String, 
-      required: true 
+
+    content: {
+      type: String,
+      required: true
     },
-    contentHash: { 
-      type: String, 
+    contentHash: {
+      type: String,
       unique: true, // Prevents duplicate uploads
-      required: true 
+      required: true
     },
-    
+
     translations: {
       type: Map,
       of: VedicTranslationSchema,
     },
-    
+
     author: { type: String, trim: true },
     source: { type: String, trim: true },
     publishedDate: { type: Date },
     tags: { type: [String], default: [], index: true },
-    
-    scriptureType: { 
+
+    scriptureType: {
       type: String
     },
     chapter: { type: String, trim: true },
     verseNumber: { type: String, trim: true },
-    
+
     // 🔥 CRITICAL: Vector embedding field for Atlas Vector Search
-    embedding: { 
-      type: [Number], 
+    embedding: {
+      type: [Number],
       required: true,
-      default: [] 
+      default: []
     },
-    
+
     chunkMetadata: {
       chunkIndex: { type: Number, required: true },
       totalChunks: { type: Number, required: true },
-      parentDocumentId: { 
-        type: Types.ObjectId, 
-        ref: "VedicDocument" 
+      parentDocumentId: {
+        type: Types.ObjectId,
+        ref: "VedicDocument"
       },
     },
-    
+
     totalQueries: { type: Number, default: 0 },
     helpfulRatings: { type: Number, default: 0 },
     averageHelpfulness: { type: Number, default: 0 },
-    
-    isActive: { type: Boolean, default: true, index: true },
+
     isFeatured: { type: Boolean, default: false, index: true },
     processedAt: { type: Date, default: Date.now },
-    processedBy: { 
-      type: Types.ObjectId, 
-      ref: "User", 
-      required: true 
-    },
   },
-  { 
+  {
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
@@ -143,20 +131,20 @@ db.vedicdocuments.createSearchIndex({
 
 // ==================== VIRTUAL PROPERTIES ====================
 
-VedicDocumentSchema.virtual("isChunk").get(function() {
+VedicDocumentSchema.virtual("isChunk").get(function () {
   return !!this.chunkMetadata?.parentDocumentId;
 });
 
-VedicDocumentSchema.virtual("helpfulnessScore").get(function() {
+VedicDocumentSchema.virtual("helpfulnessScore").get(function () {
   if (this.totalQueries === 0) return 0;
   return this.helpfulRatings / this.totalQueries;
 });
 
 // ==================== PRE-SAVE HOOK ====================
 
-VedicDocumentSchema.pre<IVedicDocument>("save", function(next) {
+VedicDocumentSchema.pre<IVedicDocument>("save", function (next) {
   const doc = this;
-  
+
   // Auto-generate content hash if not provided
   if (!doc.contentHash && doc.content) {
     doc.contentHash = crypto
@@ -164,18 +152,18 @@ VedicDocumentSchema.pre<IVedicDocument>("save", function(next) {
       .update(doc.content)
       .digest("hex");
   }
-  
+
   // Ensure embedding field is initialized
   if (!doc.embedding || doc.embedding.length === 0) {
     doc.embedding = [];
   }
-  
+
   next();
 });
 
 // ==================== POST-SAVE HOOK (for logging) ====================
 
-VedicDocumentSchema.post<IVedicDocument>("save", function(doc) {
+VedicDocumentSchema.post<IVedicDocument>("save", function (doc) {
   // You can add logging or analytics here
   console.log(`📄 Vedic document saved: ${doc.title} (${doc.category})`);
 });
@@ -183,8 +171,8 @@ VedicDocumentSchema.post<IVedicDocument>("save", function(doc) {
 // ==================== STATIC METHODS ====================
 
 // Find similar documents using vector search
-VedicDocumentSchema.statics.findSimilarDocuments = async function(
-  category: string, 
+VedicDocumentSchema.statics.findSimilarDocuments = async function (
+  category: string,
   content: string
 ) {
   // Will be implemented with vector search

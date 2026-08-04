@@ -5,13 +5,13 @@ export interface IVedicTranslation {
     title: string;
     content: string;
     summary?: string;
-    language: "en" | "hi" | "sa"; // English, Hindi, Sanskrit
+    language: string; // English, Hindi, Sanskrit
 }
 
 export interface IVedicDocument extends Document {
     // Core document info
     title: string;
-    category: VedicCategory;
+    category: string;
     subCategory?: string;
 
     // Content
@@ -49,31 +49,17 @@ export interface IVedicDocument extends Document {
     isActive: boolean;
     isFeatured: boolean;
     processedAt: Date;
-    processedBy: ObjectId; // Admin who uploaded
 
     // Timestamps
     createdAt: Date;
     updatedAt: Date;
 }
 
-// Categories specific to your Vedic platform
-export type VedicCategory =
-    | "scriptures"
-    | "vedic_recipes"
-    | "ayurveda"
-    | "vedic_books"
-    | "spiritual_discourses"
-    | "puranas"
-    | "upanishads"
-    | "mantras"
-    | "yoga"
-    | "meditation"
-    | "vedic_astrology";
-
 // For creating new documents
 export interface ICreateVedicDocument {
     title: string;
-    category: VedicCategory;
+    category: string;
+    subCategory ?: string;
     content: string;
     author?: string;
     source?: string;

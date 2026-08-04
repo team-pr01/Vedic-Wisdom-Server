@@ -18,8 +18,6 @@ const http_status_1 = __importDefault(require("http-status"));
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const emergency_model_1 = __importDefault(require("./emergency.model"));
 const emergency_model_2 = __importDefault(require("./emergency.model"));
-const sendSingleNotification_1 = require("../../utils/sendSingleNotification");
-const auth_model_1 = require("../auth/auth.model");
 const sendNotificationToMultipleUsers_1 = require("../../utils/sendNotificationToMultipleUsers");
 const forwardMessageToOthers = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
@@ -44,12 +42,19 @@ const forwardMessageToOthers = (payload) => __awaiter(void 0, void 0, void 0, fu
 const postEmergency = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield emergency_model_2.default.create(payload);
     //FInding Admins and Moderators
-    const adminsAndModerators = yield auth_model_1.User.find({
-        role: { $in: ["admin", "moderator"] },
-    }).select("_id");
+    // const adminsAndModerators = await User.find({
+    //   role: { $in: ["admin", "moderator"] },
+    // }).select("_id");
     // Sending Notification
-    const notificationPromises = adminsAndModerators.map((admin) => (0, sendSingleNotification_1.sendSingleNotification)(admin._id, "Emergency Alert 🚨", `A new emergency has been reported from ${(payload === null || payload === void 0 ? void 0 : payload.location) || ""}.`, `/dashboard/emergency/${result._id}`));
-    yield Promise.all(notificationPromises);
+    // const notificationPromises = adminsAndModerators.map((admin) =>
+    //   sendSingleNotification(
+    //     admin._id as unknown as Types.ObjectId,
+    //     "Emergency Alert 🚨",
+    //     `A new emergency has been reported from ${payload?.location || ""}.`,
+    //     `/dashboard/emergency/${result._id}`
+    //   )
+    // );
+    // await Promise.all(notificationPromises);
     return result;
 });
 // Get all emergency posts with search and filter by status
