@@ -66,8 +66,6 @@ export const processDocument = async (
       RAGConfig.rag.overlapSize
     );
 
-    console.log(`📝 Creating ${chunks.length} chunks for document: ${title}`);
-
     // Process and save all chunks
     const savedChunks: IVedicDocument[] = [];
 
@@ -102,8 +100,6 @@ export const processDocument = async (
       await chunkDoc.save();
       savedChunks.push(chunkDoc);
     }
-
-    console.log(`Successfully saved ${savedChunks.length} chunks for document: ${title}`);
 
     return savedChunks;
   } catch (error) {
@@ -515,8 +511,6 @@ export const answerQuestion = async (query: IRAGQuery): Promise<IRAGResponse> =>
     // 2. Analyze the query using AI
     const analysis = await analyzeUserQuery(query.question, conversationContext);
 
-    console.log('📊 Query Analysis:', analysis);
-
     // 3. Handle Greetings
     if (analysis.isGreeting) {
       return {
@@ -531,17 +525,7 @@ export const answerQuestion = async (query: IRAGQuery): Promise<IRAGResponse> =>
     if (analysis.isAboutAI) {
       return {
         answer: analysis.suggestedResponse || "I am a Vedic knowledge assistant, created to share insights from Hindu scriptures, Vedic philosophy, and spiritual teachings. My purpose is to support your journey of understanding through the wisdom of texts like the Bhagavad Gita, Upanishads, and other sacred writings. How can I assist you today? 🙏",
-        sources: [
-          {
-            documentId: "vedic-wisdom-ai",
-            title: "About Vedic Wisdom AI",
-            category: "AI Information",
-            content: "Vedic Wisdom AI is a knowledge assistant created to share insights from Hindu scriptures, Vedic philosophy, and spiritual teachings.",
-            relevanceScore: 1,
-            url: "https://vedicwisdom.ai/about",
-            source: "Vedic Wisdom",
-          },
-        ],
+        sources: [],
         confidence: 1,
         processingTime: Date.now() - startTime,
       };
@@ -575,23 +559,18 @@ export const answerQuestion = async (query: IRAGQuery): Promise<IRAGResponse> =>
           finalContext = `Previous conversation:\n${conversationContext}\n\nInformation from Vedic texts:\n${searchContext}`;
         }
 
-        // Build sources with URLs from the document
-        const sources = searchResults.map((result) => {
-          // Generate a meaningful URL based on document ID and title
-          const documentUrl = generateDocumentUrl(result._id.toString(), result.title);
-
-          return {
-            documentId: result._id.toString(),
-            title: result.title || "Vedic Text",
-            category: result.category || "Scripture",
-            content: result.content?.slice(0, 500) + "..." || "",
-            relevanceScore: result.score || 0,
-            chapter: result.chapter,
-            verseNumber: result.verseNumber,
-            source: result.source || "Vedic Knowledge Base",
-            url: documentUrl,
-          };
-        });
+        // ✅ Build sources WITHOUT URLs (since it's from Vedic Knowledge DB)
+        const sources = searchResults.map((result) => ({
+          documentId: result._id.toString(),
+          title: result.title || "Vedic Text",
+          category: result.category || "Scripture",
+          content: result.content?.slice(0, 500) + "..." || "",
+          relevanceScore: result.score || 0,
+          chapter: result.chapter,
+          verseNumber: result.verseNumber,
+          source: result.source || "Vedic Knowledge Base",
+          // ❌ NO URL - intentionally omitted
+        }));
 
         const answer = await generateAnswerWithContext(
           query.question,
@@ -609,14 +588,14 @@ export const answerQuestion = async (query: IRAGQuery): Promise<IRAGResponse> =>
           processingTime: Date.now() - startTime,
         };
       } else {
-        // No results in Vedic database - use AI knowledge with REAL SOURCES
+        // ✅ No results in Vedic database - use AI knowledge with REAL SOURCES (with URLs)
         const answer = await generateAIAnswerForHinduTopic(
           query.question,
           query.language || "en",
           conversationContext
         );
 
-        // Get real, verifiable sources
+        // Get real, verifiable sources with URLs
         const sources = getAISourcesForTopic(query.question);
 
         return {
@@ -628,7 +607,7 @@ export const answerQuestion = async (query: IRAGQuery): Promise<IRAGResponse> =>
       }
     }
 
-    // 7. Fallback - use AI knowledge for general questions with real sources
+    // 7. Fallback - use AI knowledge for general questions with real sources (with URLs)
     const answer = await generateAIAnswer(
       query.question,
       query.language || "en"
@@ -643,7 +622,7 @@ export const answerQuestion = async (query: IRAGQuery): Promise<IRAGResponse> =>
           category: "AI Knowledge",
           content: "Based on AI's training data and general knowledge",
           relevanceScore: 0.2,
-          url: "https://www.wikipedia.org/", // Real source
+          url: "https://www.wikipedia.org/",
           source: "Wikipedia",
         },
       ],
@@ -655,16 +634,6 @@ export const answerQuestion = async (query: IRAGQuery): Promise<IRAGResponse> =>
     console.error("❌ Error answering question:", error);
     throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to process your query");
   }
-};
-
-// Generate a meaningful URL for a document
-const generateDocumentUrl = (documentId: string, title: string): string => {
-  const baseUrl = "https://vedicwisdom.ai/knowledge";
-  const slug = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return `${baseUrl}/${slug}-${documentId.slice(-6)}`;
 };
 
 // Generate AI Answer for Hindu Topics with source
