@@ -20,6 +20,8 @@ app.use(express_1.default.urlencoded({ extended: true, limit: "50mb" }));
 app.use((0, cors_1.default)({
     origin: [
         "http://localhost:5173",
+        "https://vedic-wisdom-virid.vercel.app", // Client
+        "https://vedic-wisdom-dashboard.vercel.app", // Admin
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

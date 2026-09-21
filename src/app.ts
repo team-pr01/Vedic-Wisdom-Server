@@ -21,6 +21,8 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
+      "https://vedic-wisdom-virid.vercel.app", // Client
+      "https://vedic-wisdom-dashboard.vercel.app", // Admin
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
