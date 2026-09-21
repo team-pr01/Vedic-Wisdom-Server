@@ -1,0 +1,21 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AiRoutes = void 0;
+const express_1 = __importDefault(require("express"));
+const ai_controller_1 = require("./ai.controller");
+const auth_1 = __importDefault(require("../../middlewares/auth"));
+const auth_constants_1 = require("../auth/auth.constants");
+const checkLimit_1 = require("../../middlewares/checkLimit");
+const router = express_1.default.Router();
+router.post("/chat", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), checkLimit_1.checkAiChatLimit, ai_controller_1.AiControllers.aiChat);
+router.post("/translate-shloka", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), ai_controller_1.AiControllers.translateShloka);
+router.post("/generate-recipe", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), checkLimit_1.checkAiRecipesLimit, ai_controller_1.AiControllers.generateRecipe);
+router.post("/generate-quiz", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), ai_controller_1.AiControllers.generateQuiz);
+router.post("/translate-news", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), ai_controller_1.AiControllers.translateNews);
+router.post("/generate-kundli", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), checkLimit_1.checkKundliLimit, ai_controller_1.AiControllers.generateKundli);
+router.post("/generate-muhurta", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), checkLimit_1.checkMuhurtaLimit, ai_controller_1.AiControllers.generateMuhurta);
+router.post("/generate-vastu", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), checkLimit_1.checkVastuAiLimit, ai_controller_1.AiControllers.generateVastuAnalysis);
+exports.AiRoutes = router;
