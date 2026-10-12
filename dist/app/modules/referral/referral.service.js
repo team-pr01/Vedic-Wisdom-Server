@@ -82,7 +82,7 @@ const getMyReferrals = (userId) => __awaiter(void 0, void 0, void 0, function* (
     const result = yield referral_model_1.default.find(query)
         .populate({
         path: "referredUser",
-        select: "name profilePicture",
+        select: "name email referralCode profilePicture",
     })
         .sort({ createdAt: -1 });
     return result;
@@ -95,7 +95,7 @@ const getAllReferralsOfAnUser = (userId_1, ...args_1) => __awaiter(void 0, [user
     return (0, infinitePaginate_1.infinitePaginate)(referral_model_1.default, query, skip, limit, [
         {
             path: "referredUser",
-            select: "name profilePicture",
+            select: "name email referralCode profilePicture",
         },
     ]);
 });
