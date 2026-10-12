@@ -12,20 +12,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.infinitePaginate = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const infinitePaginate = (model_1, query_1, skip_1, limit_1, ...args_1) => __awaiter(void 0, [model_1, query_1, skip_1, limit_1, ...args_1], void 0, function* (model, query, skip, limit, populate = []) {
-    const baseQuery = {};
     let dbQuery = model.find(query);
     populate.forEach((pop) => {
         dbQuery = dbQuery.populate(pop);
     });
-    const [data, total, filteredTotal] = yield Promise.all([
+    const [data, filteredTotal] = yield Promise.all([
         dbQuery.skip(skip).limit(limit).sort({ createdAt: -1 }),
-        model.countDocuments(baseQuery),
         model.countDocuments(query),
     ]);
     return {
         data,
         meta: {
-            total,
             filteredTotal,
             skip,
             limit,

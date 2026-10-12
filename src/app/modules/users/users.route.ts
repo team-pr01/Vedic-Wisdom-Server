@@ -56,7 +56,7 @@ router.patch(
 
 router.patch(
   "/delete-account",
-  auth(UserRole.user, UserRole.moderator, UserRole.user),
+  auth(UserRole.user, UserRole.moderator, UserRole.admin),
   UserControllers.deleteAccount
 );
 
