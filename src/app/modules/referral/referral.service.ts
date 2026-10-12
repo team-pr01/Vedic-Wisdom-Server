@@ -93,7 +93,7 @@ const getMyReferrals = async (
   const result = await Referral.find(query)
     .populate({
       path: "referredUser",
-      select: "name profilePicture",
+      select: "name email referralCode profilePicture",
     })
     .sort({ createdAt: -1 });
 
@@ -113,7 +113,7 @@ const getAllReferralsOfAnUser = async (
   return infinitePaginate(Referral, query, skip, limit, [
     {
       path: "referredUser",
-      select: "name profilePicture",
+      select: "name email referralCode profilePicture",
     },
   ]);
 };
