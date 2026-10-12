@@ -53,6 +53,11 @@ const userSchema = new Schema<TUser, UserModel>(
       required: false,
       trim: true,
     },
+    pinCode: {
+      type: String,
+      required: false,
+      trim: true,
+    },
     country: {
       type: String,
       required: false,

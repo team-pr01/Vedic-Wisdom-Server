@@ -17,6 +17,7 @@ export type TUser = {
   phoneNumber: string;
   city?: string;
   state?: string;
+  pinCode?: string;
   country?: string;
   address?: string;
   password: string;

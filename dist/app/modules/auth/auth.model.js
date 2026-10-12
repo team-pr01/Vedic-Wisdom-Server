@@ -65,6 +65,11 @@ const userSchema = new mongoose_1.Schema({
         required: false,
         trim: true,
     },
+    pinCode: {
+        type: String,
+        required: false,
+        trim: true,
+    },
     country: {
         type: String,
         required: false,
