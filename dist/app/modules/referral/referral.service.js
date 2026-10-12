@@ -83,8 +83,7 @@ const getMyReferrals = (userId) => __awaiter(void 0, void 0, void 0, function* (
         .populate({
         path: "referredUser",
         select: "name email referralCode profilePicture",
-    })
-        .sort({ createdAt: -1 });
+    });
     return result;
 });
 /* Get All Referrals of An User */

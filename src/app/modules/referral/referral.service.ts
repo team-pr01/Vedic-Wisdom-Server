@@ -94,8 +94,7 @@ const getMyReferrals = async (
     .populate({
       path: "referredUser",
       select: "name email referralCode profilePicture",
-    })
-    .sort({ createdAt: -1 });
+    });
 
   return result;
 };
