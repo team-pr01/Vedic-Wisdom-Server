@@ -17,11 +17,9 @@ const generateReferralCode = catchAsync(async (req, res) => {
 });
 
 const getMyReferrals = catchAsync(async (req, res) => {
-  const { skip = "0", limit = "10" } = req.query;
   const userId = req.user.userId;
 
-  const result = await ReferralServices.getMyReferrals(userId, Number(skip),
-    Number(limit));
+  const result = await ReferralServices.getMyReferrals(userId);
 
   sendResponse(res, {
     success: true,

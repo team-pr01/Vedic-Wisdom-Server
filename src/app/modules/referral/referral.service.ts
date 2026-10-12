@@ -9,95 +9,95 @@ import { Types } from "mongoose";
 
 /* Generate Referral Code */
 const generateReferralCode = async (userId: string) => {
-    const user = await User.findById(userId);
+  const user = await User.findById(userId);
 
-    if (!user) {
-        throw new AppError(httpStatus.NOT_FOUND, "User not found");
-    }
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
 
-    if (user?.referralCode) {
-        return user?.referralCode;
-    }
+  if (user?.referralCode) {
+    return user?.referralCode;
+  }
 
-    const code = await generateUniqueReferralCode();
+  const code = await generateUniqueReferralCode();
 
-    user.referralCode = code;
+  user.referralCode = code;
 
-    await user.save();
+  await user.save();
 
-    return code;
+  return code;
 };
 
 /* Handle Referral During Signup */
 const handleReferralReward = async (
-    newUserId: string,
-    referralCode: string
+  newUserId: string,
+  referralCode: string
 ) => {
 
-    const referrer = await User.findOne({ referralCode });
+  const referrer = await User.findOne({ referralCode });
 
-    if (!referrer) return null;
+  if (!referrer) return null;
 
-    if (referrer._id.toString() === newUserId) {
-        throw new AppError(httpStatus.BAD_REQUEST, "Self referral not allowed");
-    }
+  if (referrer._id.toString() === newUserId) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Self referral not allowed");
+  }
 
-    // get current referral count for rank
-    const referralCount = await Referral.countDocuments({
-        referrer: referrer._id,
-    });
+  // get current referral count for rank
+  const referralCount = await Referral.countDocuments({
+    referrer: referrer._id,
+  });
 
-    const rank = referralCount + 1;
+  const rank = referralCount + 1;
 
-    const referral = await Referral.create({
-        referrer: referrer._id,
-        referredUser: newUserId,
-        rank,
-    });
+  const referral = await Referral.create({
+    referrer: referrer._id,
+    referredUser: newUserId,
+    rank,
+  });
 
-    referrer.referralCount += 1;
+  referrer.referralCount += 1;
 
-    let coins = 0;
+  // let coins = 0;
 
-    if (referrer.referralCount === 2) {
-        coins = 10;
-        referrer.premiumUnlocked = true;
-    } else if (referrer.referralCount > 2) {
-        coins = 5;
-    }
+  if (referrer.referralCount === 2) {
+    // coins = 10;
+    referrer.premiumUnlocked = true;
+  } else if (referrer.referralCount > 2) {
+    // coins = 5;
+  }
 
-    // if (coins > 0) {
-    //     referrer.coins += coins;
+  // if (coins > 0) {
+  //     referrer.coins += coins;
 
-    //     await CoinTransaction.create({
-    //         userId: referrer._id,
-    //         coins,
-    //         type: "REFERRAL",
-    //         referenceId: referral._id,
-    //     });
-    // }
+  //     await CoinTransaction.create({
+  //         userId: referrer._id,
+  //         coins,
+  //         type: "REFERRAL",
+  //         referenceId: referral._id,
+  //     });
+  // }
 
-    await referrer.save();
+  await referrer.save();
 
-    return referral;
+  return referral;
 };
 
 /* Get My Referrals */
 const getMyReferrals = async (
   userId: string,
-  skip = 0,
-  limit = 10
 ) => {
   const query: any = {
     referrer: new Types.ObjectId(userId),
   };
 
-  return infinitePaginate(Referral, query, skip, limit, [
-    {
+  const result = await Referral.find(query)
+    .populate({
       path: "referredUser",
       select: "name profilePicture",
-    },
-  ]);
+    })
+    .sort({ createdAt: -1 });
+
+  return result;
 };
 
 /* Get All Referrals of An User */
@@ -120,13 +120,13 @@ const getAllReferralsOfAnUser = async (
 
 /* Get My Coin Transactions */
 const getMyCoins = async (userId: string) => {
-    // return CoinTransaction.find({ userId }).sort({ createdAt: -1 });
+  console.log(userId);
 };
 
 export const ReferralServices = {
-    generateReferralCode,
-    handleReferralReward,
-    getMyReferrals,
-    getAllReferralsOfAnUser,
-    getMyCoins,
+  generateReferralCode,
+  handleReferralReward,
+  getMyReferrals,
+  getAllReferralsOfAnUser,
+  getMyCoins,
 };

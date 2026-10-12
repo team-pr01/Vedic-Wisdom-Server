@@ -54,13 +54,13 @@ const handleReferralReward = (newUserId, referralCode) => __awaiter(void 0, void
         rank,
     });
     referrer.referralCount += 1;
-    let coins = 0;
+    // let coins = 0;
     if (referrer.referralCount === 2) {
-        coins = 10;
+        // coins = 10;
         referrer.premiumUnlocked = true;
     }
     else if (referrer.referralCount > 2) {
-        coins = 5;
+        // coins = 5;
     }
     // if (coins > 0) {
     //     referrer.coins += coins;
@@ -75,16 +75,17 @@ const handleReferralReward = (newUserId, referralCode) => __awaiter(void 0, void
     return referral;
 });
 /* Get My Referrals */
-const getMyReferrals = (userId_1, ...args_1) => __awaiter(void 0, [userId_1, ...args_1], void 0, function* (userId, skip = 0, limit = 10) {
+const getMyReferrals = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const query = {
         referrer: new mongoose_1.Types.ObjectId(userId),
     };
-    return (0, infinitePaginate_1.infinitePaginate)(referral_model_1.default, query, skip, limit, [
-        {
-            path: "referredUser",
-            select: "name profilePicture",
-        },
-    ]);
+    const result = yield referral_model_1.default.find(query)
+        .populate({
+        path: "referredUser",
+        select: "name profilePicture",
+    })
+        .sort({ createdAt: -1 });
+    return result;
 });
 /* Get All Referrals of An User */
 const getAllReferralsOfAnUser = (userId_1, ...args_1) => __awaiter(void 0, [userId_1, ...args_1], void 0, function* (userId, skip = 0, limit = 10) {
@@ -100,7 +101,7 @@ const getAllReferralsOfAnUser = (userId_1, ...args_1) => __awaiter(void 0, [user
 });
 /* Get My Coin Transactions */
 const getMyCoins = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    // return CoinTransaction.find({ userId }).sort({ createdAt: -1 });
+    console.log(userId);
 });
 exports.ReferralServices = {
     generateReferralCode,
