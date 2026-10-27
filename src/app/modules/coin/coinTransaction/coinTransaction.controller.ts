@@ -28,16 +28,16 @@ const paymentSuccess = catchAsync(async (req, res) => {
   const tranId = req.query.tran_id as string;
 
   if (!tranId) {
-    return res.redirect(`${config.frontend_url}/coin-transaction/fail?error=Missing transaction ID`);
+    return res.redirect(`${config.frontend_url}/payment/fail?error=Missing transaction ID`);
   }
 
   try {
     await CoinTransactionServices.handlePaymentSuccess(tranId);
     // Redirect to frontend success page
-    res.redirect(`${config.frontend_url}/coin-transaction/success?transactionId=${tranId}`);
+    res.redirect(`${config.frontend_url}/payment/success?transactionId=${tranId}`);
   } catch (error) {
     // Redirect to frontend failure page
-    res.redirect(`${config.frontend_url}/coin-transaction/fail?transactionId=${tranId}`);
+    res.redirect(`${config.frontend_url}/payment/fail?transactionId=${tranId}`);
   }
 });
 
@@ -47,7 +47,7 @@ const paymentFail = catchAsync(async (req, res) => {
   await CoinTransactionServices.handlePaymentFailure(tran_id as string);
 
   // Redirect to frontend failure page
-  res.redirect(`${config.frontend_url}/coin-transaction/fail?transactionId=${tran_id}`);
+  res.redirect(`${config.frontend_url}/payment/fail?transactionId=${tran_id}`);
 });
 
 // Get all transactions (Admin)

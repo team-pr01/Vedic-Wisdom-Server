@@ -38,6 +38,7 @@ import { SavedItemRoutes } from "../modules/savedItem/savedBook.routes";
 import { AudioBookPurchaseRoutes } from "../modules/audioBookPurchase/audioBookPurchase.routes";
 import { VedicKnowledgeRoutes } from "../modules/rag/vedicKnowledge/vedicKnowledge.routes";
 import { AIChatRoutes } from "../modules/rag/chat/chat.routes";
+import { ProjectTransactionRoutes } from "../modules/project/projectTransaction/projectTransaction.route";
 
 const router = Router();
 
@@ -149,6 +150,10 @@ const moduleRoutes = [
   {
     path: "/project",
     route: ProjectRoutes,
+  },
+  {
+    path: "/project-transaction",
+    route: ProjectTransactionRoutes,
   },
   {
     path: "/consultant",

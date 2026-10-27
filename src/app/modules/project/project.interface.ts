@@ -1,11 +1,3 @@
-
-export type TDonor = {
-  name: string;
-  phoneNumber: string;
-  amount: string;
-  donatedAt: Date;
-};
-
 export type TProject = {
   imageUrl?: string;
   title: string;
@@ -15,7 +7,6 @@ export type TProject = {
   currency: string;
   amountNeeded: number;
   amountRaised?: number;
-  donors: TDonor[];
   createdAt?: Date;
   updatedAt?: Date;
 };

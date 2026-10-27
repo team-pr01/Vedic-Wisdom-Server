@@ -1,30 +1,5 @@
-// project.model.ts
 import { Schema, model } from "mongoose";
-import { TDonor, TProject } from "./project.interface";
-
-const DonorSchema = new Schema<TDonor>(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    phoneNumber: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    amount: {
-      type: String,
-      required: true,
-    },
-    donatedAt: {
-      type: Date,
-      default: Date.now,
-    },
-  },
-  { _id: false }
-);
+import { TProject } from "./project.interface";
 
 const ProjectSchema = new Schema<TProject>(
   {
@@ -67,11 +42,6 @@ const ProjectSchema = new Schema<TProject>(
       required: false,
       default: 0,
       min: 0,
-    },
-    donors: {
-      type: [DonorSchema],
-      required: false,
-      default: [],
     },
   },
   {
