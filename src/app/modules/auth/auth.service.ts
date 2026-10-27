@@ -11,6 +11,131 @@ import { createToken } from "./auth.utils";
 import { customUserIdGenerator } from "../../utils/customUserIdGenerator";
 import { generate4DigitsOTP } from "../../utils/generate4DigitsOTP";
 import { ReferralServices } from "../referral/referral.service";
+import admin from "../../config/firebase";
+import { OAuth2Client } from "google-auth-library";
+
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const socialLogin = async (idToken: string, provider: 'google' | 'apple') => {
+  try {
+    let email: string | undefined;
+    let name: string | undefined;
+    let picture: string | undefined;
+
+    // 1. Verify the ID token based on the provider
+    if (provider === 'google') {
+      // ✅ Use Google Auth Library for Google tokens
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+
+      if (payload) {
+        email = payload.email;
+        name = payload.name;
+        picture = payload.picture;
+      }
+    } else if (provider === 'apple') {
+      // ✅ Use Firebase Admin for Apple tokens (keep this for future)
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      email = decodedToken.email;
+      name = decodedToken.name;
+      picture = decodedToken.picture;
+    } else {
+      throw new AppError(httpStatus.BAD_REQUEST, "Invalid provider");
+    }
+
+    if (!email) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Email not provided by provider.");
+    }
+
+    // 2. Check if user exists in your database
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // If user exists but is deleted or suspended, handle it
+      if (user.isDeleted || user.isSuspended) {
+        throw new AppError(httpStatus.FORBIDDEN, "Account is inactive. Please contact support.");
+      }
+
+      // Update last login
+      user.lastLoggedIn = new Date();
+
+      // Optionally update profile picture from provider if missing
+      if (!user.profilePicture && picture) user.profilePicture = picture;
+
+      await user.save();
+    } else {
+      // 3. Create a new user if they don't exist
+      const userId = await customUserIdGenerator();
+
+      // ✅ Generate a random, secure placeholder password since schema requires it
+      const randomPassword = Math.random().toString(36).slice(-10) + "Aa1!@";
+
+      user = await User.create({
+        name: name || email.split('@')[0],
+        email,
+        profilePicture: picture,
+        userId,
+        role: 'user',
+        isDeleted: false,
+        isSuspended: false,
+        isVerified: true, // Social emails are usually pre-verified
+        lastLoggedIn: new Date(),
+
+        // ✅ Pass the random password to satisfy schema validation
+        password: randomPassword,
+
+        // ✅ Explicitly set to undefined/null if your schema requires them
+        phoneNumber: undefined,
+        countryCode: undefined,
+      });
+    }
+
+    // 4. Generate your standard JWT tokens (same as your normal login)
+    const jwtPayload = {
+      userId: user._id.toString(),
+      name: user.name,
+      email: user.email || "",
+      phoneNumber: user.phoneNumber || "", // Ensure this is handled
+      role: user.role,
+    };
+
+    const accessToken = createToken(
+      jwtPayload,
+      config.jwt_access_secret as string,
+      config.jwt_access_expires_in as string
+    );
+
+    const refreshToken = createToken(
+      jwtPayload,
+      config.jwt_refresh_secret as string,
+      config.jwt_refresh_expires_in as string
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profilePicture: user.profilePicture,
+      },
+    };
+
+  } catch (error) {
+    console.error(`${provider} auth error:`, error);
+    if (error instanceof AppError) throw error;
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid social login token.");
+  }
+};
+
+export const googleLogin = (idToken: string) => socialLogin(idToken, 'google');
+export const appleLogin = (idToken: string) => socialLogin(idToken, 'apple');
 
 
 // Signup

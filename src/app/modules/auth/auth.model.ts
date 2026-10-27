@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Schema, model } from "mongoose";
 import bcrypt from "bcrypt";
 import config from "../../config";
@@ -30,12 +31,12 @@ const userSchema = new Schema<TUser, UserModel>(
     },
     countryCode: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
     phoneNumber: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
     address: {
@@ -65,8 +66,17 @@ const userSchema = new Schema<TUser, UserModel>(
     },
     password: {
       type: String,
-      required: true,
+      required: function (this: any) {
+        // Require password only if the user is NOT using a social provider
+        return !this.googleId && !this.appleId;
+      },
       select: false,
+
+    },
+    googleId: {
+      type: String,
+      sparse: true,
+      unique: true,
     },
     role: {
       type: String,

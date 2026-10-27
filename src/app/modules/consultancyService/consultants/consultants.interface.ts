@@ -1,4 +1,3 @@
-
 export type TConsultant = {
   imageUrl?: string;
   name: string;

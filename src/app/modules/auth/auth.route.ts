@@ -38,6 +38,8 @@ router.post(
   AuthControllers.changePassword
 );
 
+router.post('/social-login', AuthControllers.socialLogin);
+
 // router.post("/verify-otp", AuthControllers.verifyOtp);
 // router.post("/resend-otp", AuthControllers.resendOtp);
 

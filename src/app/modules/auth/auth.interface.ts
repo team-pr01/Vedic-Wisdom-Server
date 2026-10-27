@@ -21,6 +21,7 @@ export type TUser = {
   country?: string;
   address?: string;
   password: string;
+  googleId?: string;
   role: "user" | "admin" | "moderator";
   assignedPages?: string[];
   expoPushToken: string;

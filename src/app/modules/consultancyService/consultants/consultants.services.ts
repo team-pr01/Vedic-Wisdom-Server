@@ -45,6 +45,7 @@ const getAllConsultants = async (
     query.$or = [
       { name: { $regex: keyword, $options: "i" } },
       { specialty: { $regex: keyword, $options: "i" } },
+      { category: { $regex: keyword, $options: "i" } },
     ];
   }
 

@@ -24,6 +24,7 @@ const getAllVastus = async (
 
   if (filters.keyword) {
     query.$text = { $search: filters.keyword };
+    
   }
 
   if (filters.category) {

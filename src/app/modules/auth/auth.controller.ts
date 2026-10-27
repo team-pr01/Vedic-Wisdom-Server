@@ -1,9 +1,30 @@
 import httpStatus from "http-status";
-import { AuthServices } from "./auth.service";
+import { appleLogin, AuthServices, googleLogin } from "./auth.service";
 import sendResponse from "../../utils/sendResponse";
 import catchAsync from "../../utils/catchAsync";
 import config from "../../config";
+import AppError from "../../errors/AppError";
 
+
+const socialLogin = catchAsync(async (req, res) => {
+  const { idToken, provider } = req.body; // provider: 'google' | 'apple'
+  
+  let result;
+  if (provider === 'google') {
+    result = await googleLogin(idToken);
+  } else if (provider === 'apple') {
+    result = await appleLogin(idToken);
+  } else {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid provider");
+  }
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Social login successful",
+    data: result,
+  });
+});
 
 // User Signup
 const signup = catchAsync(async (req, res) => {
@@ -112,6 +133,7 @@ const changePassword = catchAsync(async (req, res) => {
 
 
 export const AuthControllers = {
+  socialLogin,
   signup,
   loginUser,
   refreshToken,
