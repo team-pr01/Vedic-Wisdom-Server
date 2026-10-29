@@ -12,6 +12,8 @@ export type TProduct = {
   discountedPrice?: number;
   totalClicks?: number;
   addedBy: ObjectId;
+  status : "pending" | "approved" | "rejected";
+  rejectionReason?: string;
   createdAt?: Date;
   updatedAt?: Date;
 };

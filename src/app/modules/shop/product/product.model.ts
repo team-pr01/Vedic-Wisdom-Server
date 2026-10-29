@@ -58,6 +58,14 @@ const productSchema = new Schema<TProduct>(
       required: true,
       index: true,
     },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending"
+    },
+    rejectionReason: {
+      type: String,
+    },
   },
   {
     timestamps: true,

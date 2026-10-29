@@ -58,7 +58,7 @@ const getAllProducts = async (
     limit = 10
 ) => {
 
-    const query: any = {};
+    const query: any = { status: "approved" };
 
     if (filters.category) {
         query.category = filters.category;
@@ -88,6 +88,7 @@ const getSingleProductById = async (productId: string) => {
 // For Vendor
 const getMyProducts = async (
     userId: string,
+    filters: any = {},
     skip = 0,
     limit = 10
 ) => {
@@ -104,9 +105,19 @@ const getMyProducts = async (
         );
     }
 
-    const query = {
+    const query: any = {
         addedBy: userId,
     };
+
+     if (filters.category) {
+        query.category = filters.category;
+    }
+
+    if (filters.keyword) {
+        query.$text = {
+            $search: filters.keyword,
+        };
+    }
 
     return infinitePaginate(Product, query, skip, limit);
 };

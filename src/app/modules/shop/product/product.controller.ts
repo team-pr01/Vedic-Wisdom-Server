@@ -63,10 +63,16 @@ const getSingleProductById = catchAsync(async (req, res) => {
 // For vendor
 const getMyProducts = catchAsync(async (req, res) => {
 
-  const { skip = "0", limit = "10" } = req.query;
+  const { keyword, category, skip = "0", limit = "10" } = req.query;
+
+  const filters = {
+    keyword: keyword as string,
+    category: category as string,
+  };
 
   const result = await ProductServices.getMyProducts(
     req.user.userId,
+    filters,
     Number(skip),
     Number(limit)
   );

@@ -5,6 +5,8 @@ import AppError from "../../../errors/AppError";
 import { sendImageToCloudinary } from "../../../utils/sendImageToCloudinary";
 import { infinitePaginate } from "../../../utils/infinitePaginate";
 import Product from "../product/product.model";
+import { User } from "../../auth/auth.model";
+import { Types } from "mongoose";
 
 const applyVendor = async (
     user: any,
@@ -96,31 +98,29 @@ const getSingleVendorById = async (vendorId: string,) => {
 
 /* Get All Products of a Vendor */
 const getAllProductsOfAVendor = async (
-  vendorId: string,
-  filters: any = {},
-  skip = 0,
-  limit = 10
+    vendorId: string,
+    filters: any = {},
+    skip = 0,
+    limit = 10
 ) => {
-  const query: any = {
-    addedBy: vendorId,
-  };
-
-  if (filters.status) {
-    query.status = filters.status;
-  }
-
-  if (filters.keyword) {
-    query.$text = {
-      $search: filters.keyword,
+    const query: any = {
+        addedBy: vendorId,
     };
-  }
 
-  return infinitePaginate(Product, query, skip, limit, []);
+    if (filters.status) {
+        query.status = filters.status;
+    }
+
+    if (filters.keyword) {
+        query.$text = {
+            $search: filters.keyword,
+        };
+    }
+
+    return infinitePaginate(Product, query, skip, limit, []);
 };
 
-// For vendors
 const getMyVendorStats = async (userId: string) => {
-
     const vendor = await Vendor.findOne({ userId });
 
     if (!vendor) {
@@ -130,7 +130,7 @@ const getMyVendorStats = async (userId: string) => {
     const stats = await Product.aggregate([
         {
             $match: {
-                vendorId: vendor._id,
+                addedBy: new Types.ObjectId(userId),
             },
         },
         {
@@ -138,16 +138,30 @@ const getMyVendorStats = async (userId: string) => {
                 _id: null,
                 totalProductsCount: { $sum: 1 },
                 totalClicksCount: { $sum: "$totalClicks" },
+                approvedProducts: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", "approved"] }, 1, 0],
+                    },
+                },
+                pendingProducts: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", "pending"] }, 1, 0],
+                    },
+                },
             },
         },
     ]);
 
     const totalProductsCount = stats[0]?.totalProductsCount || 0;
     const totalClicksCount = stats[0]?.totalClicksCount || 0;
+    const approvedProducts = stats[0]?.approvedProducts || 0;
+    const pendingProducts = stats[0]?.pendingProducts || 0;
 
     return {
         totalProductsCount,
         totalClicksCount,
+        approvedProducts,
+        pendingProducts,
     };
 };
 
@@ -157,6 +171,10 @@ const updateVendorStatus = async (vendorId: string, status: string) => {
     if (!vendor) {
         throw new AppError(httpStatus.NOT_FOUND, "Vendor not found");
     };
+
+    if (status === "approved") {
+        await User.findByIdAndUpdate(vendor.userId, { isVendor: true });
+    }
 
     return {};
 };

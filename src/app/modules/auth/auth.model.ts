@@ -156,6 +156,10 @@ const userSchema = new Schema<TUser, UserModel>(
     coins: {
       type: Number,
       default: 0,
+    },
+    isVendor: {
+      type: Boolean,
+      default: false
     }
   },
   {

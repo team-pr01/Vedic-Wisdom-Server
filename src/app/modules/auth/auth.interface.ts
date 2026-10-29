@@ -51,6 +51,7 @@ export type TUser = {
   premiumUnlocked: boolean;
   coins: number;
   preferredLanguage?: string;
+  isVendor?: boolean;
 };
 
 export interface UserModel extends Model<TUser> {

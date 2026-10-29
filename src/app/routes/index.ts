@@ -39,6 +39,7 @@ import { AudioBookPurchaseRoutes } from "../modules/audioBookPurchase/audioBookP
 import { VedicKnowledgeRoutes } from "../modules/rag/vedicKnowledge/vedicKnowledge.routes";
 import { AIChatRoutes } from "../modules/rag/chat/chat.routes";
 import { ProjectTransactionRoutes } from "../modules/project/projectTransaction/projectTransaction.route";
+import { ShopBannerRoutes } from "../modules/shop/shopBanner/shopBanner.routes";
 
 const router = Router();
 
@@ -106,6 +107,10 @@ const moduleRoutes = [
   {
     path: "/product",
     route: ProductRoutes,
+  },
+  {
+    path: "/shop-banner",
+    route: ShopBannerRoutes,
   },
   {
     path: "/vendor",
