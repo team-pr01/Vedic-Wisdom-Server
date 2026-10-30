@@ -25,6 +25,8 @@ router.get(
   ProductControllers.getMyProducts
 );
 
+router.patch("/click/:productId", ProductControllers.incrementProductClick);
+
 
 router.get(
   "/:productId",

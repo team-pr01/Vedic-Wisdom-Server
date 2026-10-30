@@ -1,4 +1,3 @@
-// models/subscription.model.ts
 import { Schema, model } from "mongoose";
 import { TSubscription } from "./subscription.interface";
 
@@ -18,9 +17,15 @@ const SubscriptionSchema = new Schema<TSubscription>(
       index: true,
     },
 
+    billingType: {
+      type: String,
+      enum: ["monthly", "yearly"],
+      required: true,
+      index: true,
+    },
     status: {
       type: String,
-      enum: ["active", "expired", "cancelled"],
+      enum: ["active", "expired", "cancelled", "pending", "failed"],
       index: true,
     },
 
@@ -37,6 +42,9 @@ const SubscriptionSchema = new Schema<TSubscription>(
 
     cancelledAt: {
       type: Date,
+    },
+    transactionId: {
+      type: String,
     },
   },
   {

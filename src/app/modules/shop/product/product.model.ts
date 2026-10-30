@@ -24,6 +24,10 @@ const productSchema = new Schema<TProduct>(
       default: [],
     },
 
+    link: {
+      type: String,
+    },
+
     rating: {
       type: Number,
       default: 0,

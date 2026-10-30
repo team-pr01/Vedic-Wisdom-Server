@@ -137,7 +137,7 @@ const getMyVendorStats = async (userId: string) => {
             $group: {
                 _id: null,
                 totalProductsCount: { $sum: 1 },
-                totalClicksCount: { $sum: "$totalClicks" },
+                totalClicksCount: { $sum: "$totalClicks" }, 
                 approvedProducts: {
                     $sum: {
                         $cond: [{ $eq: ["$status", "approved"] }, 1, 0],

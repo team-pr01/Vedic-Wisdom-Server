@@ -1,22 +1,45 @@
-// controllers/subscription.controller.ts
 import httpStatus from "http-status";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import { SubscriptionServices } from "./subscription.service";
+import config from "../../../config";
 
-// Create subscription
-const createSubscription = catchAsync(async (req, res) => {
-  const result = await SubscriptionServices.createSubscription(
-    req.body,
-    req.user.userId
-  );
+const initiateSubscriptionPayment = catchAsync(async (req, res) => {
+  const userId = req.user.userId;
+
+  const result = await SubscriptionServices.initiateSubscriptionPayment(userId, req.body);
 
   sendResponse(res, {
-    statusCode: httpStatus.CREATED,
+    statusCode: httpStatus.OK,
     success: true,
-    message: "Subscription created successfully",
+    message: "Payment initiated successfully",
     data: result,
   });
+});
+
+// 2. Payment Success Callback
+const subscriptionPaymentSuccess = catchAsync(async (req, res) => {
+  const tranId = req.query.tran_id as string;
+
+  if (!tranId) {
+    return res.redirect(`${config.frontend_url}/payment/fail?transactionId=${tranId}`);
+  }
+
+  try {
+    await SubscriptionServices.handleSubscriptionPaymentSuccess(tranId);
+    res.redirect(`${config.frontend_url}/payment/success?transactionId=${tranId}`);
+  } catch (error) {
+    res.redirect(`${config.frontend_url}/payment/fail?transactionId=${tranId}`);
+  }
+});
+
+// 3. Payment Fail Callback
+const paymentFail = catchAsync(async (req, res) => {
+  const tranId = req.query.tran_id as string;
+  if (tranId) {
+    await SubscriptionServices.handleSubscriptionPaymentFailure(tranId);
+  }
+  res.redirect(`${config.frontend_url}/payment/fail?transactionId=${tranId}`);
 });
 
 // Get all subscriptions (admin)
@@ -140,7 +163,9 @@ const renewSubscription = catchAsync(async (req, res) => {
 });
 
 export const SubscriptionController = {
-  createSubscription,
+  initiateSubscriptionPayment,
+  subscriptionPaymentSuccess,
+  paymentFail,
   getAllSubscriptions,
   getMySubscriptions,
   getSingleSubscription,

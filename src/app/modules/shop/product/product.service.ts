@@ -122,6 +122,26 @@ const getMyProducts = async (
     return infinitePaginate(Product, query, skip, limit);
 };
 
+const incrementProductClick = async (productId: string) => {
+  const result = await Product.findByIdAndUpdate(
+    productId,
+    {
+      $inc: { totalClicks: 1 }, 
+    },
+    { 
+      new: true,
+      select: "totalClicks"
+    }
+  );
+
+  if (!result) {
+    throw new AppError(httpStatus.NOT_FOUND, "Product not found");
+  }
+
+  return result;
+};
+
+
 /* Update Product */
 const updateProduct = async (
     productId: string,
@@ -225,6 +245,7 @@ export const ProductServices = {
     getAllProducts,
     getSingleProductById,
     getMyProducts,
+    incrementProductClick,
     updateProduct,
     deleteProduct,
 };

@@ -85,6 +85,19 @@ const getMyProducts = catchAsync(async (req, res) => {
   });
 });
 
+const incrementProductClick = catchAsync(async (req, res) => {
+  const { productId } = req.params;
+
+  const result = await ProductServices.incrementProductClick(productId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Product click tracked successfully",
+    data: result,
+  });
+});
+
 /* Update Product */
 const updateProduct = catchAsync(async (req, res) => {
 
@@ -130,6 +143,7 @@ export const ProductControllers = {
   getAllProducts,
   getSingleProductById,
   getMyProducts,
+  incrementProductClick,
   updateProduct,
   deleteProduct,
 };

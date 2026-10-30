@@ -26,17 +26,16 @@ const SubscriptionPlanSchema = new Schema<TSubscriptionPlan>(
       trim: true,
     },
 
-    price: {
+    monthlyPrice: {
       type: Number,
       required: true,
       min: 0,
     },
 
-    billingType: {
-      type: String,
-      enum: ["monthly", "yearly"],
+    yearlyPrice: {
+      type: Number,
       required: true,
-      index: true,
+      min: 0,
     },
 
     features: {

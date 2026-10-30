@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// services/subscriptionPlan.service.ts
 import httpStatus from "http-status";
 import { TSubscriptionPlan } from "./subscriptionPlan.interface";
 import SubscriptionPlan from "./subscriptionPlan.model";
@@ -16,7 +15,6 @@ const createSubscriptionPlan = async (payload: TSubscriptionPlan) => {
 const getAllSubscriptionPlans = async (
     keyword?: string,
     status?: string,
-    billingType?: string,
     skip = 0,
     limit = 10
 ) => {
@@ -31,10 +29,6 @@ const getAllSubscriptionPlans = async (
 
     if (status) {
         query.status = status;
-    }
-
-    if (billingType) {
-        query.billingType = billingType;
     }
 
     return infinitePaginate(SubscriptionPlan, query, skip, limit, []);

@@ -5,6 +5,7 @@ export type TProduct = {
   category: string;
   description: string;
   imageUrls: string[];
+  link: string;
   rating?: number;
   soldCount?: number;
   priceCurrency: string;

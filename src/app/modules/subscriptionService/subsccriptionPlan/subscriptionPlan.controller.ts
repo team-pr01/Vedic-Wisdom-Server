@@ -18,12 +18,11 @@ const createSubscriptionPlan = catchAsync(async (req, res) => {
 
 // Get all subscription plans (admin)
 const getAllSubscriptionPlans = catchAsync(async (req, res) => {
-  const { keyword, status, billingType, skip = "0", limit = "10" } = req.query;
+  const { keyword, status, skip = "0", limit = "10" } = req.query;
 
   const result = await SubscriptionPlanServices.getAllSubscriptionPlans(
     keyword as string,
     status as string,
-    billingType as string,
     Number(skip),
     Number(limit)
   );

@@ -1,4 +1,3 @@
-// routes/subscription.routes.ts
 import express from "express";
 import auth from "../../../middlewares/auth";
 import { SubscriptionController } from "./subscription.controller";
@@ -9,10 +8,13 @@ const router = express.Router();
 
 
 router.post(
-  "/subscribe",
+  "/initiate-payment",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
-  SubscriptionController.createSubscription
+  SubscriptionController.initiateSubscriptionPayment
 );
+
+router.all("/payment/success", SubscriptionController.subscriptionPaymentSuccess);
+router.all("/payment/fail", SubscriptionController.paymentFail);
 
 // Admin only routes
 router.get(
@@ -23,7 +25,7 @@ router.get(
 
 // User routes
 router.get(
-  "/my-subscriptions",
+  "/my",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
   SubscriptionController.getMySubscriptions
 );

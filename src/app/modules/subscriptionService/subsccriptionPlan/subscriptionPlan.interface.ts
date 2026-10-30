@@ -1,6 +1,5 @@
 import { Types } from "mongoose";
 
-export type TBillingType = "monthly" | "yearly";
 export type TPlanStatus = "active" | "draft";
 
 export interface TSubscriptionPlan {
@@ -8,8 +7,8 @@ export interface TSubscriptionPlan {
   name: string;
   description: string;
   currency: string;
-  price: number;
-  billingType: TBillingType;
+  monthlyPrice: number;
+  yearlyPrice: number;
   features: string[];
   isPopular: boolean;
   status: TPlanStatus;

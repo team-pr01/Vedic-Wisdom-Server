@@ -121,11 +121,6 @@ const userSchema = new Schema<TUser, UserModel>(
       required: false,
     },
 
-    plan: {
-      type: String,
-      default: "free",
-    },
-
     // Usage tracking for subscription
     usage: {
       aiChatDaily: { type: Number, default: 0 },
@@ -156,6 +151,10 @@ const userSchema = new Schema<TUser, UserModel>(
     coins: {
       type: Number,
       default: 0,
+    },
+    isSubscribedUser: {
+      type: Boolean,
+      default: false
     },
     isVendor: {
       type: Boolean,
