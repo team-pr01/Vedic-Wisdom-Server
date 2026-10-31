@@ -101,7 +101,7 @@ const initiateSubscriptionPayment = async (userId: string, payload: any) => {
 
 // 2. Handle Successful Payment & Activate Subscription
 const handleSubscriptionPaymentSuccess = async (tranId: string) => {
-    const transaction = await Subscription.findOne({ transactionId: tranId });
+    const transaction = await Subscription.findOne({ transactionId: tranId }).populate("plan");
 
     if (!transaction) {
         throw new AppError(httpStatus.NOT_FOUND, "Transaction not found");
@@ -130,14 +130,14 @@ const handleSubscriptionPaymentSuccess = async (tranId: string) => {
     transaction.endDate = endDate;
     await transaction.save();
 
-    await User.findByIdAndUpdate(
-        transaction.userId,
-        { $set: { isSubscribedUser: true } },
-        { new: true }
-    );
-
     const plan = await SubscriptionPlan.findById(transaction.plan);
     if (!plan) throw new AppError(httpStatus.NOT_FOUND, "Plan not found");
+
+    await User.findByIdAndUpdate(
+        transaction.userId,
+        { $set: { isSubscribedUser: true, plan: plan.name } },
+        { new: true }
+    );
 
     // Send Notification
     // sendSingleNotification(

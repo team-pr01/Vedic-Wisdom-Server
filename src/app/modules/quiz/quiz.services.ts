@@ -1,10 +1,67 @@
-import { User } from "../auth/auth.model";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import httpStatus from "http-status";
+import AppError from "../../errors/AppError";
+import { infinitePaginate } from "../../utils/infinitePaginate";
 import { TQuiz } from "./quiz.interface";
 import Quiz from "./quiz.model";
+import { QuizProgress } from "./quizProgress/quizProgress.model";
 
 // Add Quiz (Admin)
 const addQuiz = async (payload: TQuiz) => {
   const result = await Quiz.create(payload);
+  return result;
+};
+
+const getAllQuizzes = async (
+  keyword?: string,
+  status?: string,
+  type?: string,
+  skip = 0,
+  limit = 10
+) => {
+  const query: any = {};
+
+  if (keyword) {
+    query.name = { $regex: keyword, $options: "i" };
+  }
+
+  if (status) {
+    query.status = status;
+  }
+
+  if (type) {
+    query.type = type;
+  }
+
+  return infinitePaginate(Quiz, query, skip, limit, []);
+};
+
+// Get Active Quizzes (Users only)
+const getActiveQuizzes = async (
+  keyword?: string,
+  type?: string,
+  skip = 0,
+  limit = 10
+) => {
+  const query: any = { status: "active" };
+
+  if (keyword) {
+    query.name = { $regex: keyword, $options: "i" };
+  }
+
+  if (type) {
+    query.type = type;
+  }
+
+  return infinitePaginate(Quiz, query, skip, limit, []);
+};
+
+// Get Single Quiz
+const getSingleQuizById = async (quizId: string) => {
+  const result = await Quiz.findById(quizId);
+  if (!result) {
+    throw new AppError(httpStatus.NOT_FOUND, "Quiz not found");
+  }
   return result;
 };
 
@@ -20,55 +77,118 @@ const deleteQuiz = async (quizId: string) => {
   return result;
 };
 
-// Get All Quizzes
-const getAllQuizzes = async () => {
-  const result = await Quiz.find();
-  return result;
-};
 
-// Get Quiz by ID
-const getQuizById = async (quizId: string) => {
-  const result = await Quiz.findById(quizId);
-  return result;
-};
-
-// Participate in Quiz (User)
-const participateInQuiz = async (
-  quizId: string,
-  userId: string,
-  answers: { questionId: string; selectedAnswer: string }[]
-) => {
+// 1. Start or Resume a Quiz
+const startQuiz = async (quizId: string, userId: string) => {
+  
   const quiz = await Quiz.findById(quizId);
-  if (!quiz) throw new Error("Quiz not found");
+  console.log(quiz);
+  if (!quiz) throw new AppError(httpStatus.NOT_FOUND, "Quiz not found");
 
-  let score = 0;
-  quiz.questions.forEach((q, index) => {
-    if (answers[index]?.selectedAnswer === String(q.correctAnswer)) score++;
-  });
+  // Check if progress already exists
+  let progress = await QuizProgress.findOne({ quizId, userId });
 
-  const result = {
-    quizId,
-    userId,
-    totalQuestions: quiz.questions.length,
-    score,
-    percentage: (score / quiz.questions.length) * 100,
-  };
+  if (!progress) {
+    // Create new progress
+    const initialLevels = quiz.levels.map((level, index) => ({
+      levelNo: level.no,
+      status: index === 0 ? "unlocked" : "locked", // Unlock Level 1
+      score: 0,
+      correctAnswers: 0,
+    }));
 
-  // Update user's totalQuizTaken
-  const updatedUser = await User.findOneAndUpdate(
-  { _id: userId },
-  { $inc: { totalQuizTaken: 1 } },
-  { new: true } // returns the updated document
-);
-console.log(updatedUser);
-  return result;
+    progress = await QuizProgress.create({
+      quizId,
+      userId,
+      currentLevel: 1,
+      levelProgress: initialLevels,
+      isCompleted: false,
+    });
+  }
+
+  return progress;
+};
+
+// 3. Submit Level Answers
+const submitLevelAnswers = async (
+    quizId: string,
+    levelNo: number,
+    userId: string,
+    answers: { questionIndex: number; selectedOption: number }[],
+    timeTaken: number // in seconds
+) => {
+  console.log(quizId);
+  console.log(userId);
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz) throw new AppError(httpStatus.NOT_FOUND, "Quiz not found");
+
+    const progress = await QuizProgress.findOne({ quizId, userId });
+    if (!progress) throw new AppError(httpStatus.NOT_FOUND, "Progress not found");
+
+    // Find the level in Quiz and Progress
+    const quizLevel = quiz.levels.find((l) => l.no === levelNo);
+    const progressLevel = progress.levelProgress.find((l) => l.levelNo === levelNo);
+
+    if (!quizLevel || !progressLevel) {
+        throw new AppError(httpStatus.NOT_FOUND, "Level not found");
+    }
+
+    if (progressLevel.status === "locked") {
+        throw new AppError(httpStatus.FORBIDDEN, "This level is locked.");
+    }
+
+    if (progressLevel.status === "completed") {
+        throw new AppError(httpStatus.BAD_REQUEST, "You have already completed this level.");
+    }
+
+    // Calculate Score
+    let correctAnswers = 0;
+    answers.forEach((ans) => {
+        const correctIndex = quizLevel.questions[ans.questionIndex]?.correctAnswer;
+        if (correctIndex === ans.selectedOption) {
+            correctAnswers++;
+        }
+    });
+
+    const isPassed = correctAnswers >= quizLevel.passingScore;
+
+    // Update Progress Level
+    progressLevel.score = correctAnswers;
+    progressLevel.correctAnswers = correctAnswers;
+    progressLevel.status = isPassed ? "completed" : "failed";
+    progressLevel.completedAt = new Date();
+
+    // Update Overall Progress
+    progress.totalCorrectAnswers += correctAnswers;
+    progress.totalScore += correctAnswers * 10; // Example: 10 points per correct answer
+    progress.overallTimeTaken += timeTaken;
+
+    if (isPassed) {
+        // Unlock next level if exists
+        const nextLevelNo = levelNo + 1;
+        const nextLevelProgress = progress.levelProgress.find((l) => l.levelNo === nextLevelNo);
+        const nextQuizLevel = quiz.levels.find((l) => l.no === nextLevelNo);
+
+        if (nextQuizLevel && nextLevelProgress) {
+            nextLevelProgress.status = "unlocked";
+            progress.currentLevel = nextLevelNo;
+        } else {
+            // No next level, quiz is finished!
+            progress.isCompleted = true;
+        }
+    }
+
+    await progress.save();
+    return progress;
 };
 
 export const QuizService = {
   addQuiz,
+  getAllQuizzes,
+  getActiveQuizzes,
+  getSingleQuizById,
   updateQuiz,
   deleteQuiz,
-  getQuizById,
-  getAllQuizzes,
-  participateInQuiz,
+  startQuiz,
+  submitLevelAnswers
 };

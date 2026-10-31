@@ -51,6 +51,7 @@ export type TUser = {
   coins: number;
   preferredLanguage?: string;
   isSubscribedUser?: boolean;
+  plan?: string;
   isVendor?: boolean;
 };
 

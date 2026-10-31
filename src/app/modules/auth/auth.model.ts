@@ -156,6 +156,10 @@ const userSchema = new Schema<TUser, UserModel>(
       type: Boolean,
       default: false
     },
+    plan: {
+      type: String,
+      default: null
+    },
     isVendor: {
       type: Boolean,
       default: false

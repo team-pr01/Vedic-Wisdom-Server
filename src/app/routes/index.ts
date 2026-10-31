@@ -40,6 +40,7 @@ import { VedicKnowledgeRoutes } from "../modules/rag/vedicKnowledge/vedicKnowled
 import { AIChatRoutes } from "../modules/rag/chat/chat.routes";
 import { ProjectTransactionRoutes } from "../modules/project/projectTransaction/projectTransaction.route";
 import { ShopBannerRoutes } from "../modules/shop/shopBanner/shopBanner.routes";
+import { QuizProgressRoutes } from "../modules/quiz/quizProgress/quizProgress.routes";
 
 const router = Router();
 
@@ -179,6 +180,10 @@ const moduleRoutes = [
   {
     path: "/quiz",
     route: QuizRoutes,
+  },
+  {
+    path: "/quiz-progress",
+    route: QuizProgressRoutes,
   },
   {
     path: "/chat",
