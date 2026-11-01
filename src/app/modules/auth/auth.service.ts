@@ -11,8 +11,10 @@ import { createToken } from "./auth.utils";
 import { customUserIdGenerator } from "../../utils/customUserIdGenerator";
 import { generate4DigitsOTP } from "../../utils/generate4DigitsOTP";
 import { ReferralServices } from "../referral/referral.service";
-import admin from "../../config/firebase";
+// import admin from "../../config/firebase";
 import { OAuth2Client } from "google-auth-library";
+
+const admin:any = null
 
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -39,7 +41,7 @@ const socialLogin = async (idToken: string, provider: 'google' | 'apple') => {
       }
     } else if (provider === 'apple') {
       // ✅ Use Firebase Admin for Apple tokens (keep this for future)
-      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      const decodedToken = await admin?.auth().verifyIdToken(idToken);
       email = decodedToken.email;
       name = decodedToken.name;
       picture = decodedToken.picture;

@@ -36,8 +36,9 @@ const auth_utils_1 = require("./auth.utils");
 const customUserIdGenerator_1 = require("../../utils/customUserIdGenerator");
 const generate4DigitsOTP_1 = require("../../utils/generate4DigitsOTP");
 const referral_service_1 = require("../referral/referral.service");
-const firebase_1 = __importDefault(require("../../config/firebase"));
+// import admin from "../../config/firebase";
 const google_auth_library_1 = require("google-auth-library");
+const admin = null;
 const googleClient = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const socialLogin = (idToken, provider) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -60,7 +61,7 @@ const socialLogin = (idToken, provider) => __awaiter(void 0, void 0, void 0, fun
         }
         else if (provider === 'apple') {
             // ✅ Use Firebase Admin for Apple tokens (keep this for future)
-            const decodedToken = yield firebase_1.default.auth().verifyIdToken(idToken);
+            const decodedToken = yield (admin === null || admin === void 0 ? void 0 : admin.auth().verifyIdToken(idToken));
             email = decodedToken.email;
             name = decodedToken.name;
             picture = decodedToken.picture;
