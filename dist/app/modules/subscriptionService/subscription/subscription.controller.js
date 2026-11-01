@@ -13,20 +13,42 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubscriptionController = void 0;
-// controllers/subscription.controller.ts
 const http_status_1 = __importDefault(require("http-status"));
 const catchAsync_1 = __importDefault(require("../../../utils/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../utils/sendResponse"));
 const subscription_service_1 = require("./subscription.service");
-// Create subscription
-const createSubscription = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield subscription_service_1.SubscriptionServices.createSubscription(req.body, req.user.userId);
+const config_1 = __importDefault(require("../../../config"));
+const initiateSubscriptionPayment = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = req.user.userId;
+    const result = yield subscription_service_1.SubscriptionServices.initiateSubscriptionPayment(userId, req.body);
     (0, sendResponse_1.default)(res, {
-        statusCode: http_status_1.default.CREATED,
+        statusCode: http_status_1.default.OK,
         success: true,
-        message: "Subscription created successfully",
+        message: "Payment initiated successfully",
         data: result,
     });
+}));
+// 2. Payment Success Callback
+const subscriptionPaymentSuccess = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const tranId = req.query.tran_id;
+    if (!tranId) {
+        return res.redirect(`${config_1.default.frontend_url}/payment/fail?transactionId=${tranId}`);
+    }
+    try {
+        yield subscription_service_1.SubscriptionServices.handleSubscriptionPaymentSuccess(tranId);
+        res.redirect(`${config_1.default.frontend_url}/payment/success?transactionId=${tranId}`);
+    }
+    catch (error) {
+        res.redirect(`${config_1.default.frontend_url}/payment/fail?transactionId=${tranId}`);
+    }
+}));
+// 3. Payment Fail Callback
+const paymentFail = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const tranId = req.query.tran_id;
+    if (tranId) {
+        yield subscription_service_1.SubscriptionServices.handleSubscriptionPaymentFailure(tranId);
+    }
+    res.redirect(`${config_1.default.frontend_url}/payment/fail?transactionId=${tranId}`);
 }));
 // Get all subscriptions (admin)
 const getAllSubscriptions = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -115,7 +137,9 @@ const renewSubscription = (0, catchAsync_1.default)((req, res) => __awaiter(void
     });
 }));
 exports.SubscriptionController = {
-    createSubscription,
+    initiateSubscriptionPayment,
+    subscriptionPaymentSuccess,
+    paymentFail,
     getAllSubscriptions,
     getMySubscriptions,
     getSingleSubscription,

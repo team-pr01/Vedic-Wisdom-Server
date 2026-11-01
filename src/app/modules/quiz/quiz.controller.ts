@@ -18,10 +18,11 @@ const addQuiz = catchAsync(async (req, res) => {
 
 // Get all quizzes
 const getAllQuizzes = catchAsync(async (req, res) => {
-  const { keyword, status, type, skip = "0", limit = "10" } = req.query;
+  const { keyword, name, status, type, skip = "0", limit = "10" } = req.query;
 
   const result = await QuizService.getAllQuizzes(
     keyword as string,
+    name as string,
     status as string,
     type as string,
     Number(skip),
@@ -38,10 +39,11 @@ const getAllQuizzes = catchAsync(async (req, res) => {
 
 // Get active quizzes
 const getActiveQuizzes = catchAsync(async (req, res) => {
-  const { keyword, type, skip = "0", limit = "10" } = req.query;
+  const { keyword, name, type, skip = "0", limit = "10" } = req.query;
 
   const result = await QuizService.getActiveQuizzes(
     keyword as string,
+    name as string,
     type as string,
     Number(skip),
     Number(limit)
@@ -54,6 +56,23 @@ const getActiveQuizzes = catchAsync(async (req, res) => {
     data: result,
   });
 });
+
+const getQuizQuestionsByLevelNo = catchAsync(async (req, res) => {
+  const { quizId, levelNo } = req.params;
+
+  const result = await QuizService.getQuizQuestionsByLevelNo(
+    quizId,
+    Number(levelNo)
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Level questions fetched successfully",
+    data: result,
+  });
+});
+
 
 // Update Quiz
 const updateQuiz = catchAsync(async (req, res) => {
@@ -134,6 +153,7 @@ export const QuizController = {
   addQuiz,
   getAllQuizzes,
   getActiveQuizzes,
+  getQuizQuestionsByLevelNo,
   updateQuiz,
   deleteQuiz,
   getSingleQuizById,

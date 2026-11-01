@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// models/subscription.model.ts
 const mongoose_1 = require("mongoose");
 const SubscriptionSchema = new mongoose_1.Schema({
     userId: {
@@ -15,9 +14,15 @@ const SubscriptionSchema = new mongoose_1.Schema({
         required: true,
         index: true,
     },
+    billingType: {
+        type: String,
+        enum: ["monthly", "yearly"],
+        required: true,
+        index: true,
+    },
     status: {
         type: String,
-        enum: ["active", "expired", "cancelled"],
+        enum: ["active", "expired", "cancelled", "pending", "failed"],
         index: true,
     },
     startDate: {
@@ -31,6 +36,9 @@ const SubscriptionSchema = new mongoose_1.Schema({
     },
     cancelledAt: {
         type: Date,
+    },
+    transactionId: {
+        type: String,
     },
 }, {
     timestamps: true,

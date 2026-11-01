@@ -19,13 +19,10 @@ router.post("/verify-forgot-password-otp", auth_controller_1.AuthControllers.ver
 router.post("/resend-forgot-password-otp", auth_controller_1.AuthControllers.resendForgotPasswordOtp);
 router.post("/reset-password", auth_controller_1.AuthControllers.resetPassword);
 router.post("/change-password", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.user, auth_constants_1.UserRole.moderator), auth_controller_1.AuthControllers.changePassword);
+router.post('/social-login', auth_controller_1.AuthControllers.socialLogin);
 // router.post("/verify-otp", AuthControllers.verifyOtp);
 // router.post("/resend-otp", AuthControllers.resendOtp);
-// router.post(
-//   "/refresh-token",
-//   validateRequest(AuthValidations.refreshTokenValidationSchema),
-//   AuthControllers.refreshToken
-// );
+router.post("/refresh-token", (0, validateRequest_1.default)(auth_validation_1.AuthValidations.refreshTokenValidationSchema), auth_controller_1.AuthControllers.refreshToken);
 // router.post("/verify-reset-password-otp", AuthControllers.verifyResetOtp);
 // router.post("/resend-forgot-password-otp", AuthControllers.resendForgotPasswordOtp);
 // router.post(

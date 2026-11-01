@@ -18,6 +18,26 @@ const auth_service_1 = require("./auth.service");
 const sendResponse_1 = __importDefault(require("../../utils/sendResponse"));
 const catchAsync_1 = __importDefault(require("../../utils/catchAsync"));
 const config_1 = __importDefault(require("../../config"));
+const AppError_1 = __importDefault(require("../../errors/AppError"));
+const socialLogin = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { idToken, provider } = req.body; // provider: 'google' | 'apple'
+    let result;
+    if (provider === 'google') {
+        result = yield (0, auth_service_1.googleLogin)(idToken);
+    }
+    else if (provider === 'apple') {
+        result = yield (0, auth_service_1.appleLogin)(idToken);
+    }
+    else {
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Invalid provider");
+    }
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Social login successful",
+        data: result,
+    });
+}));
 // User Signup
 const signup = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield auth_service_1.AuthServices.signup(req.body);
@@ -103,6 +123,7 @@ const changePassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0,
     });
 }));
 exports.AuthControllers = {
+    socialLogin,
     signup,
     loginUser,
     refreshToken,

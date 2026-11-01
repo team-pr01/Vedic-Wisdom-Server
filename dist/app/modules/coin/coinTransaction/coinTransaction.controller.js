@@ -35,16 +35,16 @@ const initiatePayment = (0, catchAsync_1.default)((req, res) => __awaiter(void 0
 const paymentSuccess = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const tranId = req.query.tran_id;
     if (!tranId) {
-        return res.redirect(`${config_1.default.frontend_url}/coin-transaction/fail?error=Missing transaction ID`);
+        return res.redirect(`${config_1.default.frontend_url}/payment/fail?error=Missing transaction ID`);
     }
     try {
         yield coinTransaction_service_1.CoinTransactionServices.handlePaymentSuccess(tranId);
         // Redirect to frontend success page
-        res.redirect(`${config_1.default.frontend_url}/coin-transaction/success?transactionId=${tranId}`);
+        res.redirect(`${config_1.default.frontend_url}/payment/success?transactionId=${tranId}`);
     }
     catch (error) {
         // Redirect to frontend failure page
-        res.redirect(`${config_1.default.frontend_url}/coin-transaction/fail?transactionId=${tranId}`);
+        res.redirect(`${config_1.default.frontend_url}/payment/fail?transactionId=${tranId}`);
     }
 }));
 // Payment failure
@@ -52,7 +52,7 @@ const paymentFail = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, vo
     const { tran_id } = req.query;
     yield coinTransaction_service_1.CoinTransactionServices.handlePaymentFailure(tran_id);
     // Redirect to frontend failure page
-    res.redirect(`${config_1.default.frontend_url}/coin-transaction/fail?transactionId=${tran_id}`);
+    res.redirect(`${config_1.default.frontend_url}/payment/fail?transactionId=${tran_id}`);
 }));
 // Get all transactions (Admin)
 const getAllTransactions = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {

@@ -28,13 +28,35 @@ const addQuiz = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0
         data: result,
     });
 }));
-// Get all courses
+// Get all quizzes
 const getAllQuizzes = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield quiz_services_1.QuizService.getAllQuizzes();
+    const { keyword, name, status, type, skip = "0", limit = "10" } = req.query;
+    const result = yield quiz_services_1.QuizService.getAllQuizzes(keyword, name, status, type, Number(skip), Number(limit));
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
         message: "All quizzes fetched successfully",
+        data: result,
+    });
+}));
+// Get active quizzes
+const getActiveQuizzes = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { keyword, name, type, skip = "0", limit = "10" } = req.query;
+    const result = yield quiz_services_1.QuizService.getActiveQuizzes(keyword, name, type, Number(skip), Number(limit));
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Active quizzes fetched successfully",
+        data: result,
+    });
+}));
+const getQuizQuestionsByLevelNo = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { quizId, levelNo } = req.params;
+    const result = yield quiz_services_1.QuizService.getQuizQuestionsByLevelNo(quizId, Number(levelNo));
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Level questions fetched successfully",
         data: result,
     });
 }));
@@ -61,9 +83,9 @@ const deleteQuiz = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, voi
     });
 }));
 // Get Quiz by ID
-const getQuiz = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getSingleQuizById = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
-    const result = yield quiz_services_1.QuizService.getQuizById(id);
+    const result = yield quiz_services_1.QuizService.getSingleQuizById(id);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -71,23 +93,37 @@ const getQuiz = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0
         data: result,
     });
 }));
-// Participate in Quiz
-const participateQuiz = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.params;
-    const { answers, userId } = req.body;
-    const result = yield quiz_services_1.QuizService.participateInQuiz(id, userId, answers);
+const startQuiz = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { quizId } = req.params;
+    const userId = req.user.userId;
+    const result = yield quiz_services_1.QuizService.startQuiz(quizId, userId);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
-        message: "Quiz completed",
+        message: "Quiz started successfully",
+        data: result,
+    });
+}));
+const submitLevelAnswers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { quizId, levelNo } = req.params;
+    const { answers, timeTaken } = req.body;
+    const userId = req.user.userId;
+    const result = yield quiz_services_1.QuizService.submitLevelAnswers(quizId, Number(levelNo), userId, answers, Number(timeTaken));
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Level submitted successfully",
         data: result,
     });
 }));
 exports.QuizController = {
     addQuiz,
     getAllQuizzes,
+    getActiveQuizzes,
+    getQuizQuestionsByLevelNo,
     updateQuiz,
     deleteQuiz,
-    getQuiz,
-    participateQuiz,
+    getSingleQuizById,
+    startQuiz,
+    submitLevelAnswers
 };

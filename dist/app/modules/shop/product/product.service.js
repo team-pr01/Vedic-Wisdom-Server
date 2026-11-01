@@ -48,7 +48,7 @@ const addProduct = (userId, payload, files) => __awaiter(void 0, void 0, void 0,
 });
 /* Get All Products */
 const getAllProducts = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (filters = {}, skip = 0, limit = 10) {
-    const query = {};
+    const query = { status: "approved" };
     if (filters.category) {
         query.category = filters.category;
     }
@@ -68,7 +68,7 @@ const getSingleProductById = (productId) => __awaiter(void 0, void 0, void 0, fu
     return product;
 });
 // For Vendor
-const getMyProducts = (userId_1, ...args_1) => __awaiter(void 0, [userId_1, ...args_1], void 0, function* (userId, skip = 0, limit = 10) {
+const getMyProducts = (userId_1, ...args_1) => __awaiter(void 0, [userId_1, ...args_1], void 0, function* (userId, filters = {}, skip = 0, limit = 10) {
     const vendor = yield vendor_model_1.default.findOne({
         userId,
         status: "approved",
@@ -79,7 +79,27 @@ const getMyProducts = (userId_1, ...args_1) => __awaiter(void 0, [userId_1, ...a
     const query = {
         addedBy: userId,
     };
+    if (filters.category) {
+        query.category = filters.category;
+    }
+    if (filters.keyword) {
+        query.$text = {
+            $search: filters.keyword,
+        };
+    }
     return (0, infinitePaginate_1.infinitePaginate)(product_model_1.default, query, skip, limit);
+});
+const incrementProductClick = (productId) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield product_model_1.default.findByIdAndUpdate(productId, {
+        $inc: { totalClicks: 1 },
+    }, {
+        new: true,
+        select: "totalClicks"
+    });
+    if (!result) {
+        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Product not found");
+    }
+    return result;
 });
 /* Update Product */
 const updateProduct = (productId, userId, payload, files) => __awaiter(void 0, void 0, void 0, function* () {
@@ -141,6 +161,7 @@ exports.ProductServices = {
     getAllProducts,
     getSingleProductById,
     getMyProducts,
+    incrementProductClick,
     updateProduct,
     deleteProduct,
 };

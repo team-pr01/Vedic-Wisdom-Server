@@ -1,15 +1,100 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = require("mongoose");
-const QuestionSchema = new mongoose_1.Schema({
-    question: { type: String, required: true },
-    options: { type: [String], required: true },
-    correctAnswer: { type: Number, required: true },
+const questionSchema = new mongoose_1.Schema({
+    question: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    options: {
+        type: [String],
+        required: true,
+        validate: {
+            validator: function (val) {
+                return val.length >= 2;
+            },
+            message: "A question must have at least 2 options.",
+        },
+    },
+    correctAnswer: {
+        type: Number,
+        required: true,
+        min: 0, // Index of the correct answer (e.g., 0 for option A)
+    },
 });
-const QuizSchema = new mongoose_1.Schema({
-    type: { type: String, required: true },
-    title: { type: String, required: true },
-    questions: [QuestionSchema],
-}, { timestamps: true });
-const Quiz = (0, mongoose_1.model)("Quiz", QuizSchema);
+const levelSchema = new mongoose_1.Schema({
+    no: {
+        type: Number,
+        required: true,
+    },
+    name: {
+        type: String,
+        trim: true,
+    },
+    passingScore: {
+        type: Number,
+        required: true,
+        default: 27,
+    },
+    duration: {
+        type: Number, // Duration in minutes
+        required: true,
+        default: 30,
+    },
+    questions: {
+        type: [questionSchema],
+        required: true,
+    },
+}, { _id: false });
+const prizeSchema = new mongoose_1.Schema({
+    currency: {
+        type: String,
+        required: true,
+        default: "BDT",
+    },
+    firstPrize: { type: Number, default: 0 },
+    secondPrize: { type: Number, default: 0 },
+    thirdPrize: { type: Number, default: 0 },
+    fourthPrize: { type: Number, default: 0 },
+    fifthPrize: { type: Number, default: 0 },
+    sixthPrize: { type: Number, default: 0 },
+    seventhPrize: { type: Number, default: 0 },
+    eighthPrize: { type: Number, default: 0 },
+    ninthPrize: { type: Number, default: 0 },
+    tenthPrize: { type: Number, default: 0 },
+});
+// MAIN QUIZ SCHEMA
+const quizSchema = new mongoose_1.Schema({
+    type: {
+        type: String,
+        enum: ["free", "paid"],
+        required: true,
+    },
+    name: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    levels: {
+        type: [levelSchema],
+        required: true,
+    },
+    prize: {
+        type: prizeSchema,
+        required: true,
+    },
+    status: {
+        type: String,
+        enum: ["draft", "active"],
+        default: "draft",
+    },
+}, {
+    timestamps: true,
+});
+//INDEXES
+quizSchema.index({ name: "text" });
+quizSchema.index({ status: 1, type: 1 });
+quizSchema.index({ createdAt: -1 });
+const Quiz = (0, mongoose_1.model)("Quiz", quizSchema);
 exports.default = Quiz;

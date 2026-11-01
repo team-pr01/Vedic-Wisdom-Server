@@ -14,7 +14,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubscriptionPlanServices = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// services/subscriptionPlan.service.ts
 const http_status_1 = __importDefault(require("http-status"));
 const subscriptionPlan_model_1 = __importDefault(require("./subscriptionPlan.model"));
 const infinitePaginate_1 = require("../../../utils/infinitePaginate");
@@ -25,7 +24,7 @@ const createSubscriptionPlan = (payload) => __awaiter(void 0, void 0, void 0, fu
     return result;
 });
 // Get all subscription plans (admin - includes draft)
-const getAllSubscriptionPlans = (keyword_1, status_1, billingType_1, ...args_1) => __awaiter(void 0, [keyword_1, status_1, billingType_1, ...args_1], void 0, function* (keyword, status, billingType, skip = 0, limit = 10) {
+const getAllSubscriptionPlans = (keyword_1, status_1, ...args_1) => __awaiter(void 0, [keyword_1, status_1, ...args_1], void 0, function* (keyword, status, skip = 0, limit = 10) {
     const query = {};
     if (keyword) {
         query.$or = [
@@ -35,9 +34,6 @@ const getAllSubscriptionPlans = (keyword_1, status_1, billingType_1, ...args_1) 
     }
     if (status) {
         query.status = status;
-    }
-    if (billingType) {
-        query.billingType = billingType;
     }
     return (0, infinitePaginate_1.infinitePaginate)(subscriptionPlan_model_1.default, query, skip, limit, []);
 });

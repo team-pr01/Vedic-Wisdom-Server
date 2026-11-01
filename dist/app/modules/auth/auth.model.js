@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.User = void 0;
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const mongoose_1 = require("mongoose");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const config_1 = __importDefault(require("../../config"));
@@ -42,12 +43,12 @@ const userSchema = new mongoose_1.Schema({
     },
     countryCode: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
     },
     phoneNumber: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
     },
     address: {
@@ -77,8 +78,16 @@ const userSchema = new mongoose_1.Schema({
     },
     password: {
         type: String,
-        required: true,
+        required: function () {
+            // Require password only if the user is NOT using a social provider
+            return !this.googleId && !this.appleId;
+        },
         select: false,
+    },
+    googleId: {
+        type: String,
+        sparse: true,
+        unique: true,
     },
     role: {
         type: String,
@@ -122,10 +131,6 @@ const userSchema = new mongoose_1.Schema({
         default: null,
         required: false,
     },
-    plan: {
-        type: String,
-        default: "free",
-    },
     // Usage tracking for subscription
     usage: {
         aiChatDaily: { type: Number, default: 0 },
@@ -155,6 +160,18 @@ const userSchema = new mongoose_1.Schema({
     coins: {
         type: Number,
         default: 0,
+    },
+    isSubscribedUser: {
+        type: Boolean,
+        default: false
+    },
+    plan: {
+        type: String,
+        default: null
+    },
+    isVendor: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true,

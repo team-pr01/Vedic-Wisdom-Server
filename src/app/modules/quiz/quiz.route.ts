@@ -18,6 +18,12 @@ router.get("/active", QuizController.getActiveQuizzes);
 router.patch("/update/:id", auth(UserRole.admin), QuizController.updateQuiz);
 router.delete("/delete/:id", auth(UserRole.admin), QuizController.deleteQuiz);
 
+router.get(
+  "/:quizId/level/:levelNo", 
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
+  QuizController.getQuizQuestionsByLevelNo
+);
+
 
 
 // User Routes

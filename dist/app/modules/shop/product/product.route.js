@@ -14,6 +14,7 @@ router.post("/add", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_con
 router.get("/", product_controller_1.ProductControllers.getAllProducts);
 // For vendor to get their own products
 router.get("/my-products", (0, auth_1.default)(auth_constants_1.UserRole.user), product_controller_1.ProductControllers.getMyProducts);
+router.patch("/click/:productId", product_controller_1.ProductControllers.incrementProductClick);
 router.get("/:productId", product_controller_1.ProductControllers.getSingleProductById);
 router.patch("/update/:productId", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), multer_config_1.multerUpload.array("files", 4), product_controller_1.ProductControllers.updateProduct);
 router.delete("/delete/:productId", (0, auth_1.default)(auth_constants_1.UserRole.user), product_controller_1.ProductControllers.deleteProduct);

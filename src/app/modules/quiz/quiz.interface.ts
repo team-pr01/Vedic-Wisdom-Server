@@ -1,6 +1,7 @@
 // quiz.interface.ts
 
 export type TQuestion = {
+  _id?: string;
   question: string;
   options: string[];
   correctAnswer: number;

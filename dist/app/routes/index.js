@@ -40,6 +40,9 @@ const savedBook_routes_1 = require("../modules/savedItem/savedBook.routes");
 const audioBookPurchase_routes_1 = require("../modules/audioBookPurchase/audioBookPurchase.routes");
 const vedicKnowledge_routes_1 = require("../modules/rag/vedicKnowledge/vedicKnowledge.routes");
 const chat_routes_1 = require("../modules/rag/chat/chat.routes");
+const projectTransaction_route_1 = require("../modules/project/projectTransaction/projectTransaction.route");
+const shopBanner_routes_1 = require("../modules/shop/shopBanner/shopBanner.routes");
+const quizProgress_routes_1 = require("../modules/quiz/quizProgress/quizProgress.routes");
 const router = (0, express_1.Router)();
 const moduleRoutes = [
     {
@@ -107,6 +110,10 @@ const moduleRoutes = [
         route: product_route_1.ProductRoutes,
     },
     {
+        path: "/shop-banner",
+        route: shopBanner_routes_1.ShopBannerRoutes,
+    },
+    {
         path: "/vendor",
         route: vendor_route_1.VendorRoutes,
     },
@@ -151,6 +158,10 @@ const moduleRoutes = [
         route: project_route_1.ProjectRoutes,
     },
     {
+        path: "/project-transaction",
+        route: projectTransaction_route_1.ProjectTransactionRoutes,
+    },
+    {
         path: "/consultant",
         route: consultants_route_1.ConsultantsRoutes,
     },
@@ -169,6 +180,10 @@ const moduleRoutes = [
     {
         path: "/quiz",
         route: quiz_route_1.QuizRoutes,
+    },
+    {
+        path: "/quiz-progress",
+        route: quizProgress_routes_1.QuizProgressRoutes,
     },
     {
         path: "/chat",

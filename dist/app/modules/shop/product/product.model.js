@@ -20,6 +20,9 @@ const productSchema = new mongoose_1.Schema({
         type: [String],
         default: [],
     },
+    link: {
+        type: String,
+    },
     rating: {
         type: Number,
         default: 0,
@@ -48,6 +51,14 @@ const productSchema = new mongoose_1.Schema({
         ref: "Vendor",
         required: true,
         index: true,
+    },
+    status: {
+        type: String,
+        enum: ["pending", "approved", "rejected"],
+        default: "pending"
+    },
+    rejectionReason: {
+        type: String,
     },
 }, {
     timestamps: true,

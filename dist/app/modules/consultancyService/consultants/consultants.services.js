@@ -40,6 +40,7 @@ const getAllConsultants = (keyword_1, category_1, ...args_1) => __awaiter(void 0
         query.$or = [
             { name: { $regex: keyword, $options: "i" } },
             { specialty: { $regex: keyword, $options: "i" } },
+            { category: { $regex: keyword, $options: "i" } },
         ];
     }
     if (category) {

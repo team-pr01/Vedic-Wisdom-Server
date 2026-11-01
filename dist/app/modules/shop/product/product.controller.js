@@ -55,12 +55,26 @@ const getSingleProductById = (0, catchAsync_1.default)((req, res) => __awaiter(v
 }));
 // For vendor
 const getMyProducts = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { skip = "0", limit = "10" } = req.query;
-    const result = yield product_service_1.ProductServices.getMyProducts(req.user.userId, Number(skip), Number(limit));
+    const { keyword, category, skip = "0", limit = "10" } = req.query;
+    const filters = {
+        keyword: keyword,
+        category: category,
+    };
+    const result = yield product_service_1.ProductServices.getMyProducts(req.user.userId, filters, Number(skip), Number(limit));
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
         message: "My products fetched successfully",
+        data: result,
+    });
+}));
+const incrementProductClick = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { productId } = req.params;
+    const result = yield product_service_1.ProductServices.incrementProductClick(productId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Product click tracked successfully",
         data: result,
     });
 }));
@@ -91,6 +105,7 @@ exports.ProductControllers = {
     getAllProducts,
     getSingleProductById,
     getMyProducts,
+    incrementProductClick,
     updateProduct,
     deleteProduct,
 };

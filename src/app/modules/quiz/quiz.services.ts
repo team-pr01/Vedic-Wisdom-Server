@@ -14,6 +14,7 @@ const addQuiz = async (payload: TQuiz) => {
 
 const getAllQuizzes = async (
   keyword?: string,
+  name?: string,
   status?: string,
   type?: string,
   skip = 0,
@@ -23,6 +24,10 @@ const getAllQuizzes = async (
 
   if (keyword) {
     query.name = { $regex: keyword, $options: "i" };
+  }
+
+  if (name) {
+    query.name = { $regex: name, $options: "i" };
   }
 
   if (status) {
@@ -39,6 +44,7 @@ const getAllQuizzes = async (
 // Get Active Quizzes (Users only)
 const getActiveQuizzes = async (
   keyword?: string,
+  name?: string,
   type?: string,
   skip = 0,
   limit = 10
@@ -47,6 +53,10 @@ const getActiveQuizzes = async (
 
   if (keyword) {
     query.name = { $regex: keyword, $options: "i" };
+  }
+
+  if (name) {
+    query.name = { $regex: name, $options: "i" };
   }
 
   if (type) {
@@ -64,6 +74,38 @@ const getSingleQuizById = async (quizId: string) => {
   }
   return result;
 };
+
+const getQuizQuestionsByLevelNo = async (quizId: string, levelNo: number) => {
+  const quiz = await Quiz.findById(quizId);
+  
+  if (!quiz) {
+    throw new AppError(httpStatus.NOT_FOUND, "Quiz not found");
+  }
+
+  // Find the requested level
+  const level = quiz.levels.find((l) => l.no === Number(levelNo));
+  
+  if (!level) {
+    throw new AppError(httpStatus.NOT_FOUND, "Level not found in this quiz");
+  }
+
+  const sanitizedQuestions = level.questions.map((q) => ({
+    _id: q._id,
+    question: q.question,
+    options: q.options,
+  }));
+
+  return {
+    quizName: quiz.name,
+    levelNo: level.no,
+    levelName: level.name,
+    duration: level.duration,
+    passingScore: level.passingScore,
+    totalQuestions: sanitizedQuestions.length,
+    questions: sanitizedQuestions,
+  };
+};
+
 
 // Update Quiz (Admin)
 const updateQuiz = async (quizId: string, payload: Partial<TQuiz>) => {
@@ -187,6 +229,7 @@ export const QuizService = {
   getAllQuizzes,
   getActiveQuizzes,
   getSingleQuizById,
+  getQuizQuestionsByLevelNo,
   updateQuiz,
   deleteQuiz,
   startQuiz,

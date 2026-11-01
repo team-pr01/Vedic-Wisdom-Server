@@ -20,6 +20,8 @@ const AppError_1 = __importDefault(require("../../../errors/AppError"));
 const sendImageToCloudinary_1 = require("../../../utils/sendImageToCloudinary");
 const infinitePaginate_1 = require("../../../utils/infinitePaginate");
 const product_model_1 = __importDefault(require("../product/product.model"));
+const auth_model_1 = require("../../auth/auth.model");
+const mongoose_1 = require("mongoose");
 const applyVendor = (user, payload, files) => __awaiter(void 0, void 0, void 0, function* () {
     const exists = yield vendor_model_1.default.findOne({ userId: user.userId });
     if (exists) {
@@ -84,9 +86,8 @@ const getAllProductsOfAVendor = (vendorId_1, ...args_1) => __awaiter(void 0, [ve
     }
     return (0, infinitePaginate_1.infinitePaginate)(product_model_1.default, query, skip, limit, []);
 });
-// For vendors
 const getMyVendorStats = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a, _b, _c, _d;
     const vendor = yield vendor_model_1.default.findOne({ userId });
     if (!vendor) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Vendor not found");
@@ -94,7 +95,7 @@ const getMyVendorStats = (userId) => __awaiter(void 0, void 0, void 0, function*
     const stats = yield product_model_1.default.aggregate([
         {
             $match: {
-                vendorId: vendor._id,
+                addedBy: new mongoose_1.Types.ObjectId(userId),
             },
         },
         {
@@ -102,14 +103,28 @@ const getMyVendorStats = (userId) => __awaiter(void 0, void 0, void 0, function*
                 _id: null,
                 totalProductsCount: { $sum: 1 },
                 totalClicksCount: { $sum: "$totalClicks" },
+                approvedProducts: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", "approved"] }, 1, 0],
+                    },
+                },
+                pendingProducts: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", "pending"] }, 1, 0],
+                    },
+                },
             },
         },
     ]);
     const totalProductsCount = ((_a = stats[0]) === null || _a === void 0 ? void 0 : _a.totalProductsCount) || 0;
     const totalClicksCount = ((_b = stats[0]) === null || _b === void 0 ? void 0 : _b.totalClicksCount) || 0;
+    const approvedProducts = ((_c = stats[0]) === null || _c === void 0 ? void 0 : _c.approvedProducts) || 0;
+    const pendingProducts = ((_d = stats[0]) === null || _d === void 0 ? void 0 : _d.pendingProducts) || 0;
     return {
         totalProductsCount,
         totalClicksCount,
+        approvedProducts,
+        pendingProducts,
     };
 });
 const updateVendorStatus = (vendorId, status) => __awaiter(void 0, void 0, void 0, function* () {
@@ -118,6 +133,9 @@ const updateVendorStatus = (vendorId, status) => __awaiter(void 0, void 0, void 
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Vendor not found");
     }
     ;
+    if (status === "approved") {
+        yield auth_model_1.User.findByIdAndUpdate(vendor.userId, { isVendor: true });
+    }
     return {};
 });
 /* Suspend Vendor */

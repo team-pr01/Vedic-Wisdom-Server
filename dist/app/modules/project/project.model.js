@@ -1,27 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// project.model.ts
 const mongoose_1 = require("mongoose");
-const DonorSchema = new mongoose_1.Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-    phoneNumber: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-    amount: {
-        type: String,
-        required: true,
-    },
-    donatedAt: {
-        type: Date,
-        default: Date.now,
-    },
-}, { _id: false });
 const ProjectSchema = new mongoose_1.Schema({
     imageUrl: {
         type: String,
@@ -62,11 +41,6 @@ const ProjectSchema = new mongoose_1.Schema({
         required: false,
         default: 0,
         min: 0,
-    },
-    donors: {
-        type: [DonorSchema],
-        required: false,
-        default: [],
     },
 }, {
     timestamps: true,
