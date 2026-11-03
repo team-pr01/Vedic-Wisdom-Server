@@ -29,6 +29,9 @@ export type TQuizProgress = {
   rewardClaimMethod?: "coins" | "payment";
   paymentDetails?: {
     method: string;
+    accountName?: string;
+    branchName?: string;
+    routingNumber?: string;
     accountNumber: string;
   };
 };

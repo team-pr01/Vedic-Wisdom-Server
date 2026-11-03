@@ -44,6 +44,9 @@ const quizProgressSchema = new Schema<TQuizProgress>(
     rewardClaimMethod: { type: String, enum: ["coins", "payment"] },
     paymentDetails: {
       method: { type: String },
+      accountName: { type: String },
+      branchName: { type: String },
+      routingNumber: { type: String },
       accountNumber: { type: String },
     },
   },

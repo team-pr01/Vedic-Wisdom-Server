@@ -8,6 +8,25 @@ const router = express.Router();
 // All routes here require the user to be logged in
 router.use(auth(UserRole.user, UserRole.admin, UserRole.moderator));
 
+// For getting all progress
+router.get(
+    "/my-progress",
+    auth(UserRole.user, UserRole.admin, UserRole.moderator),
+    QuizProgressControllers.getMyAllProgress
+);
+
+// Submit Payment Details for Prize
+router.post(
+    "/submit-payment-details/:quizId",
+    auth(UserRole.user, UserRole.admin, UserRole.moderator),
+    QuizProgressControllers.submitPaymentDetails
+);
+
+router.post(
+  "/submit-coin-request/:quizId",
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
+  QuizProgressControllers.submitCoinRequest
+);
 
 // Get user's current progress on a quiz
 router.get("/:quizId/progress", QuizProgressControllers.getMyProgress);
@@ -17,5 +36,8 @@ router.get("/:quizId/leaderboard", QuizProgressControllers.getLeaderboard);
 
 // Claim reward (Coins or Payment)
 router.post("/:quizId/claim-reward", QuizProgressControllers.claimReward);
+
+
+
 
 export const QuizProgressRoutes = router;

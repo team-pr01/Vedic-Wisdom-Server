@@ -95,7 +95,7 @@ const getMostPopularAudioBooks = catchAsync(async (req, res) => {
 //   const { keyword, isPremium, skip = "0", limit = "10" } = req.query;
 
 //   const result = await AudioBookServices.getRecommendedAudioBooks(
-//     req.user._id,
+//     req.user.userId,
 //     { keyword, isPremium },
 //     Number(skip),
 //     Number(limit)
