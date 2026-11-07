@@ -4,7 +4,7 @@ export type TLoginAuth = {
   password: string;
 };
 
-import { Model } from "mongoose";
+import { Model, ObjectId } from "mongoose";
 import { UserRole } from "./auth.constants";
 
 export type TUser = {
@@ -53,6 +53,7 @@ export type TUser = {
   isSubscribedUser?: boolean;
   plan?: string;
   isVendor?: boolean;
+  blockedUsers?: ObjectId[];
 };
 
 export interface UserModel extends Model<TUser> {
