@@ -11,6 +11,14 @@ router.get(
   auth(UserRole.admin, UserRole.moderator),
   UserControllers.getAllUsers
 );
+
+router.get(
+  "/for-chat",
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
+  UserControllers.getAllUsersForChat
+);
+
+
 router.get(
   "/me",
   auth(

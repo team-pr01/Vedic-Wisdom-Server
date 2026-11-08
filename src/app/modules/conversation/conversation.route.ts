@@ -11,11 +11,19 @@ router.post(
   ConversationControllers.accessChat
 );
 
+router.post(
+  "/group/create",
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
+  ConversationControllers.createGroupChat
+);
+
 // Get Inbox Chat List
 router.get(
   "/inbox",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
   ConversationControllers.getMyInbox
 );
+
+router.patch("/request/:conversationId", auth(UserRole.user, UserRole.admin, UserRole.moderator), ConversationControllers.handleMessageRequest);
 
 export const ConversationRoutes = router;

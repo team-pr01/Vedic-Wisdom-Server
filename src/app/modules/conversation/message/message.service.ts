@@ -11,32 +11,36 @@ const getMessages = async (
   skip = 0,
   limit = 20
 ) => {
-  // 1. Verify the user is part of this conversation
-  const conversation = await Conversation.findById(conversationId);
+  // 1. Verify the user is part of this conversation and populate details
+  const conversation = await Conversation.findById(conversationId)
+    .populate("members", "name profilePicture email")
+    .populate("admins", "name profilePicture");
+
   if (!conversation) {
     throw new AppError(httpStatus.NOT_FOUND, "Conversation not found");
   }
 
   const isMember = conversation.members.some(
-    (memberId) => memberId.toString() === userId
+    (member: any) => member._id.toString() === userId
   );
+
   if (!isMember) {
     throw new AppError(httpStatus.FORBIDDEN, "You are not a member of this chat");
   }
 
-  // 2. Fetch messages (Sort by descending to get the latest 20, then we can reverse on frontend if needed)
+  // 2. Fetch messages
   const messages = await Message.find({ conversationId })
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
+    .populate("sender", "name profilePicture")
     .lean();
 
   const total = await Message.countDocuments({ conversationId });
 
   // 3. Mark these messages as read by the current user
-  // We only want to mark messages where the sender is NOT the current user
   const messageIds = messages
-    .filter((msg) => msg.sender.toString() !== userId)
+    .filter((msg) => (msg.sender as any)?._id?.toString() !== userId && msg.sender?.toString() !== userId)
     .map((msg) => msg._id);
 
   if (messageIds.length > 0) {
@@ -46,11 +50,17 @@ const getMessages = async (
     );
   }
 
-  // Note: Your 2-minute auto-delete logic should ideally happen in a DB hook 
-  // or when you detect that all members have read the message.
-
   return {
-    messages: messages.reverse(), // Reverse so oldest is at the top for the UI
+    messages: messages.reverse(),
+    // ✅ Added conversation details here
+    conversationDetails: {
+      isGroup: conversation.isGroup,
+      groupName: conversation.groupName,
+      groupAvatar: conversation.groupAvatar,
+      members: conversation.members,
+      admins: conversation.admins,
+      blockedBy: conversation.blockedBy,
+    },
     meta: {
       total,
       skip,

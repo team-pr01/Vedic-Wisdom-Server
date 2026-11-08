@@ -19,7 +19,7 @@ const getMessages = catchAsync(async (req, res) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "Messages fetched successfully",
-    data: result.messages,
+    data: result,
   });
 });
 

@@ -4,10 +4,13 @@ import http from "http";
 import { Conversation } from "../modules/conversation/conversation.model";
 import { Message } from "../modules/conversation/message/message.model";
 
+let ioInstance: Server;
+
 export const initSocket = (server: http.Server) => {
     const io = new Server(server, {
         cors: { origin: "*" }, // Configure to your frontend URL in production
     });
+    ioInstance = io;
 
     // Store online users: userId -> socketId
     const onlineUsers = new Map();
@@ -16,11 +19,12 @@ export const initSocket = (server: http.Server) => {
         // 1. User connects and registers their ID
         socket.on("addUser", async (userId) => {
             onlineUsers.set(userId, socket.id);
+            socket.join(userId);
             io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
 
             // Automatically join ALL of the user's conversation rooms
             // This ensures they get real-time inbox updates even if they aren't in the ChatWindow
-             const userConversations = await Conversation.find({ members: userId });
+            const userConversations = await Conversation.find({ members: userId });
             userConversations.forEach((convo) => {
                 socket.join(convo._id.toString());
             });
@@ -45,8 +49,11 @@ export const initSocket = (server: http.Server) => {
             // Update conversation lastMessage
             await Conversation.findByIdAndUpdate(conversationId, { lastMessage: newMessage._id });
 
+            const populatedMessage = await Message.findById(newMessage._id)
+                .populate("sender", "name profilePicture");
+
             // Emit to everyone in the room (including sender)
-            io.to(conversationId).emit("receiveMessage", newMessage);
+            io.to(conversationId).emit("receiveMessage", populatedMessage);
         });
 
         socket.on("messageRead", async ({ conversationId, userId }) => {
@@ -65,9 +72,14 @@ export const initSocket = (server: http.Server) => {
             socket.to(conversationId).emit("messagesMarkedAsRead", { conversationId, userId });
         });
 
+        // Listen for when a request is accepted/rejected to update both sides
+        socket.on("requestStatusChanged", ({ targetUserId, conversationId, status }) => {
+            io.to(targetUserId).emit("requestUpdated", { conversationId, status });
+        });
+
         // 4. Typing Indicator
-        socket.on("typing", ({ conversationId, userId, isTyping }) => {
-            socket.to(conversationId).emit("userTyping", { userId, isTyping });
+        socket.on("typing", ({ conversationId, userId, userName, isTyping }) => {
+            socket.to(conversationId).emit("userTyping", { userId, userName, isTyping });
         });
 
         // 5. Disconnect
@@ -80,4 +92,8 @@ export const initSocket = (server: http.Server) => {
             }
         });
     });
+};
+export const getIO = () => {
+    if (!ioInstance) throw new Error("Socket.io not initialized!");
+    return ioInstance;
 };

@@ -39,6 +39,27 @@ const getAllUsers = catchAsync(async (req, res) => {
   });
 });
 
+const getAllUsersForChat = catchAsync(async (req, res) => {
+  const userId = req.user.userId;
+  // Read conversationId from query params
+  const { keyword, conversationId, skip = "0", limit = "10" } = req.query;
+
+  const result = await UserServices.getAllUsersForChat(
+    userId,
+    conversationId as string,
+    keyword as string,
+    Number(skip),
+    Number(limit)
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Users fetched successfully for chat",
+    data: result,
+  });
+});;
+
 // Get single user by ID
 const getSingleUserById = catchAsync(async (req, res) => {
   const { userId } = req.params;
@@ -156,6 +177,7 @@ const savePushToken = catchAsync(async (req, res) => {
 
 export const UserControllers = {
   getAllUsers,
+  getAllUsersForChat,
   getMe,
   suspendUser,
   withdrawSuspension,

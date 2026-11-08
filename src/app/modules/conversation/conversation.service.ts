@@ -2,6 +2,8 @@
 import { Conversation } from "./conversation.model";
 import { Types } from "mongoose";
 import { Message } from "./message/message.model";
+import AppError from "../../errors/AppError";
+import httpStatus from "http-status";
 
 const accessChat = async (userId: string, targetUserId: string) => {
     if (!targetUserId) throw new Error("Target User ID is required");
@@ -24,6 +26,8 @@ const accessChat = async (userId: string, targetUserId: string) => {
         const chatData = {
             isGroup: false,
             members: [new Types.ObjectId(userId), new Types.ObjectId(targetUserId)],
+            messageRequestStatus: "pending",
+            requestedBy: new Types.ObjectId(userId),
         };
         const createdChat = await Conversation.create(chatData);
 
@@ -34,6 +38,26 @@ const accessChat = async (userId: string, targetUserId: string) => {
 
         return fullChat;
     }
+};
+
+const handleMessageRequest = async (
+    conversationId: string,
+    userId: string,
+    action: "accepted" | "rejected"
+) => {
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation) throw new AppError(httpStatus.NOT_FOUND, "Conversation not found");
+
+    // Ensure the person accepting/rejecting is the RECEIVER, not the sender
+    if (conversation.requestedBy?.toString() === userId) {
+        throw new AppError(httpStatus.FORBIDDEN, "You cannot accept your own request");
+    }
+
+    conversation.messageRequestStatus = action;
+    await conversation.save();
+
+    return conversation;
 };
 
 const getMyInbox = async (userId: string) => {
@@ -96,6 +120,8 @@ const getMyInbox = async (userId: string) => {
                 conversationId: convo._id,
                 isGroup: convo.isGroup,
                 name: chatName,
+                messageRequestStatus: convo.messageRequestStatus,
+                requestedBy: convo.requestedBy,
                 avatar: chatAvatar,
                 otherUserId: otherUser?._id || null,
                 lastMessage: convo.lastMessage
@@ -115,7 +141,53 @@ const getMyInbox = async (userId: string) => {
     return formattedInbox;
 };
 
+const createGroupChat = async (
+    creatorId: string,
+    payload: { groupName: string; groupAvatar?: string; members: string[] }
+) => {
+    if (!payload.members || payload.members.length < 2) {
+        throw new AppError(httpStatus.BAD_REQUEST, "At least 2 members are required to create a group");
+    }
+
+    // Combine creator with the members list and remove duplicates
+    const allMembers = [...new Set([creatorId, ...payload.members])];
+
+    // Validation: Ensure creator is connected to all members (has a 1-on-1 chat)
+    for (const memberId of payload.members) {
+        const existingChat = await Conversation.findOne({
+            isGroup: false,
+            $and: [
+                { members: { $elemMatch: { $eq: new Types.ObjectId(creatorId) } } },
+                { members: { $elemMatch: { $eq: new Types.ObjectId(memberId) } } },
+            ],
+        });
+
+        if (!existingChat) {
+            throw new AppError(
+                httpStatus.FORBIDDEN,
+                "You can only add users you have previously chatted with."
+            );
+        }
+    }
+
+    const groupChat = await Conversation.create({
+        isGroup: true,
+        groupName: payload.groupName,
+        groupAvatar: payload.groupAvatar || "",
+        members: allMembers,
+        admins: [creatorId], // Creator is the admin
+    });
+
+    const fullGroupChat = await Conversation.findById(groupChat._id)
+        .populate("members", "name profilePicture email")
+        .populate("admins", "name profilePicture");
+
+    return fullGroupChat;
+};
+
 export const ConversationServices = {
     accessChat,
+    handleMessageRequest,
     getMyInbox,
+    createGroupChat
 };

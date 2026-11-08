@@ -5,6 +5,8 @@ import { User } from "../auth/auth.model";
 import { infinitePaginate } from "../../utils/infinitePaginate";
 import { deleteImageFromCloudinary, extractPublicId } from "../../utils/deleteImageFromCloudinary";
 import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
+import { Types } from "mongoose";
+import { Conversation } from "../conversation/conversation.model";
 // import AppError from "../../errors/AppError";
 // import httpStatus from "http-status";
 // import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
@@ -49,6 +51,107 @@ const getAllUsers = async (
 
   return infinitePaginate(User, query, skip, limit);
 };
+
+const getAllUsersForChat = async (
+  userId: string,
+  conversationId?: string, // ✅ Added conversationId (Group ID)
+  keyword?: string,
+  skip = 0,
+  limit = 10
+) => {
+  const currentUserId = new Types.ObjectId(userId);
+
+  // 1. Build the base query
+  const query: any = {
+    _id: { $ne: currentUserId }, // Don't show the current user
+    isDeleted: false,
+  };
+
+  // ✅ 2. Exclude users who are ALREADY in the group
+  if (conversationId) {
+    const group = await Conversation.findById(conversationId).select("members");
+    
+    if (!group) {
+      throw new AppError(httpStatus.NOT_FOUND, "Group not found");
+    }
+
+    // Add a condition to exclude all existing group members from the search
+    query._id = { 
+      $ne: currentUserId, 
+      $nin: group.members // $nin means "Not In"
+    };
+  }
+
+  // 3. Text Search
+  if (keyword) {
+    query.$or = [
+      { name: { $regex: keyword, $options: "i" } },
+      { email: { $regex: keyword, $options: "i" } },
+    ];
+  }
+
+  // 4. Aggregation Pipeline (Same as before)
+  const pipeline: any[] = [
+    { $match: query },
+    { $sort: { name: 1 } },
+    {
+      $lookup: {
+        from: "conversations",
+        let: { otherUserId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              isGroup: false,
+              $expr: {
+                $and: [
+                  { $in: [currentUserId, "$members"] },
+                  { $in: ["$$otherUserId", "$members"] },
+                ],
+              },
+            },
+          },
+        ],
+        as: "existingChat",
+      },
+    },
+    {
+      $addFields: {
+        isConnected: { $gt: [{ $size: "$existingChat" }, 0] },
+        isMessageReqAccepted: { $gt: [{ $size: "$existingChat" }, 0] },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        email: 1,
+        profilePicture: 1,
+        isConnected: 1,
+        isMessageReqAccepted: 1,
+      },
+    },
+    { $skip: skip },
+    { $limit: limit },
+  ];
+
+  const [users, total] = await Promise.all([
+    User.aggregate(pipeline),
+    User.countDocuments(query),
+  ]);
+
+  return {
+    data: users,
+    meta: {
+      total,
+      filteredTotal: total,
+      skip,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasMore: skip + users.length < total,
+    },
+  };
+};
+
 
 const getSingleUserById = async (userId: string) => {
   const result = await User.findById(userId);
@@ -275,6 +378,7 @@ const saveUserPushToken = async (payload: any) => {
 
 export const UserServices = {
   getAllUsers,
+  getAllUsersForChat,
   getMe,
   suspendUser,
   withdrawSuspension,
