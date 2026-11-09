@@ -7,6 +7,7 @@ export type TMessage = {
   text: string;
   readBy: ObjectId[];
   deleteAt?: Date | null;
+  isSystemMessage?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 };

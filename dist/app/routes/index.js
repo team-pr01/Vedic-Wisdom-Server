@@ -32,8 +32,7 @@ const reels_route_1 = require("../modules/reels/reels.route");
 const subscriptionPlan_routes_1 = require("../modules/subscriptionService/subsccriptionPlan/subscriptionPlan.routes");
 const subscription_routes_1 = require("../modules/subscriptionService/subscription/subscription.routes");
 const quiz_route_1 = require("../modules/quiz/quiz.route");
-const message_route_1 = require("../modules/message/message.route");
-const chat_route_1 = require("../modules/chat/chat.route");
+const conversation_route_1 = require("../modules/conversation/conversation.route");
 const coinPackage_route_1 = require("../modules/coin/coinPackage/coinPackage.route");
 const coinTransaction_route_1 = require("../modules/coin/coinTransaction/coinTransaction.route");
 const savedBook_routes_1 = require("../modules/savedItem/savedBook.routes");
@@ -43,6 +42,8 @@ const chat_routes_1 = require("../modules/rag/chat/chat.routes");
 const projectTransaction_route_1 = require("../modules/project/projectTransaction/projectTransaction.route");
 const shopBanner_routes_1 = require("../modules/shop/shopBanner/shopBanner.routes");
 const quizProgress_routes_1 = require("../modules/quiz/quizProgress/quizProgress.routes");
+const message_routee_1 = require("../modules/conversation/message/message.routee");
+const report_route_1 = require("../modules/conversation/report/report.route");
 const router = (0, express_1.Router)();
 const moduleRoutes = [
     {
@@ -186,12 +187,16 @@ const moduleRoutes = [
         route: quizProgress_routes_1.QuizProgressRoutes,
     },
     {
-        path: "/chat",
-        route: chat_route_1.ChatRoutes,
+        path: "/conversation",
+        route: conversation_route_1.ConversationRoutes,
     },
     {
         path: "/message",
-        route: message_route_1.MessageRoutes,
+        route: message_routee_1.MessageRoutes,
+    },
+    {
+        path: "/report",
+        route: report_route_1.ReportRoutes,
     },
     {
         path: "/coin-package",

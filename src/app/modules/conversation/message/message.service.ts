@@ -11,7 +11,6 @@ const getMessages = async (
   skip = 0,
   limit = 20
 ) => {
-  // 1. Verify the user is part of this conversation and populate details
   const conversation = await Conversation.findById(conversationId)
     .populate("members", "name profilePicture email")
     .populate("admins", "name profilePicture");
@@ -20,27 +19,56 @@ const getMessages = async (
     throw new AppError(httpStatus.NOT_FOUND, "Conversation not found");
   }
 
+  const userIdString = userId.toString();
+
+  // ✅ FIX 1: Safe check for leftMembers
+  // const hasLeftGroup = conversation.isGroup && conversation.leftMembers?.some(
+  //   (id: any) => id && id.toString() === userIdString // <-- Added 'id &&' check
+  // );
+
+  // if (hasLeftGroup) {
+  //   throw new AppError(httpStatus.FORBIDDEN, "You have left this group and cannot view messages.");
+  // }
+
+  // ✅ FIX 2: Safe check for isMember
   const isMember = conversation.members.some(
-    (member: any) => member._id.toString() === userId
+    (member: any) => {
+      if (!member) return false; // <-- Added null check
+      const memberId = member._id || member;
+      return memberId.toString() === userIdString;
+    }
   );
 
   if (!isMember) {
     throw new AppError(httpStatus.FORBIDDEN, "You are not a member of this chat");
   }
 
-  // 2. Fetch messages
-  const messages = await Message.find({ conversationId })
+  // ✅ FIX 3: Safe check for deletedBy
+  const deletionRecord = conversation?.deletedBy?.find(
+    (d: any) => d && d.user && d.user.toString() === userIdString // <-- Added d && d.user check
+  );
+
+  const query: any = { conversationId };
+  if (deletionRecord) {
+    query.createdAt = { $gt: deletionRecord.deletedAt };
+  }
+
+  const messages = await Message.find(query)
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
     .populate("sender", "name profilePicture")
     .lean();
 
-  const total = await Message.countDocuments({ conversationId });
+  const total = await Message.countDocuments(query);
 
-  // 3. Mark these messages as read by the current user
+  // ✅ FIX 4: Safe check for message sender
   const messageIds = messages
-    .filter((msg) => (msg.sender as any)?._id?.toString() !== userId && msg.sender?.toString() !== userId)
+    .filter((msg) => {
+      if (!msg.sender) return false; // <-- Added null check
+      const senderId = (msg.sender as any)?._id?.toString() || msg.sender?.toString();
+      return senderId !== userIdString;
+    })
     .map((msg) => msg._id);
 
   if (messageIds.length > 0) {
@@ -52,7 +80,6 @@ const getMessages = async (
 
   return {
     messages: messages.reverse(),
-    // ✅ Added conversation details here
     conversationDetails: {
       isGroup: conversation.isGroup,
       groupName: conversation.groupName,

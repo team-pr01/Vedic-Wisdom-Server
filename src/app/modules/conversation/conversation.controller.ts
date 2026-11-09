@@ -73,6 +73,7 @@ const getMyInbox = catchAsync(async (req, res) => {
 });
 
 const createGroupChat = catchAsync(async (req, res) => {
+  const file = req.file;
   const userId = req.user.userId;
   const { groupName, groupAvatar, members } = req.body;
 
@@ -80,7 +81,7 @@ const createGroupChat = catchAsync(async (req, res) => {
     groupName,
     groupAvatar,
     members,
-  });
+  }, file);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -90,9 +91,47 @@ const createGroupChat = catchAsync(async (req, res) => {
   });
 });
 
+// Delete Chat (1-on-1 or Group)
+const deleteChatForUser = catchAsync(async (req, res) => {
+  const { conversationId } = req.params;
+  const userId = req.user.userId;
+
+  const result = await ConversationServices.deleteChatForUser(
+    conversationId,
+    userId
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Chat deleted successfully",
+    data: result,
+  });
+});
+
+// Leave Group
+const leaveGroup = catchAsync(async (req, res) => {
+  const { conversationId } = req.params;
+  const userId = req.user.userId;
+
+  const result = await ConversationServices.leaveGroup(
+    conversationId,
+    userId
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "You have left the group successfully",
+    data: result,
+  });
+});
+
 export const ConversationControllers = {
   accessChat,
   handleMessageRequest,
   getMyInbox,
-  createGroupChat
+  createGroupChat,
+  deleteChatForUser,
+  leaveGroup
 };

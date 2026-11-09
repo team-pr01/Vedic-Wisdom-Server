@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Server } from "socket.io";
 import http from "http";
@@ -22,9 +23,12 @@ export const initSocket = (server: http.Server) => {
             socket.join(userId);
             io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
 
-            // Automatically join ALL of the user's conversation rooms
-            // This ensures they get real-time inbox updates even if they aren't in the ChatWindow
-            const userConversations = await Conversation.find({ members: userId });
+            const userConversations = await Conversation.find({
+                members: userId,
+                // Find groups where they are NOT in the leftMembers array
+                leftMembers: { $ne: userId } 
+            });
+            
             userConversations.forEach((convo) => {
                 socket.join(convo._id.toString());
             });
@@ -39,6 +43,12 @@ export const initSocket = (server: http.Server) => {
         socket.on("sendMessage", async (data) => {
             const { conversationId, senderId, text } = data;
 
+            const conversation = await Conversation.findById(conversationId);
+            if (conversation?.isGroup && conversation?.leftMembers?.some(id => id.toString() === senderId.toString())) {
+                return socket.emit("messageError", { message: "You are no longer in this group." });
+            }
+
+
             // Save to DB
             const newMessage = await Message.create({
                 conversationId,
@@ -46,8 +56,15 @@ export const initSocket = (server: http.Server) => {
                 text,
             });
 
+            const updatedDeletedBy = conversation?.deletedBy?.filter(
+                (record: any) => record.user.toString() === senderId.toString()
+            );
+
             // Update conversation lastMessage
-            await Conversation.findByIdAndUpdate(conversationId, { lastMessage: newMessage._id });
+            await Conversation.findByIdAndUpdate(conversationId, {
+                lastMessage: newMessage._id,
+                deletedBy: updatedDeletedBy
+            });
 
             const populatedMessage = await Message.findById(newMessage._id)
                 .populate("sender", "name profilePicture");
@@ -80,6 +97,10 @@ export const initSocket = (server: http.Server) => {
         // 4. Typing Indicator
         socket.on("typing", ({ conversationId, userId, userName, isTyping }) => {
             socket.to(conversationId).emit("userTyping", { userId, userName, isTyping });
+        });
+
+        socket.on("leaveRoom", (conversationId) => {
+            socket.leave(conversationId);
         });
 
         // 5. Disconnect

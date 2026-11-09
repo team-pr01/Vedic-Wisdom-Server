@@ -4,6 +4,8 @@ import { Types } from "mongoose";
 import { Message } from "./message/message.model";
 import AppError from "../../errors/AppError";
 import httpStatus from "http-status";
+import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
+import { getIO } from "../../socket";
 
 const accessChat = async (userId: string, targetUserId: string) => {
     if (!targetUserId) throw new Error("Target User ID is required");
@@ -65,6 +67,7 @@ const getMyInbox = async (userId: string) => {
 
     const conversations = await Conversation.find({
         members: { $in: [userObjectId] },
+        "deletedBy.user": { $ne: userObjectId }
     })
         .populate("members", "name profilePicture")
         .populate("lastMessage")
@@ -85,7 +88,7 @@ const getMyInbox = async (userId: string) => {
                 chatAvatar = otherUser?.profilePicture || "";
             }
 
-            // ✅ Calculate unread count
+            // Calculate unread count
             // Find messages in this conversation where the sender is NOT me, and I am NOT in readBy
             const unreadCount = await Message.countDocuments({
                 conversationId: convo._id,
@@ -116,6 +119,11 @@ const getMyInbox = async (userId: string) => {
                 }
             }
 
+            const hasLeft = convo.isGroup && convo.leftMembers?.some(
+                (id: any) => id && id.toString() === userId.toString()
+            );
+
+
             return {
                 conversationId: convo._id,
                 isGroup: convo.isGroup,
@@ -124,6 +132,7 @@ const getMyInbox = async (userId: string) => {
                 requestedBy: convo.requestedBy,
                 avatar: chatAvatar,
                 otherUserId: otherUser?._id || null,
+                hasLeft: hasLeft || false,
                 lastMessage: convo.lastMessage
                     ? {
                         text: convo.lastMessage.text,
@@ -143,7 +152,8 @@ const getMyInbox = async (userId: string) => {
 
 const createGroupChat = async (
     creatorId: string,
-    payload: { groupName: string; groupAvatar?: string; members: string[] }
+    payload: { groupName: string; groupAvatar?: string; members: string[] },
+    file: Express.Multer.File | undefined
 ) => {
     if (!payload.members || payload.members.length < 2) {
         throw new AppError(httpStatus.BAD_REQUEST, "At least 2 members are required to create a group");
@@ -170,10 +180,21 @@ const createGroupChat = async (
         }
     }
 
+
+    let imageUrl = "";
+
+    if (file) {
+        const imageName = `${Date.now()}`;
+        const path = file.path;
+
+        const { secure_url } = await sendImageToCloudinary(imageName, path);
+        imageUrl = secure_url;
+    }
+
     const groupChat = await Conversation.create({
         isGroup: true,
         groupName: payload.groupName,
-        groupAvatar: payload.groupAvatar || "",
+        groupAvatar: imageUrl || "",
         members: allMembers,
         admins: [creatorId], // Creator is the admin
     });
@@ -185,9 +206,58 @@ const createGroupChat = async (
     return fullGroupChat;
 };
 
+const leaveGroup = async (conversationId: string, userId: string) => {
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation || !conversation.isGroup) {
+        throw new AppError(httpStatus.BAD_REQUEST, "Not a valid group");
+    }
+
+    // Update DB (Only needs to be done once)
+    await Conversation.findByIdAndUpdate(conversationId, {
+        $push: { leftMembers: userId },
+        $pull: { admins: userId }
+    });
+
+    // Create system message (Only needs to be done once)
+    const systemMessage = await Message.create({
+        conversationId,
+        sender: userId,
+        text: "User left the group",
+        isSystemMessage: true 
+    });
+
+    const io = getIO();
+
+    // Emit system message to the room
+    io.to(conversationId).emit("receiveMessage", systemMessage);
+
+    // Tell the leaving user's frontend to leave the socket room
+    io.to(userId.toString()).emit("leaveSocketRoom", conversationId);
+
+    return { success: true, message: "You left the group" };
+};
+
+const deleteChatForUser = async (conversationId: string, userId: string) => {
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) throw new AppError(httpStatus.NOT_FOUND, "Chat not found");
+
+    // Add the user to the deletedBy array
+    await Conversation.findByIdAndUpdate(conversationId, {
+        $push: { deletedBy: { user: userId, deletedAt: new Date() } }
+    });
+
+    const io = getIO();
+    io.to(userId.toString()).emit("chatDeleted", { conversationId });
+
+    return { success: true, message: "Chat deleted successfully" };
+};
+
 export const ConversationServices = {
     accessChat,
     handleMessageRequest,
     getMyInbox,
-    createGroupChat
+    createGroupChat,
+    leaveGroup,
+    deleteChatForUser,
 };

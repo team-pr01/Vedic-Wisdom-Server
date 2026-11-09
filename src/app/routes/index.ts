@@ -41,6 +41,7 @@ import { ProjectTransactionRoutes } from "../modules/project/projectTransaction/
 import { ShopBannerRoutes } from "../modules/shop/shopBanner/shopBanner.routes";
 import { QuizProgressRoutes } from "../modules/quiz/quizProgress/quizProgress.routes";
 import { MessageRoutes } from "../modules/conversation/message/message.routee";
+import { ReportRoutes } from "../modules/conversation/report/report.route";
 
 const router = Router();
 
@@ -192,6 +193,10 @@ const moduleRoutes = [
   {
     path: "/message",
     route: MessageRoutes,
+  },
+  {
+    path: "/report",
+    route: ReportRoutes,
   },
   {
     path: "/coin-package",

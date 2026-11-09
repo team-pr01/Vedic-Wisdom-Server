@@ -18,8 +18,8 @@ const quizProgress_service_1 = require("./quizProgress.service");
 const catchAsync_1 = __importDefault(require("../../../utils/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../utils/sendResponse"));
 const getMyProgress = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id: quizId } = req.params;
-    const userId = req.user._id;
+    const { quizId } = req.params;
+    const userId = req.user.userId;
     const result = yield quizProgress_service_1.QuizProgressServices.getMyProgress(quizId, userId);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
@@ -28,9 +28,20 @@ const getMyProgress = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
         data: result,
     });
 }));
+const getMyAllProgress = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = req.user.userId;
+    const result = yield quizProgress_service_1.QuizProgressServices.getMyAllProgress(userId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "All progress fetched successfully",
+        data: result,
+    });
+}));
 const getLeaderboard = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id: quizId } = req.params;
-    const result = yield quizProgress_service_1.QuizProgressServices.getLeaderboard(quizId);
+    const { quizId } = req.params;
+    const userId = req.user.userId;
+    const result = yield quizProgress_service_1.QuizProgressServices.getLeaderboard(quizId, userId);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -39,9 +50,9 @@ const getLeaderboard = (0, catchAsync_1.default)((req, res) => __awaiter(void 0,
     });
 }));
 const claimReward = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id: quizId } = req.params;
+    const { quizId } = req.params;
     const { rewardClaimMethod, paymentDetails } = req.body;
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const result = yield quizProgress_service_1.QuizProgressServices.claimReward(quizId, userId, rewardClaimMethod, paymentDetails);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
@@ -50,8 +61,34 @@ const claimReward = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, vo
         data: result,
     });
 }));
+const submitPaymentDetails = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { quizId } = req.params;
+    const userId = req.user.userId;
+    const { paymentDetails } = req.body;
+    const result = yield quizProgress_service_1.QuizProgressServices.submitPaymentDetails(quizId, userId, paymentDetails);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Payment details submitted successfully. Your reward will be processed shortly.",
+        data: result,
+    });
+}));
+const submitCoinRequest = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { quizId } = req.params;
+    const userId = req.user.userId;
+    const result = yield quizProgress_service_1.QuizProgressServices.submitCoinRequest(quizId, userId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Coin request submitted successfully. It will be processed by the admin.",
+        data: result,
+    });
+}));
 exports.QuizProgressControllers = {
     getMyProgress,
+    getMyAllProgress,
     getLeaderboard,
     claimReward,
+    submitPaymentDetails,
+    submitCoinRequest,
 };

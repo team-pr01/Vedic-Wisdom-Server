@@ -54,7 +54,7 @@ const getAllUsers = async (
 
 const getAllUsersForChat = async (
   userId: string,
-  conversationId?: string, // ✅ Added conversationId (Group ID)
+  conversationId?: string, 
   keyword?: string,
   skip = 0,
   limit = 10
@@ -63,11 +63,11 @@ const getAllUsersForChat = async (
 
   // 1. Build the base query
   const query: any = {
-    _id: { $ne: currentUserId }, // Don't show the current user
+    _id: { $ne: currentUserId }, 
     isDeleted: false,
   };
 
-  // ✅ 2. Exclude users who are ALREADY in the group
+  // 2. Exclude users who are ALREADY in the group
   if (conversationId) {
     const group = await Conversation.findById(conversationId).select("members");
     
@@ -75,10 +75,9 @@ const getAllUsersForChat = async (
       throw new AppError(httpStatus.NOT_FOUND, "Group not found");
     }
 
-    // Add a condition to exclude all existing group members from the search
     query._id = { 
       $ne: currentUserId, 
-      $nin: group.members // $nin means "Not In"
+      $nin: group.members 
     };
   }
 
@@ -90,10 +89,12 @@ const getAllUsersForChat = async (
     ];
   }
 
-  // 4. Aggregation Pipeline (Same as before)
+  // 4. Aggregation Pipeline
   const pipeline: any[] = [
     { $match: query },
     { $sort: { name: 1 } },
+    
+    // ✅ Join with Conversation to check status
     {
       $lookup: {
         from: "conversations",
@@ -110,16 +111,46 @@ const getAllUsersForChat = async (
               },
             },
           },
+          // Project only the status we need
+          { $project: { messageRequestStatus: 1 } }
         ],
         as: "existingChat",
       },
     },
+    
+    // ✅ Calculate the new isConnected logic
     {
       $addFields: {
-        isConnected: { $gt: [{ $size: "$existingChat" }, 0] },
-        isMessageReqAccepted: { $gt: [{ $size: "$existingChat" }, 0] },
+        // isConnected is TRUE only if a chat exists AND the status is "accepted"
+        isConnected: {
+          $cond: {
+            if: { $gt: [{ $size: "$existingChat" }, 0] },
+            then: {
+              $eq: [
+                { $arrayElemAt: ["$existingChat.messageRequestStatus", 0] },
+                "accepted"
+              ]
+            },
+            else: false
+          }
+        },
+        // isMessageReqAccepted is the exact same logic here
+        isMessageReqAccepted: {
+          $cond: {
+            if: { $gt: [{ $size: "$existingChat" }, 0] },
+            then: {
+              $eq: [
+                { $arrayElemAt: ["$existingChat.messageRequestStatus", 0] },
+                "accepted"
+              ]
+            },
+            else: false
+          }
+        },
       },
     },
+    
+    // 5. Format output
     {
       $project: {
         _id: 1,
@@ -130,6 +161,8 @@ const getAllUsersForChat = async (
         isMessageReqAccepted: 1,
       },
     },
+    
+    // 6. Pagination
     { $skip: skip },
     { $limit: limit },
   ];
@@ -151,7 +184,6 @@ const getAllUsersForChat = async (
     },
   };
 };
-
 
 const getSingleUserById = async (userId: string) => {
   const result = await User.findById(userId);

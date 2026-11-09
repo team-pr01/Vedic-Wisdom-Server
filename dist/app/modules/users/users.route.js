@@ -11,6 +11,7 @@ const auth_constants_1 = require("../auth/auth.constants");
 const multer_config_1 = require("../../config/multer.config");
 const router = express_1.default.Router();
 router.get("/", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), users_controller_1.UserControllers.getAllUsers);
+router.get("/for-chat", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), users_controller_1.UserControllers.getAllUsersForChat);
 router.get("/me", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), users_controller_1.UserControllers.getMe);
 router.patch("/suspend/:userId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), users_controller_1.UserControllers.suspendUser);
 router.patch("/suspension/withdraw/:userId", (0, auth_1.default)(auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), users_controller_1.UserControllers.withdrawSuspension);

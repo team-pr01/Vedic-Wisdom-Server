@@ -172,7 +172,8 @@ const userSchema = new mongoose_1.Schema({
     isVendor: {
         type: Boolean,
         default: false
-    }
+    },
+    blockedUsers: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
 }, {
     timestamps: true,
 });
