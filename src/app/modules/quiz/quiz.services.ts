@@ -49,21 +49,35 @@ const getActiveQuizzes = async (
   skip = 0,
   limit = 10
 ) => {
-  const query: any = { status: "active" };
+  const filter: any = { status: "active" };
 
-  if (keyword) {
-    query.name = { $regex: keyword, $options: "i" };
-  }
+  if (keyword) filter.name = { $regex: keyword, $options: "i" };
+  if (name) filter.name = { $regex: name, $options: "i" };
+  if (type) filter.type = type;
 
-  if (name) {
-    query.name = { $regex: name, $options: "i" };
-  }
+  const result = await infinitePaginate(Quiz, filter, skip, limit, []);
 
-  if (type) {
-    query.type = type;
-  }
+  const sanitizedData = result.data.map((quiz: any) => {
+    const quizObj = quiz.toObject ? quiz.toObject() : quiz;
+    
+    if (quizObj.levels) {
+      quizObj.levels = quizObj.levels.map((level: any) => {
+        if (level.questions) {
+          level.questions = level.questions.map((q: any) => {
+            delete q.correctAnswer;
+            return q;
+          });
+        }
+        return level;
+      });
+    }
+    return quizObj;
+  });
 
-  return infinitePaginate(Quiz, query, skip, limit, []);
+  return {
+    ...result,
+    data: sanitizedData
+  };
 };
 
 // Get Single Quiz
@@ -89,6 +103,11 @@ const getQuizQuestionsByLevelNo = async (quizId: string, levelNo: number) => {
     throw new AppError(httpStatus.NOT_FOUND, "Level not found in this quiz");
   }
 
+  // Calculate the last level number
+  // We use Math.max to find the highest level number in the levels array
+  const levelNumbers = quiz.levels.map((l) => l.no);
+  const lastLevelNo = Math.max(...levelNumbers);
+
   const sanitizedQuestions = level.questions.map((q) => ({
     _id: q._id,
     question: q.question,
@@ -103,6 +122,7 @@ const getQuizQuestionsByLevelNo = async (quizId: string, levelNo: number) => {
     passingScore: level.passingScore,
     totalQuestions: sanitizedQuestions.length,
     questions: sanitizedQuestions,
+    lastLevelNo,
   };
 };
 

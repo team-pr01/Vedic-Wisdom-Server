@@ -3,7 +3,7 @@ import app from "./app";
 import config from "./app/config";
 import mongoose from "mongoose";
 import { Server } from "http";
-import setupSocket from "./app/socket";
+import { initSocket } from "./app/socket";
 
 let server: Server;
 
@@ -13,7 +13,7 @@ async function main() {
 
     server = http.createServer(app);
 
-    setupSocket(server)
+    initSocket(server);
 
     // registerCrons();
     // registerOldNotificationCleanupCron();

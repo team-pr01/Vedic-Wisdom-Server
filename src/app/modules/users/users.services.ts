@@ -5,6 +5,8 @@ import { User } from "../auth/auth.model";
 import { infinitePaginate } from "../../utils/infinitePaginate";
 import { deleteImageFromCloudinary, extractPublicId } from "../../utils/deleteImageFromCloudinary";
 import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
+import { Types } from "mongoose";
+import { Conversation } from "../conversation/conversation.model";
 // import AppError from "../../errors/AppError";
 // import httpStatus from "http-status";
 // import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
@@ -48,6 +50,134 @@ const getAllUsers = async (
   }
 
   return infinitePaginate(User, query, skip, limit);
+};
+
+const getAllUsersForChat = async (
+  userId: string,
+  conversationId?: string, 
+  keyword?: string,
+  skip = 0,
+  limit = 10
+) => {
+  const currentUserId = new Types.ObjectId(userId);
+
+  // 1. Build the base query
+  const query: any = {
+    _id: { $ne: currentUserId }, 
+    isDeleted: false,
+  };
+
+  // 2. Exclude users who are ALREADY in the group
+  if (conversationId) {
+    const group = await Conversation.findById(conversationId).select("members");
+    
+    if (!group) {
+      throw new AppError(httpStatus.NOT_FOUND, "Group not found");
+    }
+
+    query._id = { 
+      $ne: currentUserId, 
+      $nin: group.members 
+    };
+  }
+
+  // 3. Text Search
+  if (keyword) {
+    query.$or = [
+      { name: { $regex: keyword, $options: "i" } },
+      { email: { $regex: keyword, $options: "i" } },
+    ];
+  }
+
+  // 4. Aggregation Pipeline
+  const pipeline: any[] = [
+    { $match: query },
+    { $sort: { name: 1 } },
+    
+    // ✅ Join with Conversation to check status
+    {
+      $lookup: {
+        from: "conversations",
+        let: { otherUserId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              isGroup: false,
+              $expr: {
+                $and: [
+                  { $in: [currentUserId, "$members"] },
+                  { $in: ["$$otherUserId", "$members"] },
+                ],
+              },
+            },
+          },
+          // ✅ Project the status so we can use it
+          { $project: { messageRequestStatus: 1 } }
+        ],
+        as: "existingChat",
+      },
+    },
+    
+    // ✅ Calculate connection status and expose the request status
+    {
+      $addFields: {
+        // 1. Is there an accepted connection?
+        isConnected: {
+          $cond: {
+            if: { $gt: [{ $size: "$existingChat" }, 0] },
+            then: {
+              $eq: [
+                { $arrayElemAt: ["$existingChat.messageRequestStatus", 0] },
+                "accepted"
+              ]
+            },
+            else: false
+          }
+        },
+        // 2. Expose the raw status (pending, rejected, accepted, or none if no chat exists)
+        connectionStatus: {
+          $cond: {
+            if: { $gt: [{ $size: "$existingChat" }, 0] },
+            then: { $arrayElemAt: ["$existingChat.messageRequestStatus", 0] },
+            else: "none" // No chat exists yet
+          }
+        }
+      },
+    },
+    
+    // 5. Format output
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        email: 1,
+        profilePicture: 1,
+        isConnected: 1,
+        connectionStatus: 1, 
+      },
+    },
+    
+    // 6. Pagination
+    { $skip: skip },
+    { $limit: limit },
+  ];
+
+  const [users, total] = await Promise.all([
+    User.aggregate(pipeline),
+    User.countDocuments(query),
+  ]);
+
+  return {
+    data: users,
+    meta: {
+      total,
+      filteredTotal: total,
+      skip,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasMore: skip + users.length < total,
+    },
+  };
 };
 
 const getSingleUserById = async (userId: string) => {
@@ -275,6 +405,7 @@ const saveUserPushToken = async (payload: any) => {
 
 export const UserServices = {
   getAllUsers,
+  getAllUsersForChat,
   getMe,
   suspendUser,
   withdrawSuspension,

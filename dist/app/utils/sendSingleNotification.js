@@ -44,8 +44,9 @@ const sendSingleNotification = (userId, title, message, deepLink, externalLink) 
     //     body: message,
     //   },
     // ]);
+    const io = (0, socket_1.getIO)();
     // Emit via Socket.io
-    socket_1.io.to(userId.toString()).emit("new-notification", {
+    io.to(userId.toString()).emit("new-notification", {
         title,
         message,
         deepLink,

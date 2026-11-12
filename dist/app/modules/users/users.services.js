@@ -20,6 +20,8 @@ const auth_model_1 = require("../auth/auth.model");
 const infinitePaginate_1 = require("../../utils/infinitePaginate");
 const deleteImageFromCloudinary_1 = require("../../utils/deleteImageFromCloudinary");
 const sendImageToCloudinary_1 = require("../../utils/sendImageToCloudinary");
+const mongoose_1 = require("mongoose");
+const conversation_model_1 = require("../conversation/conversation.model");
 // import AppError from "../../errors/AppError";
 // import httpStatus from "http-status";
 // import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
@@ -57,6 +59,115 @@ const getAllUsers = (...args_1) => __awaiter(void 0, [...args_1], void 0, functi
         query.premiumUnlocked = filters.premiumUnlocked === "true";
     }
     return (0, infinitePaginate_1.infinitePaginate)(auth_model_1.User, query, skip, limit);
+});
+const getAllUsersForChat = (userId_1, conversationId_1, keyword_1, ...args_1) => __awaiter(void 0, [userId_1, conversationId_1, keyword_1, ...args_1], void 0, function* (userId, conversationId, keyword, skip = 0, limit = 10) {
+    const currentUserId = new mongoose_1.Types.ObjectId(userId);
+    // 1. Build the base query
+    const query = {
+        _id: { $ne: currentUserId },
+        isDeleted: false,
+    };
+    // 2. Exclude users who are ALREADY in the group
+    if (conversationId) {
+        const group = yield conversation_model_1.Conversation.findById(conversationId).select("members");
+        if (!group) {
+            throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Group not found");
+        }
+        query._id = {
+            $ne: currentUserId,
+            $nin: group.members
+        };
+    }
+    // 3. Text Search
+    if (keyword) {
+        query.$or = [
+            { name: { $regex: keyword, $options: "i" } },
+            { email: { $regex: keyword, $options: "i" } },
+        ];
+    }
+    // 4. Aggregation Pipeline
+    const pipeline = [
+        { $match: query },
+        { $sort: { name: 1 } },
+        // ✅ Join with Conversation to check status
+        {
+            $lookup: {
+                from: "conversations",
+                let: { otherUserId: "$_id" },
+                pipeline: [
+                    {
+                        $match: {
+                            isGroup: false,
+                            $expr: {
+                                $and: [
+                                    { $in: [currentUserId, "$members"] },
+                                    { $in: ["$$otherUserId", "$members"] },
+                                ],
+                            },
+                        },
+                    },
+                    // ✅ Project the status so we can use it
+                    { $project: { messageRequestStatus: 1 } }
+                ],
+                as: "existingChat",
+            },
+        },
+        // ✅ Calculate connection status and expose the request status
+        {
+            $addFields: {
+                // 1. Is there an accepted connection?
+                isConnected: {
+                    $cond: {
+                        if: { $gt: [{ $size: "$existingChat" }, 0] },
+                        then: {
+                            $eq: [
+                                { $arrayElemAt: ["$existingChat.messageRequestStatus", 0] },
+                                "accepted"
+                            ]
+                        },
+                        else: false
+                    }
+                },
+                // 2. Expose the raw status (pending, rejected, accepted, or none if no chat exists)
+                connectionStatus: {
+                    $cond: {
+                        if: { $gt: [{ $size: "$existingChat" }, 0] },
+                        then: { $arrayElemAt: ["$existingChat.messageRequestStatus", 0] },
+                        else: "none" // No chat exists yet
+                    }
+                }
+            },
+        },
+        // 5. Format output
+        {
+            $project: {
+                _id: 1,
+                name: 1,
+                email: 1,
+                profilePicture: 1,
+                isConnected: 1,
+                connectionStatus: 1,
+            },
+        },
+        // 6. Pagination
+        { $skip: skip },
+        { $limit: limit },
+    ];
+    const [users, total] = yield Promise.all([
+        auth_model_1.User.aggregate(pipeline),
+        auth_model_1.User.countDocuments(query),
+    ]);
+    return {
+        data: users,
+        meta: {
+            total,
+            filteredTotal: total,
+            skip,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            hasMore: skip + users.length < total,
+        },
+    };
 });
 const getSingleUserById = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield auth_model_1.User.findById(userId);
@@ -213,6 +324,7 @@ const saveUserPushToken = (payload) => __awaiter(void 0, void 0, void 0, functio
 });
 exports.UserServices = {
     getAllUsers,
+    getAllUsersForChat,
     getMe,
     suspendUser,
     withdrawSuspension,

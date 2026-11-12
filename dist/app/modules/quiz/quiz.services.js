@@ -42,17 +42,30 @@ const getAllQuizzes = (keyword_1, name_1, status_1, type_1, ...args_1) => __awai
 });
 // Get Active Quizzes (Users only)
 const getActiveQuizzes = (keyword_1, name_1, type_1, ...args_1) => __awaiter(void 0, [keyword_1, name_1, type_1, ...args_1], void 0, function* (keyword, name, type, skip = 0, limit = 10) {
-    const query = { status: "active" };
-    if (keyword) {
-        query.name = { $regex: keyword, $options: "i" };
-    }
-    if (name) {
-        query.name = { $regex: name, $options: "i" };
-    }
-    if (type) {
-        query.type = type;
-    }
-    return (0, infinitePaginate_1.infinitePaginate)(quiz_model_1.default, query, skip, limit, []);
+    const filter = { status: "active" };
+    if (keyword)
+        filter.name = { $regex: keyword, $options: "i" };
+    if (name)
+        filter.name = { $regex: name, $options: "i" };
+    if (type)
+        filter.type = type;
+    const result = yield (0, infinitePaginate_1.infinitePaginate)(quiz_model_1.default, filter, skip, limit, []);
+    const sanitizedData = result.data.map((quiz) => {
+        const quizObj = quiz.toObject ? quiz.toObject() : quiz;
+        if (quizObj.levels) {
+            quizObj.levels = quizObj.levels.map((level) => {
+                if (level.questions) {
+                    level.questions = level.questions.map((q) => {
+                        delete q.correctAnswer;
+                        return q;
+                    });
+                }
+                return level;
+            });
+        }
+        return quizObj;
+    });
+    return Object.assign(Object.assign({}, result), { data: sanitizedData });
 });
 // Get Single Quiz
 const getSingleQuizById = (quizId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -72,6 +85,10 @@ const getQuizQuestionsByLevelNo = (quizId, levelNo) => __awaiter(void 0, void 0,
     if (!level) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Level not found in this quiz");
     }
+    // Calculate the last level number
+    // We use Math.max to find the highest level number in the levels array
+    const levelNumbers = quiz.levels.map((l) => l.no);
+    const lastLevelNo = Math.max(...levelNumbers);
     const sanitizedQuestions = level.questions.map((q) => ({
         _id: q._id,
         question: q.question,
@@ -85,6 +102,7 @@ const getQuizQuestionsByLevelNo = (quizId, levelNo) => __awaiter(void 0, void 0,
         passingScore: level.passingScore,
         totalQuestions: sanitizedQuestions.length,
         questions: sanitizedQuestions,
+        lastLevelNo,
     };
 });
 // Update Quiz (Admin)

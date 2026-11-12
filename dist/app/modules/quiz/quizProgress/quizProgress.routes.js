@@ -11,6 +11,11 @@ const quizProgress_controller_1 = require("./quizProgress.controller");
 const router = express_1.default.Router();
 // All routes here require the user to be logged in
 router.use((0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator));
+// For getting all progress
+router.get("/my-progress", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), quizProgress_controller_1.QuizProgressControllers.getMyAllProgress);
+// Submit Payment Details for Prize
+router.post("/submit-payment-details/:quizId", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), quizProgress_controller_1.QuizProgressControllers.submitPaymentDetails);
+router.post("/submit-coin-request/:quizId", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), quizProgress_controller_1.QuizProgressControllers.submitCoinRequest);
 // Get user's current progress on a quiz
 router.get("/:quizId/progress", quizProgress_controller_1.QuizProgressControllers.getMyProgress);
 // Get leaderboard for a quiz (Can be public, but auth doesn't hurt)

@@ -30,8 +30,7 @@ import { ReelsRoutes } from "../modules/reels/reels.route";
 import { SubscriptionPlanRoutes } from "../modules/subscriptionService/subsccriptionPlan/subscriptionPlan.routes";
 import { SubscriptionRoutes } from "../modules/subscriptionService/subscription/subscription.routes";
 import { QuizRoutes } from "../modules/quiz/quiz.route";
-import { MessageRoutes } from "../modules/message/message.route";
-import { ChatRoutes } from "../modules/chat/chat.route";
+import { ConversationRoutes } from "../modules/conversation/conversation.route";
 import { CoinPackageRoutes } from "../modules/coin/coinPackage/coinPackage.route";
 import { CoinTransactionRoutes } from "../modules/coin/coinTransaction/coinTransaction.route";
 import { SavedItemRoutes } from "../modules/savedItem/savedBook.routes";
@@ -41,6 +40,8 @@ import { AIChatRoutes } from "../modules/rag/chat/chat.routes";
 import { ProjectTransactionRoutes } from "../modules/project/projectTransaction/projectTransaction.route";
 import { ShopBannerRoutes } from "../modules/shop/shopBanner/shopBanner.routes";
 import { QuizProgressRoutes } from "../modules/quiz/quizProgress/quizProgress.routes";
+import { MessageRoutes } from "../modules/conversation/message/message.routee";
+import { ReportRoutes } from "../modules/conversation/report/report.route";
 
 const router = Router();
 
@@ -186,12 +187,16 @@ const moduleRoutes = [
     route: QuizProgressRoutes,
   },
   {
-    path: "/chat",
-    route: ChatRoutes,
+    path: "/conversation",
+    route: ConversationRoutes,
   },
   {
     path: "/message",
     route: MessageRoutes,
+  },
+  {
+    path: "/report",
+    route: ReportRoutes,
   },
   {
     path: "/coin-package",

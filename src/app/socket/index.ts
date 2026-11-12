@@ -1,168 +1,192 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Server as SocketIOserver } from "socket.io";
-import Message from "../modules/message/message.model";
-import { Server } from "http";
-import Chat from "../modules/chat/chat.model";
-import { ChatServices } from "../modules/chat/chat.service";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Server } from "socket.io";
+import http from "http";
+import { Conversation } from "../modules/conversation/conversation.model";
+import { Message } from "../modules/conversation/message/message.model";
+import { User } from "../modules/auth/auth.model";
 
-export let io: SocketIOserver;
-export const userSocketMap = new Map();
-const setupSocket = (server: Server) => {
-    const io = new SocketIOserver(server, {
-        cors: {
-            origin: ["http://localhost:5173"],
-            methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-            credentials: true,
-        },
+let ioInstance: Server;
+export const onlineUsers = new Map();
+
+export const initSocket = (server: http.Server) => {
+    const io = new Server(server, {
+        cors: { origin: "*" }, // Configure to your frontend URL in production
     });
+    ioInstance = io;
 
-    const sendMessage = async (message: any) => {
-        const senderId = typeof message.sender === 'string'
-            ? message.sender
-            : message.sender?._id;
-
-        const receiverId = typeof message.receiver === 'string'
-            ? message.receiver
-            : message.receiver?._id;
-
-        console.log("Sender ID:", senderId);
-        console.log("Receiver ID:", receiverId);
-        console.log("Temp ID:", message.tempId);
-
-        const senderSocketId = userSocketMap.get(senderId);
-        const receiverSocketId = userSocketMap.get(receiverId);
-
-        try {
-            // Find or create chat
-            let chat = await Chat.findOne({
-                participants: { $all: [senderId, receiverId] }
-            });
-
-            if (!chat) {
-                chat = await Chat.create({
-                    participants: [senderId, receiverId],
-                    isActive: true,
-                });
-                console.log("New chat created:", chat._id);
-            }
-
-            // Create message
-            const messageData = {
-                sender: senderId,
-                receiver: receiverId,
-                content: message.content,
-                messageType: message.messageType || "text",
-            };
-
-            const createdMessage = await Message.create(messageData);
-
-            // Update chat with last message
-            chat.lastMessage = createdMessage._id;
-            chat.lastMessageAt = createdMessage.createdAt;
-            await chat.save();
-
-            // Populate message
-            const populatedMessage = await Message.findById(createdMessage._id)
-                .populate("sender", "_id name email profilePicture")
-                .populate("receiver", "_id name email profilePicture");
-
-            console.log("✅ Message created:", populatedMessage?._id);
-
-            const responseMessage = {
-                ...populatedMessage?.toObject(),
-                tempId: message.tempId,
-            };
-
-            // ✅ Send to receiver
-            if (receiverSocketId) {
-                io.to(receiverSocketId).emit("receiveMessage", populatedMessage);
-                console.log("📤 Sent to receiver:", receiverId);
-
-                // ✅ Update receiver's chat list in real-time
-                const receiverChatList = await ChatServices.getChatList(receiverId);
-                console.log("Receiver chat list", receiverChatList);
-                io.to(receiverSocketId).emit("updateChatList", receiverChatList);
-            }
-
-            // ✅ Send confirmation to sender
-            if (senderSocketId) {
-                io.to(senderSocketId).emit("messageSent", responseMessage);
-                console.log("📤 Sent confirmation to sender:", senderId);
-
-                // ✅ Update sender's chat list in real-time
-                const senderChatList = await ChatServices.getChatList(senderId);
-                console.log("Sender chat list", senderChatList);
-                io.to(senderSocketId).emit("updateChatList", senderChatList);
-            }
-
-            // ✅ If sender is offline, save for later
-            if (!senderSocketId) {
-                console.log("⚠️ Sender is offline, message saved but not delivered");
-            }
-
-        } catch (error) {
-            console.error("❌ Error sending message:", error);
-            if (senderSocketId) {
-                io.to(senderSocketId).emit("messageError", {
-                    tempId: message.tempId,
-                    error: "Failed to send message",
-                });
-            }
-        }
-    };
+    // Store online users: userId -> socketId
+    const onlineUsers = new Map();
 
     io.on("connection", (socket) => {
-        const userId = socket.handshake.query.userId as string;
+        // 1. User connects and registers their ID
+        socket.on("addUser", async (userId) => {
+            onlineUsers.set(userId, socket.id);
+            socket.join(userId);
 
-        if (userId) {
-            userSocketMap.set(userId, socket.id);
-            console.log(`✅ User connected: ${userId} with socket ID: ${socket.id}`);
-            console.log(`📊 Online users: ${userSocketMap.size}`);
+            // 1. Broadcast initial online list
+            io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
 
-            // ✅ Send updated chat list on connection
-            (async () => {
-                const chatList = await ChatServices.getChatList(userId);
-                socket.emit("updateChatList", chatList);
-            })();
+            // 2. Broadcast to everyone that this user just came online
+            io.emit("userStatusChanged", { userId, isOnline: true });
 
-            const onlineUsers = Array.from(userSocketMap.keys());
-            io.emit("onlineUsers", onlineUsers);
-            socket.broadcast.emit("userOnline", userId);
-        } else {
-            console.log("❌ User ID not provided during connection.");
-        }
+            // Join all their conversation rooms
+            const userConversations = await Conversation.find({
+                members: userId,
+                leftMembers: { $ne: userId }
+            });
 
-        socket.on("sendMessage", (message) => {
-            console.log("📩 Received sendMessage event:", message);
-            sendMessage(message);
+            userConversations.forEach((convo) => {
+                socket.join(convo._id.toString());
+            });
         });
 
-        socket.on("typing", ({ sender, receiver, isTyping }) => {
-            const receiverSocketId = userSocketMap.get(receiver);
-            if (receiverSocketId) {
-                io.to(receiverSocketId).emit("userTyping", {
-                    sender,
-                    isTyping,
+        // 2. Join a specific chat room
+        socket.on("joinRoom", (conversationId) => {
+            socket.join(conversationId);
+        });
+
+        // 3. Send Message
+        socket.on("sendMessage", async (data) => {
+            const { conversationId, senderId, text, mentions = [], tempId } = data;
+
+            const conversation = await Conversation.findById(conversationId);
+            if (!conversation) return;
+
+            // 1. Check if user left the group
+            if (conversation.isGroup && conversation.leftMembers?.some(id => id.toString() === senderId.toString())) {
+                return socket.emit("messageError", { message: "You are no longer in this group." });
+            }
+
+            // 2. Check Block status
+            // Did I block someone else?
+            const hasSenderBlockedOther = conversation.blockedBy?.some(
+                (id) => id.toString() === senderId.toString()
+            );
+            if (hasSenderBlockedOther) {
+                return socket.emit("messageError", { message: "Unblock the user to send messages." });
+            }
+
+            // Did someone else block me?
+            const isSenderBlockedByOther = conversation.blockedBy?.some(
+                (id) => id.toString() !== senderId.toString()
+            );
+
+            // 3. Save to DB (Always save so the sender sees it)
+            const newMessage = await Message.create({
+                conversationId,
+                sender: senderId,
+                text,
+                mentions,
+            });
+
+            const messageCreatedAt = newMessage?.createdAt instanceof Date
+                ? newMessage.createdAt
+                : new Date();
+
+            const updatedDeletedBy = conversation?.deletedBy?.map((record: any) => {
+                return {
+                    user: record.user,
+                    // Set their new cutoff time to exactly the time of this new message
+                    deletedAt: new Date(messageCreatedAt.getTime() - 1),
+                };
+            }) || [];
+
+            // 4. Update conversation lastMessage
+            await Conversation.findByIdAndUpdate(conversationId, {
+                lastMessage: newMessage._id,
+                deletedBy: updatedDeletedBy
+            });
+
+            const populatedMessage = await Message.findById(newMessage._id)
+                .populate("sender", "name profilePicture");
+
+            const messageWithTempId = {
+                ...populatedMessage?.toObject(), // Convert Mongoose doc to plain object
+                tempId: tempId
+            };
+
+            // 5. Emit Logic based on block status
+            if (isSenderBlockedByOther) {
+                // If I am blocked, only send the message back to ME (the sender)
+                // so my screen updates, but the other person never receives it.
+                io.to(senderId).emit("receiveMessage", messageWithTempId);
+            } else {
+                // Normal flow: Emit to everyone in the room
+                io.to(conversationId).emit("receiveMessage", messageWithTempId);
+            }
+
+            mentions.forEach((taggedUserId: string) => {
+                if (taggedUserId !== senderId) {
+                    io.to(taggedUserId).emit("youWereMentioned", messageWithTempId);
+                }
+            });
+        });
+
+        socket.on("messageRead", async ({ conversationId, userId }) => {
+            // 1. Update all messages in this conversation sent by the OTHER user
+            await Message.updateMany(
+                {
+                    conversationId,
+                    sender: { $ne: userId } // Don't mark our own messages as read by us
+                },
+                {
+                    $addToSet: { readBy: userId } // Add user to readBy array
+                }
+            );
+
+            // 2. Broadcast to the room
+            socket.to(conversationId).emit("messagesMarkedAsRead", { conversationId, userId });
+        });
+
+        // Listen for when a request is accepted/rejected to update both sides
+        socket.on("requestStatusChanged", ({ targetUserId, conversationId, status }) => {
+            io.to(targetUserId).emit("requestUpdated", { conversationId, status });
+        });
+
+        // 4. Typing Indicator
+        socket.on("typing", ({ conversationId, userId, userName, isTyping }) => {
+            socket.to(conversationId).emit("userTyping", { userId, userName, isTyping });
+        });
+
+        socket.on("leaveRoom", (conversationId) => {
+            socket.leave(conversationId);
+        });
+
+        // 5. Disconnect
+        socket.on("disconnect", async () => {
+            // Remove from online users
+            const userId = [...onlineUsers.entries()].find(([_, id]) => id === socket.id)?.[0];
+            if (userId) {
+                onlineUsers.delete(userId);
+                io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
+
+                // 1. Generate the timestamp
+                const lastActiveAt = new Date();
+
+                // 2. Save it to the Database
+                await User.findByIdAndUpdate(userId, { lastActiveAt });
+
+                // 3. Broadcast it to everyone
+                io.emit("userStatusChanged", {
+                    userId,
+                    isOnline: false,
+                    lastActiveAt
                 });
             }
         });
 
-        socket.on("disconnect", () => {
-            console.log(`❌ Client Disconnected: ${socket.id}`);
-            for (const [userId, socketId] of userSocketMap.entries()) {
-                if (socketId === socket.id) {
-                    userSocketMap.delete(userId);
-                    console.log(`👤 User removed: ${userId}`);
-                    socket.broadcast.emit("userOffline", userId);
-                    const onlineUsers = Array.from(userSocketMap.keys());
-                    io.emit("onlineUsers", onlineUsers);
-                    break;
-                }
-            }
+        // 6. Join a new group
+        socket.on("joinNewGroup", (conversationId) => {
+            socket.join(conversationId);
         });
     });
-
-    return io;
+};
+export const getIO = () => {
+    if (!ioInstance) throw new Error("Socket.io not initialized!");
+    return ioInstance;
 };
 
-export default setupSocket;
+export const isUserOnline = (userId: string) => {
+    return onlineUsers.has(userId);
+};

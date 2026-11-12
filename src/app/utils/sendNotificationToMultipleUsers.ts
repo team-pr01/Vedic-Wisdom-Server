@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { User } from "../modules/auth/auth.model";
 import { Notification } from "../modules/notification/notification.model";
-import { io } from "../socket";
+import { getIO } from "../socket";
 
 export const sendNotificationToMultipleUsers = async (
   userIds: any[],
@@ -23,6 +23,9 @@ export const sendNotificationToMultipleUsers = async (
     message,
     data,
   });
+
+  // ✅ Get the initialized IO instance
+  const io = getIO();
 
   // 3️⃣ Emit socket event ONLY to intended users
   users.forEach((user) => {

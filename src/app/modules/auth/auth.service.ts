@@ -11,10 +11,8 @@ import { createToken } from "./auth.utils";
 import { customUserIdGenerator } from "../../utils/customUserIdGenerator";
 import { generate4DigitsOTP } from "../../utils/generate4DigitsOTP";
 import { ReferralServices } from "../referral/referral.service";
-// import admin from "../../config/firebase";
+import admin from "../../config/firebase";
 import { OAuth2Client } from "google-auth-library";
-
-const admin:any = null
 
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);

@@ -4,10 +4,9 @@ import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 
 
-
 const getMyProgress = catchAsync(async (req, res) => {
-  const { id: quizId } = req.params;
-  const userId = req.user._id;
+  const { quizId } = req.params;
+  const userId = req.user.userId;
 
   const result = await QuizProgressServices.getMyProgress(quizId, userId);
 
@@ -19,12 +18,24 @@ const getMyProgress = catchAsync(async (req, res) => {
   });
 });
 
+const getMyAllProgress = catchAsync(async (req, res) => {
+  const userId = req.user.userId;
 
+  const result = await QuizProgressServices.getMyAllProgress(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "All progress fetched successfully",
+    data: result,
+  });
+});
 
 const getLeaderboard = catchAsync(async (req, res) => {
-  const { id: quizId } = req.params;
+  const { quizId } = req.params;
+  const userId = req.user.userId;
 
-  const result = await QuizProgressServices.getLeaderboard(quizId);
+  const result = await QuizProgressServices.getLeaderboard(quizId,userId);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -35,9 +46,9 @@ const getLeaderboard = catchAsync(async (req, res) => {
 });
 
 const claimReward = catchAsync(async (req, res) => {
-  const { id: quizId } = req.params;
+  const { quizId } = req.params;
   const { rewardClaimMethod, paymentDetails } = req.body;
-  const userId = req.user._id;
+  const userId = req.user.userId;
 
   const result = await QuizProgressServices.claimReward(
     quizId,
@@ -54,8 +65,46 @@ const claimReward = catchAsync(async (req, res) => {
   });
 });
 
+const submitPaymentDetails = catchAsync(async (req, res) => {
+  const { quizId } = req.params;
+  const userId = req.user.userId;
+  const { paymentDetails } = req.body;
+
+  const result = await QuizProgressServices.submitPaymentDetails(
+    quizId,
+    userId,
+    paymentDetails
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Payment details submitted successfully. Your reward will be processed shortly.",
+    data: result,
+  });
+});
+
+const submitCoinRequest = catchAsync(async (req, res) => {
+  const { quizId } = req.params;
+  const userId = req.user.userId;
+
+  const result = await QuizProgressServices.submitCoinRequest(quizId, userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Coin request submitted successfully. It will be processed by the admin.",
+    data: result,
+  });
+});
+
+
+
 export const QuizProgressControllers = {
   getMyProgress,
+  getMyAllProgress,
   getLeaderboard,
   claimReward,
+  submitPaymentDetails,
+  submitCoinRequest,
 };

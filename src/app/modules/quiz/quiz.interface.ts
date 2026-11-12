@@ -1,4 +1,3 @@
-// quiz.interface.ts
 
 export type TQuestion = {
   _id?: string;

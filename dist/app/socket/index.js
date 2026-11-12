@@ -8,146 +8,161 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.userSocketMap = exports.io = void 0;
+exports.isUserOnline = exports.getIO = exports.initSocket = exports.onlineUsers = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 const socket_io_1 = require("socket.io");
-const message_model_1 = __importDefault(require("../modules/message/message.model"));
-const chat_model_1 = __importDefault(require("../modules/chat/chat.model"));
-const chat_service_1 = require("../modules/chat/chat.service");
-exports.userSocketMap = new Map();
-const setupSocket = (server) => {
+const conversation_model_1 = require("../modules/conversation/conversation.model");
+const message_model_1 = require("../modules/conversation/message/message.model");
+const auth_model_1 = require("../modules/auth/auth.model");
+let ioInstance;
+exports.onlineUsers = new Map();
+const initSocket = (server) => {
     const io = new socket_io_1.Server(server, {
-        cors: {
-            origin: ["http://localhost:5173"],
-            methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-            credentials: true,
-        },
+        cors: { origin: "*" }, // Configure to your frontend URL in production
     });
-    const sendMessage = (message) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b;
-        const senderId = typeof message.sender === 'string'
-            ? message.sender
-            : (_a = message.sender) === null || _a === void 0 ? void 0 : _a._id;
-        const receiverId = typeof message.receiver === 'string'
-            ? message.receiver
-            : (_b = message.receiver) === null || _b === void 0 ? void 0 : _b._id;
-        console.log("Sender ID:", senderId);
-        console.log("Receiver ID:", receiverId);
-        console.log("Temp ID:", message.tempId);
-        const senderSocketId = exports.userSocketMap.get(senderId);
-        const receiverSocketId = exports.userSocketMap.get(receiverId);
-        try {
-            // Find or create chat
-            let chat = yield chat_model_1.default.findOne({
-                participants: { $all: [senderId, receiverId] }
-            });
-            if (!chat) {
-                chat = yield chat_model_1.default.create({
-                    participants: [senderId, receiverId],
-                    isActive: true,
-                });
-                console.log("New chat created:", chat._id);
-            }
-            // Create message
-            const messageData = {
-                sender: senderId,
-                receiver: receiverId,
-                content: message.content,
-                messageType: message.messageType || "text",
-            };
-            const createdMessage = yield message_model_1.default.create(messageData);
-            // Update chat with last message
-            chat.lastMessage = createdMessage._id;
-            chat.lastMessageAt = createdMessage.createdAt;
-            yield chat.save();
-            // Populate message
-            const populatedMessage = yield message_model_1.default.findById(createdMessage._id)
-                .populate("sender", "_id name email profilePicture")
-                .populate("receiver", "_id name email profilePicture");
-            console.log("✅ Message created:", populatedMessage === null || populatedMessage === void 0 ? void 0 : populatedMessage._id);
-            const responseMessage = Object.assign(Object.assign({}, populatedMessage === null || populatedMessage === void 0 ? void 0 : populatedMessage.toObject()), { tempId: message.tempId });
-            // ✅ Send to receiver
-            if (receiverSocketId) {
-                io.to(receiverSocketId).emit("receiveMessage", populatedMessage);
-                console.log("📤 Sent to receiver:", receiverId);
-                // ✅ Update receiver's chat list in real-time
-                const receiverChatList = yield chat_service_1.ChatServices.getChatList(receiverId);
-                console.log("Receiver chat list", receiverChatList);
-                io.to(receiverSocketId).emit("updateChatList", receiverChatList);
-            }
-            // ✅ Send confirmation to sender
-            if (senderSocketId) {
-                io.to(senderSocketId).emit("messageSent", responseMessage);
-                console.log("📤 Sent confirmation to sender:", senderId);
-                // ✅ Update sender's chat list in real-time
-                const senderChatList = yield chat_service_1.ChatServices.getChatList(senderId);
-                console.log("Sender chat list", senderChatList);
-                io.to(senderSocketId).emit("updateChatList", senderChatList);
-            }
-            // ✅ If sender is offline, save for later
-            if (!senderSocketId) {
-                console.log("⚠️ Sender is offline, message saved but not delivered");
-            }
-        }
-        catch (error) {
-            console.error("❌ Error sending message:", error);
-            if (senderSocketId) {
-                io.to(senderSocketId).emit("messageError", {
-                    tempId: message.tempId,
-                    error: "Failed to send message",
-                });
-            }
-        }
-    });
+    ioInstance = io;
+    // Store online users: userId -> socketId
+    const onlineUsers = new Map();
     io.on("connection", (socket) => {
-        const userId = socket.handshake.query.userId;
-        if (userId) {
-            exports.userSocketMap.set(userId, socket.id);
-            console.log(`✅ User connected: ${userId} with socket ID: ${socket.id}`);
-            console.log(`📊 Online users: ${exports.userSocketMap.size}`);
-            // ✅ Send updated chat list on connection
-            (() => __awaiter(void 0, void 0, void 0, function* () {
-                const chatList = yield chat_service_1.ChatServices.getChatList(userId);
-                socket.emit("updateChatList", chatList);
-            }))();
-            const onlineUsers = Array.from(exports.userSocketMap.keys());
-            io.emit("onlineUsers", onlineUsers);
-            socket.broadcast.emit("userOnline", userId);
-        }
-        else {
-            console.log("❌ User ID not provided during connection.");
-        }
-        socket.on("sendMessage", (message) => {
-            console.log("📩 Received sendMessage event:", message);
-            sendMessage(message);
+        // 1. User connects and registers their ID
+        socket.on("addUser", (userId) => __awaiter(void 0, void 0, void 0, function* () {
+            onlineUsers.set(userId, socket.id);
+            socket.join(userId);
+            // 1. Broadcast initial online list
+            io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
+            // 2. Broadcast to everyone that this user just came online
+            io.emit("userStatusChanged", { userId, isOnline: true });
+            // Join all their conversation rooms
+            const userConversations = yield conversation_model_1.Conversation.find({
+                members: userId,
+                leftMembers: { $ne: userId }
+            });
+            userConversations.forEach((convo) => {
+                socket.join(convo._id.toString());
+            });
+        }));
+        // 2. Join a specific chat room
+        socket.on("joinRoom", (conversationId) => {
+            socket.join(conversationId);
         });
-        socket.on("typing", ({ sender, receiver, isTyping }) => {
-            const receiverSocketId = exports.userSocketMap.get(receiver);
-            if (receiverSocketId) {
-                io.to(receiverSocketId).emit("userTyping", {
-                    sender,
-                    isTyping,
+        // 3. Send Message
+        socket.on("sendMessage", (data) => __awaiter(void 0, void 0, void 0, function* () {
+            var _a, _b, _c, _d;
+            const { conversationId, senderId, text, mentions = [], tempId } = data;
+            const conversation = yield conversation_model_1.Conversation.findById(conversationId);
+            if (!conversation)
+                return;
+            // 1. Check if user left the group
+            if (conversation.isGroup && ((_a = conversation.leftMembers) === null || _a === void 0 ? void 0 : _a.some(id => id.toString() === senderId.toString()))) {
+                return socket.emit("messageError", { message: "You are no longer in this group." });
+            }
+            // 2. Check Block status
+            // Did I block someone else?
+            const hasSenderBlockedOther = (_b = conversation.blockedBy) === null || _b === void 0 ? void 0 : _b.some((id) => id.toString() === senderId.toString());
+            if (hasSenderBlockedOther) {
+                return socket.emit("messageError", { message: "Unblock the user to send messages." });
+            }
+            // Did someone else block me?
+            const isSenderBlockedByOther = (_c = conversation.blockedBy) === null || _c === void 0 ? void 0 : _c.some((id) => id.toString() !== senderId.toString());
+            // 3. Save to DB (Always save so the sender sees it)
+            const newMessage = yield message_model_1.Message.create({
+                conversationId,
+                sender: senderId,
+                text,
+                mentions,
+            });
+            const messageCreatedAt = (newMessage === null || newMessage === void 0 ? void 0 : newMessage.createdAt) instanceof Date
+                ? newMessage.createdAt
+                : new Date();
+            const updatedDeletedBy = ((_d = conversation === null || conversation === void 0 ? void 0 : conversation.deletedBy) === null || _d === void 0 ? void 0 : _d.map((record) => {
+                return {
+                    user: record.user,
+                    // Set their new cutoff time to exactly the time of this new message
+                    deletedAt: new Date(messageCreatedAt.getTime() - 1),
+                };
+            })) || [];
+            // 4. Update conversation lastMessage
+            yield conversation_model_1.Conversation.findByIdAndUpdate(conversationId, {
+                lastMessage: newMessage._id,
+                deletedBy: updatedDeletedBy
+            });
+            const populatedMessage = yield message_model_1.Message.findById(newMessage._id)
+                .populate("sender", "name profilePicture");
+            const messageWithTempId = Object.assign(Object.assign({}, populatedMessage === null || populatedMessage === void 0 ? void 0 : populatedMessage.toObject()), { tempId: tempId });
+            // 5. Emit Logic based on block status
+            if (isSenderBlockedByOther) {
+                // If I am blocked, only send the message back to ME (the sender)
+                // so my screen updates, but the other person never receives it.
+                io.to(senderId).emit("receiveMessage", messageWithTempId);
+            }
+            else {
+                // Normal flow: Emit to everyone in the room
+                io.to(conversationId).emit("receiveMessage", messageWithTempId);
+            }
+            mentions.forEach((taggedUserId) => {
+                if (taggedUserId !== senderId) {
+                    io.to(taggedUserId).emit("youWereMentioned", messageWithTempId);
+                }
+            });
+        }));
+        socket.on("messageRead", (_a) => __awaiter(void 0, [_a], void 0, function* ({ conversationId, userId }) {
+            // 1. Update all messages in this conversation sent by the OTHER user
+            yield message_model_1.Message.updateMany({
+                conversationId,
+                sender: { $ne: userId } // Don't mark our own messages as read by us
+            }, {
+                $addToSet: { readBy: userId } // Add user to readBy array
+            });
+            // 2. Broadcast to the room
+            socket.to(conversationId).emit("messagesMarkedAsRead", { conversationId, userId });
+        }));
+        // Listen for when a request is accepted/rejected to update both sides
+        socket.on("requestStatusChanged", ({ targetUserId, conversationId, status }) => {
+            io.to(targetUserId).emit("requestUpdated", { conversationId, status });
+        });
+        // 4. Typing Indicator
+        socket.on("typing", ({ conversationId, userId, userName, isTyping }) => {
+            socket.to(conversationId).emit("userTyping", { userId, userName, isTyping });
+        });
+        socket.on("leaveRoom", (conversationId) => {
+            socket.leave(conversationId);
+        });
+        // 5. Disconnect
+        socket.on("disconnect", () => __awaiter(void 0, void 0, void 0, function* () {
+            var _a;
+            // Remove from online users
+            const userId = (_a = [...onlineUsers.entries()].find(([_, id]) => id === socket.id)) === null || _a === void 0 ? void 0 : _a[0];
+            if (userId) {
+                onlineUsers.delete(userId);
+                io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
+                // 1. Generate the timestamp
+                const lastActiveAt = new Date();
+                // 2. Save it to the Database
+                yield auth_model_1.User.findByIdAndUpdate(userId, { lastActiveAt });
+                // 3. Broadcast it to everyone
+                io.emit("userStatusChanged", {
+                    userId,
+                    isOnline: false,
+                    lastActiveAt
                 });
             }
-        });
-        socket.on("disconnect", () => {
-            console.log(`❌ Client Disconnected: ${socket.id}`);
-            for (const [userId, socketId] of exports.userSocketMap.entries()) {
-                if (socketId === socket.id) {
-                    exports.userSocketMap.delete(userId);
-                    console.log(`👤 User removed: ${userId}`);
-                    socket.broadcast.emit("userOffline", userId);
-                    const onlineUsers = Array.from(exports.userSocketMap.keys());
-                    io.emit("onlineUsers", onlineUsers);
-                    break;
-                }
-            }
+        }));
+        // 6. Join a new group
+        socket.on("joinNewGroup", (conversationId) => {
+            socket.join(conversationId);
         });
     });
-    return io;
 };
-exports.default = setupSocket;
+exports.initSocket = initSocket;
+const getIO = () => {
+    if (!ioInstance)
+        throw new Error("Socket.io not initialized!");
+    return ioInstance;
+};
+exports.getIO = getIO;
+const isUserOnline = (userId) => {
+    return exports.onlineUsers.has(userId);
+};
+exports.isUserOnline = isUserOnline;

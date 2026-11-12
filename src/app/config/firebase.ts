@@ -1,13 +1,9 @@
-// import * as admin from 'firebase-admin';
-// import * as fs from 'fs';
-// import * as path from 'path';
+import * as admin from 'firebase-admin';
 
-// const serviceAccountPath = path.resolve(process.cwd(), 'secrets/service-account-key.json');
+import serviceAccount from '../../secrets/service-account-key.json';
 
-// const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+});
 
-// admin.initializeApp({
-//   credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-// });
-
-// export default admin;
+export default admin;

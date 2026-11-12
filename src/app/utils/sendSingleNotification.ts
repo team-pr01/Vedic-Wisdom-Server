@@ -2,7 +2,7 @@ import Expo from "expo-server-sdk";
 import mongoose from "mongoose";
 import { User } from "../modules/auth/auth.model";
 import { Notification } from "../modules/notification/notification.model";
-import { io } from "../socket";
+import { getIO } from "../socket";
 
 const expo = new Expo();
 console.log(expo);
@@ -40,6 +40,7 @@ export const sendSingleNotification = async (
     //     body: message,
     //   },
     // ]);
+    const io = getIO();
 
     // Emit via Socket.io
     io.to(userId.toString()).emit("new-notification", {
