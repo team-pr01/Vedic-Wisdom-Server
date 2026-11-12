@@ -17,6 +17,7 @@ export type TConversation = {
   admins?: Types.ObjectId[];
   lastMessage?: Types.ObjectId;
   blockedBy?: Types.ObjectId[];
+  lastActiveAt?: Date;
 
   messageRequestStatus: TMessageRequestStatus;
   requestedBy?: Types.ObjectId;

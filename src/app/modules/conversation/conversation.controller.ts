@@ -234,6 +234,37 @@ const removeFromGroup = catchAsync(async (req, res) => {
   });
 });
 
+const toggleBlockUser = catchAsync(async (req, res) => {
+  const { conversationId } = req.params;
+  const { action } = req.body; // "block" or "unblock"
+  const requesterId = req.user.userId;
+
+  const result = await ConversationServices.toggleBlockUser(
+    conversationId,
+    requesterId,
+    action
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `User ${action}ed successfully`,
+    data: result,
+  });
+});
+
+const getMyBlockedUsers = catchAsync(async (req, res) => {
+  const userId = req.user.userId;
+  const result = await ConversationServices.getMyBlockedUsers(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Blocked users fetched successfully",
+    data: result,
+  });
+});
+
 
 export const ConversationControllers = {
   accessChat,
@@ -247,5 +278,7 @@ export const ConversationControllers = {
   leaveGroup,
   makeGroupAdmin,
   removeFromAdmin,
-  removeFromGroup
+  removeFromGroup,
+  toggleBlockUser,
+  getMyBlockedUsers
 };

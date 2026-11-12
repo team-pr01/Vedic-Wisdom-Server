@@ -79,4 +79,18 @@ router.patch(
 
 router.patch("/request/:conversationId", auth(UserRole.user, UserRole.admin, UserRole.moderator), ConversationControllers.handleMessageRequest);
 
+router.patch(
+  "/toggle-block/:conversationId",
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
+  ConversationControllers.toggleBlockUser
+);
+
+// Get Blocked List Route
+router.get(
+  "/blocked-list",
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
+  ConversationControllers.getMyBlockedUsers
+);
+
+
 export const ConversationRoutes = router;

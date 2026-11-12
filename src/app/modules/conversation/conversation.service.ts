@@ -5,9 +5,10 @@ import { Message } from "./message/message.model";
 import AppError from "../../errors/AppError";
 import httpStatus from "http-status";
 import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
-import { getIO } from "../../socket";
+import { getIO, isUserOnline } from "../../socket";
 import { User } from "../auth/auth.model";
 import { deleteImageFromCloudinary, extractPublicId } from "../../utils/deleteImageFromCloudinary";
+import { infinitePaginate } from "../../utils/infinitePaginate";
 
 const accessChat = async (userId: string, targetUserId: string) => {
     if (!targetUserId) throw new Error("Target User ID is required");
@@ -71,7 +72,8 @@ const getMyInbox = async (userId: string) => {
         members: { $in: [userObjectId] },
         "deletedBy.user": { $ne: userObjectId }
     })
-        .populate("members", "name profilePicture")
+        // ✅ Added lastActiveAt to the populated fields
+        .populate("members", "name profilePicture lastActiveAt") 
         .populate("lastMessage")
         .sort({ updatedAt: -1 })
         .lean();
@@ -81,13 +83,20 @@ const getMyInbox = async (userId: string) => {
             let chatName = convo.groupName;
             let chatAvatar = convo.groupAvatar;
             let otherUser = null;
+            let isOnline = false;
 
+            // ✅ Combined the logic into one block
             if (!convo.isGroup) {
                 otherUser = convo.members.find(
                     (member: any) => member._id.toString() !== userId
                 );
                 chatName = otherUser?.name || "Unknown User";
                 chatAvatar = otherUser?.profilePicture || "";
+                
+                // ✅ Safely check if online
+                if (otherUser?._id) {
+                    isOnline = isUserOnline(otherUser._id.toString());
+                }
             }
 
             // Calculate unread count
@@ -97,7 +106,7 @@ const getMyInbox = async (userId: string) => {
                 readBy: { $ne: userObjectId },
             });
 
-            // Change the isRead logic
+            // isRead logic
             let isRead = true;
             if (convo.lastMessage) {
                 const readByStrings = convo.lastMessage.readBy?.map((id: any) => id.toString()) || [];
@@ -119,7 +128,6 @@ const getMyInbox = async (userId: string) => {
                 (id: any) => id && id.toString() === userId.toString()
             );
 
-            // ✅ Get group member count
             const groupMemberCount = convo.isGroup ? convo.members.length : 0;
 
             return {
@@ -131,7 +139,7 @@ const getMyInbox = async (userId: string) => {
                 avatar: chatAvatar,
                 otherUserId: otherUser?._id || null,
                 hasLeft: hasLeft || false,
-                groupMemberCount, // ✅ Added to return object
+                groupMemberCount,
                 lastMessage: convo.lastMessage
                     ? {
                         text: convo.lastMessage.text,
@@ -142,6 +150,9 @@ const getMyInbox = async (userId: string) => {
                     : null,
                 unreadCount: unreadCount,
                 updatedAt: convo.updatedAt,
+                blockedBy: convo.blockedBy,
+                isOnline: isOnline, // ✅ Works now
+                lastActiveAt: otherUser?.lastActiveAt || null, // ✅ Pass the lastActiveAt
             };
         })
     );
@@ -206,87 +217,87 @@ const createGroupChat = async (
 };
 
 const updateGroupInfo = async (
-  conversationId: string,
-  userId: string,
-  payload: { groupName?: string },
-  file?: Express.Multer.File
+    conversationId: string,
+    userId: string,
+    payload: { groupName?: string },
+    file?: Express.Multer.File
 ) => {
-  const conversation = await Conversation.findById(conversationId);
-  
-  if (!conversation || !conversation.isGroup) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Not a valid group");
-  }
+    const conversation = await Conversation.findById(conversationId);
 
-  // Verify the user is a member of the group
-  const isMember = conversation.members.some(
-    (memberId) => memberId.toString() === userId.toString()
-  );
-  if (!isMember) {
-    throw new AppError(httpStatus.FORBIDDEN, "You are not a member of this group");
-  }
-
-  const updateData: any = {};
-  const systemMessages: string[] = [];
-
-  // 1. Handle Group Name Update
-  if (payload.groupName && payload.groupName !== conversation.groupName) {
-    updateData.groupName = payload.groupName;
-    systemMessages.push(`Group name changed to "${payload.groupName}"`);
-  }
-
-  // 2. Handle Group Avatar Update
-  if (file) {
-    // Delete old avatar from Cloudinary if it exists
-    if (conversation.groupAvatar) {
-      const publicId = extractPublicId(conversation.groupAvatar);
-      await deleteImageFromCloudinary(publicId);
+    if (!conversation || !conversation.isGroup) {
+        throw new AppError(httpStatus.BAD_REQUEST, "Not a valid group");
     }
 
-    // Upload new avatar
-    const imageName = `group-avatar-${conversationId}-${Date.now()}`;
-    const path = file.path;
-    const { secure_url } = await sendImageToCloudinary(imageName, path);
-    
-    updateData.groupAvatar = secure_url;
-  }
+    // Verify the user is a member of the group
+    const isMember = conversation.members.some(
+        (memberId) => memberId.toString() === userId.toString()
+    );
+    if (!isMember) {
+        throw new AppError(httpStatus.FORBIDDEN, "You are not a member of this group");
+    }
 
-  // If nothing changed, return early
-  if (Object.keys(updateData).length === 0) {
-    return conversation;
-  }
+    const updateData: any = {};
+    const systemMessages: string[] = [];
 
-  // 3. Update the Conversation
-  const updatedConversation = await Conversation.findByIdAndUpdate(
-    conversationId,
-    { $set: updateData },
-    { new: true }
-  ).populate("members", "name profilePicture email")
-   .populate("admins", "name profilePicture email");
+    // 1. Handle Group Name Update
+    if (payload.groupName && payload.groupName !== conversation.groupName) {
+        updateData.groupName = payload.groupName;
+        systemMessages.push(`Group name changed to "${payload.groupName}"`);
+    }
 
-  // 4. Create System Messages for the updates
-  const io = getIO();
-  
-  if (systemMessages.length > 0) {
-    const systemMessageText = systemMessages.join(" and ");
-    const systemMessage = await Message.create({
-      conversationId,
-      sender: userId,
-      text: systemMessageText,
-      isSystemMessage: true,
-    });
+    // 2. Handle Group Avatar Update
+    if (file) {
+        // Delete old avatar from Cloudinary if it exists
+        if (conversation.groupAvatar) {
+            const publicId = extractPublicId(conversation.groupAvatar);
+            await deleteImageFromCloudinary(publicId);
+        }
 
-    await Conversation.findByIdAndUpdate(conversationId, {
-      lastMessage: systemMessage._id,
-    });
+        // Upload new avatar
+        const imageName = `group-avatar-${conversationId}-${Date.now()}`;
+        const path = file.path;
+        const { secure_url } = await sendImageToCloudinary(imageName, path);
 
-    // Emit the system message
-    io.to(conversationId).emit("receiveMessage", systemMessage);
-  }
+        updateData.groupAvatar = secure_url;
+    }
 
-  // 5. Emit the updated conversation details to everyone in the room
-  io.to(conversationId).emit("groupInfoUpdated", updatedConversation);
+    // If nothing changed, return early
+    if (Object.keys(updateData).length === 0) {
+        return conversation;
+    }
 
-  return updatedConversation;
+    // 3. Update the Conversation
+    const updatedConversation = await Conversation.findByIdAndUpdate(
+        conversationId,
+        { $set: updateData },
+        { new: true }
+    ).populate("members", "name profilePicture email")
+        .populate("admins", "name profilePicture email");
+
+    // 4. Create System Messages for the updates
+    const io = getIO();
+
+    if (systemMessages.length > 0) {
+        const systemMessageText = systemMessages.join(" and ");
+        const systemMessage = await Message.create({
+            conversationId,
+            sender: userId,
+            text: systemMessageText,
+            isSystemMessage: true,
+        });
+
+        await Conversation.findByIdAndUpdate(conversationId, {
+            lastMessage: systemMessage._id,
+        });
+
+        // Emit the system message
+        io.to(conversationId).emit("receiveMessage", systemMessage);
+    }
+
+    // 5. Emit the updated conversation details to everyone in the room
+    io.to(conversationId).emit("groupInfoUpdated", updatedConversation);
+
+    return updatedConversation;
 };
 
 const getGroupMembers = async (conversationId: string, userId: string) => {
@@ -509,65 +520,65 @@ const makeGroupAdmin = async (
 };
 
 const removeFromAdmin = async (
-  conversationId: string,
-  requesterId: string,
-  targetUserId: string
+    conversationId: string,
+    requesterId: string,
+    targetUserId: string
 ) => {
-  const conversation = await Conversation.findById(conversationId);
-  if (!conversation || !conversation.isGroup) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Not a valid group");
-  }
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation || !conversation.isGroup) {
+        throw new AppError(httpStatus.BAD_REQUEST, "Not a valid group");
+    }
 
-  // Check if requester is an admin
-  const isRequesterAdmin = conversation.admins?.some(
-    (id) => id.toString() === requesterId.toString()
-  );
-  if (!isRequesterAdmin) {
-    throw new AppError(httpStatus.FORBIDDEN, "Only group admins can dismiss other admins");
-  }
+    // Check if requester is an admin
+    const isRequesterAdmin = conversation.admins?.some(
+        (id) => id.toString() === requesterId.toString()
+    );
+    if (!isRequesterAdmin) {
+        throw new AppError(httpStatus.FORBIDDEN, "Only group admins can dismiss other admins");
+    }
 
-  // Prevent an admin from dismissing themselves
-  if (requesterId.toString() === targetUserId.toString()) {
-    throw new AppError(httpStatus.BAD_REQUEST, "You cannot dismiss yourself as admin");
-  }
+    // Prevent an admin from dismissing themselves
+    if (requesterId.toString() === targetUserId.toString()) {
+        throw new AppError(httpStatus.BAD_REQUEST, "You cannot dismiss yourself as admin");
+    }
 
-  // Check if target is actually an admin
-  const isTargetAdmin = conversation.admins?.some(
-    (id) => id.toString() === targetUserId.toString()
-  );
-  if (!isTargetAdmin) {
-    throw new AppError(httpStatus.BAD_REQUEST, "This user is not an admin");
-  }
+    // Check if target is actually an admin
+    const isTargetAdmin = conversation.admins?.some(
+        (id) => id.toString() === targetUserId.toString()
+    );
+    if (!isTargetAdmin) {
+        throw new AppError(httpStatus.BAD_REQUEST, "This user is not an admin");
+    }
 
-  // Remove from admins array
-  const updatedConversation = await Conversation.findByIdAndUpdate(
-    conversationId,
-    { $pull: { admins: targetUserId } },
-    { new: true }
-  )
-    .populate("members", "name profilePicture email")
-    .populate("admins", "name profilePicture email");
+    // Remove from admins array
+    const updatedConversation = await Conversation.findByIdAndUpdate(
+        conversationId,
+        { $pull: { admins: targetUserId } },
+        { new: true }
+    )
+        .populate("members", "name profilePicture email")
+        .populate("admins", "name profilePicture email");
 
-  const targetUser = await User.findById(targetUserId).select("name");
+    const targetUser = await User.findById(targetUserId).select("name");
 
-  // Create System Message
-  const systemMessage = await Message.create({
-    conversationId,
-    sender: requesterId,
-    text: `${targetUser?.name} was dismissed as Admin`,
-    isSystemMessage: true,
-  });
+    // Create System Message
+    const systemMessage = await Message.create({
+        conversationId,
+        sender: requesterId,
+        text: `${targetUser?.name} was dismissed as Admin`,
+        isSystemMessage: true,
+    });
 
-  await Conversation.findByIdAndUpdate(conversationId, {
-    lastMessage: systemMessage._id,
-  });
+    await Conversation.findByIdAndUpdate(conversationId, {
+        lastMessage: systemMessage._id,
+    });
 
-  // Real-time Socket Events
-  const io = getIO();
-  io.to(conversationId).emit("receiveMessage", systemMessage);
-  io.to(conversationId).emit("groupMembersUpdated", updatedConversation);
+    // Real-time Socket Events
+    const io = getIO();
+    io.to(conversationId).emit("receiveMessage", systemMessage);
+    io.to(conversationId).emit("groupMembersUpdated", updatedConversation);
 
-  return updatedConversation;
+    return updatedConversation;
 };
 
 // Remove a member from the group
@@ -651,6 +662,97 @@ const deleteChatForUser = async (conversationId: string, userId: string) => {
     return { success: true, message: "Chat deleted successfully" };
 };
 
+
+const toggleBlockUser = async (
+    conversationId: string,
+    requesterId: string,
+    action: "block" | "unblock"
+) => {
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation || conversation.isGroup) {
+        throw new AppError(httpStatus.BAD_REQUEST, "Invalid conversation");
+    }
+
+    // ✅ Cast requesterId to ObjectId for Mongoose operators
+    const requesterObjectId = new Types.ObjectId(requesterId);
+
+    if (action === "block") {
+        // Add to blockedBy if not already there
+        await Conversation.findByIdAndUpdate(conversationId, {
+            $addToSet: { blockedBy: requesterObjectId }, // ✅ Use ObjectId
+        });
+
+        const io = getIO();
+        io.to(conversationId).emit("blockStatusChanged", {
+            conversationId,
+            blockedBy: requesterId,
+            action
+        });
+
+    } else {
+        // Remove from blockedBy
+        await Conversation.findByIdAndUpdate(conversationId, {
+            $pull: { blockedBy: requesterObjectId }, // ✅ Use ObjectId
+        });
+
+        const io = getIO();
+        io.to(conversationId).emit("blockStatusChanged", {
+            conversationId,
+            blockedBy: requesterId,
+            action
+        });
+    }
+
+    const updatedConversation = await Conversation.findById(conversationId);
+    return updatedConversation;
+};
+
+// 2. Get My Blocked Users List
+const getMyBlockedUsers = async (
+    userId: string,
+    skip = 0,
+    limit = 10
+) => {
+    const userObjectId = new Types.ObjectId(userId);
+
+    // 1. Build the query
+    const query = {
+        isGroup: false,
+        blockedBy: { $in: [userObjectId] },
+    };
+
+    // 2. Use infinitePaginate to get the paginated conversations
+    const result = await infinitePaginate(
+        Conversation,
+        query,
+        skip,
+        limit,
+        [{ path: "members", select: "name profilePicture email" }]
+    );
+
+    // 3. Format the paginated data to extract the blocked user
+    const formattedBlockedUsers = result.data.map((convo: any) => {
+        // Find the other user (the one who is blocked)
+        const blockedUser = convo.members.find(
+            (member: any) => member._id.toString() !== userId.toString()
+        );
+
+        return {
+            conversationId: convo._id,
+            userId: blockedUser?._id,
+            name: blockedUser?.name || "Unknown",
+            profilePicture: blockedUser?.profilePicture,
+            email: blockedUser?.email,
+        };
+    });
+
+    // 4. Return the formatted data with the meta data from infinitePaginate
+    return {
+        data: formattedBlockedUsers,
+        meta: result.meta,
+    };
+};
+
 export const ConversationServices = {
     accessChat,
     handleMessageRequest,
@@ -664,4 +766,6 @@ export const ConversationServices = {
     removeFromAdmin,
     removeFromGroup,
     deleteChatForUser,
+    toggleBlockUser,
+    getMyBlockedUsers
 };

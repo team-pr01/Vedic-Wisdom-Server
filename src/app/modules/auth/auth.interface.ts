@@ -54,6 +54,7 @@ export type TUser = {
   plan?: string;
   isVendor?: boolean;
   blockedUsers?: ObjectId[];
+  lastActiveAt?: Date;
 };
 
 export interface UserModel extends Model<TUser> {

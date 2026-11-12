@@ -20,6 +20,7 @@ const conversationSchema = new Schema<TConversation>({
     user: { type: Schema.Types.ObjectId, ref: "User" },
     deletedAt: { type: Date, default: Date.now }
   }],
+  lastActiveAt: { type: Date, default: Date.now },
 
   //To Track who left the group
   leftMembers: [{ type: Schema.Types.ObjectId, ref: "User" }],

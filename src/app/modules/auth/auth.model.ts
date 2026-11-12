@@ -165,6 +165,10 @@ const userSchema = new Schema<TUser, UserModel>(
       default: false
     },
     blockedUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    lastActiveAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,
