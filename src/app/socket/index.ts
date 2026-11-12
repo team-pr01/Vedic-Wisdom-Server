@@ -112,6 +112,11 @@ export const initSocket = (server: http.Server) => {
                 io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
             }
         });
+
+        // 6. Join a new group
+        socket.on("joinNewGroup", (conversationId) => {
+            socket.join(conversationId);
+        });
     });
 };
 export const getIO = () => {

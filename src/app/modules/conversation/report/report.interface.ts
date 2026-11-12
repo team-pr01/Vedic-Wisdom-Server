@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-export type TReportType = "user" | "group" | "message";
+export type TReportType = "user" | "group";
 export type TReportStatus = "pending" | "resolved" | "dismissed";
 
 export type TReport = {

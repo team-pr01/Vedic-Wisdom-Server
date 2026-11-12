@@ -4,6 +4,8 @@ import { Message } from "./message.model";
 import AppError from "../../../errors/AppError";
 import { Types } from "mongoose";
 import { Conversation } from "../conversation.model";
+import { getIO } from "../../../socket";
+import { User } from "../../auth/auth.model";
 
 const getMessages = async (
   conversationId: string,
@@ -97,6 +99,62 @@ const getMessages = async (
   };
 };
 
+const reactToMessage = async (
+  messageId: string,
+  userId: string,
+  emoji: string,
+  method: "add" | "remove" = "add"
+) => {
+  const message = await Message.findById(messageId);
+  if (!message) throw new AppError(httpStatus.NOT_FOUND, "Message not found");
+
+  const user = await User.findById(userId);
+  if (!user) throw new AppError(httpStatus.NOT_FOUND, "User not found");
+
+  if (!message.reactions) {
+    message.reactions = [];
+  }
+
+  const currentUserId = userId.toString();
+
+  // Find if the user has ALREADY reacted with THIS EXACT emoji
+  const existingReactionIndex = message.reactions.findIndex(
+    (r) => r.userId.toString() === currentUserId && r.emoji === emoji
+  );
+
+  if (method === "remove") {
+    // If they clicked the same emoji again, remove it
+    if (existingReactionIndex > -1) {
+      message.reactions.splice(existingReactionIndex, 1);
+    }
+  } else {
+    // ✅ FIX: Remove ANY previous reaction from this user first
+    // This ensures they can only have ONE reaction per message
+    message.reactions = message.reactions.filter(
+      (r) => r.userId.toString() !== currentUserId
+    );
+
+    // ✅ Now add the new reaction
+    message.reactions.push({
+      emoji,
+      userId: new Types.ObjectId(userId) as any,
+      userName: user.name,
+    });
+  }
+
+  await message.save();
+
+  // Emit real-time event to the room
+  const io = getIO();
+  io.to(message.conversationId.toString()).emit("messageReactionUpdated", {
+    messageId: message._id,
+    reactions: message.reactions,
+  });
+
+  return message;
+};
+
 export const MessageServices = {
   getMessages,
+  reactToMessage,
 };

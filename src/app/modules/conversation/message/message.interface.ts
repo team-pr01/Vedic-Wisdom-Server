@@ -1,5 +1,11 @@
 import { ObjectId } from "mongoose";
 
+export type TReaction = {
+  emoji: string;
+  userId: ObjectId;
+  userName: string;
+};
+
 export type TMessage = {
   _id?: ObjectId;
   conversationId: ObjectId;
@@ -8,6 +14,7 @@ export type TMessage = {
   readBy: ObjectId[];
   deleteAt?: Date | null;
   isSystemMessage?: boolean;
+  reactions?: TReaction[];
   createdAt?: Date;
   updatedAt?: Date;
 };

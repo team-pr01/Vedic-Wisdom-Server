@@ -16,7 +16,7 @@ const reportSchema = new Schema<TReport>(
     },
     reportType: {
       type: String,
-      enum: ["user", "group", "message"],
+      enum: ["user", "group"],
       required: true,
     },
     reason: {

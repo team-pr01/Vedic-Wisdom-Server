@@ -7,7 +7,14 @@ const messageSchema = new Schema<TMessage>({
     text: { type: String, required: true },
     readBy: [{ type: Schema.Types.ObjectId, ref: "User" }], // Who has seen it
     deleteAt: { type: Date, default: null }, // When to auto-delete
-    isSystemMessage: { type: Boolean, default: false }
+    isSystemMessage: { type: Boolean, default: false },
+    reactions: [
+    {
+      emoji: { type: String, required: true },
+      userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+      userName: { type: String, required: true },
+    }
+  ],
 }, { timestamps: true });
 
 // TTL Index: MongoDB will automatically delete the document when the current time reaches 'deleteAt' [citation:15][citation:21]

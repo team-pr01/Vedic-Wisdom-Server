@@ -23,6 +23,27 @@ const getMessages = catchAsync(async (req, res) => {
   });
 });
 
+const reactToMessage = catchAsync(async (req, res) => {
+  const { messageId } = req.params;
+  const { emoji, method } = req.body;
+  const userId = req.user.userId;
+
+  const result = await MessageServices.reactToMessage(
+    messageId,
+    userId,
+    emoji,
+    method || "add"
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `Reaction ${method === "remove" ? "removed" : "added"} successfully`,
+    data: result,
+  });
+});
+
 export const MessageControllers = {
   getMessages,
+  reactToMessage,
 };
