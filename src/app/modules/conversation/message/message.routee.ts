@@ -11,6 +11,17 @@ router.patch(
   MessageControllers.reactToMessage
 );
 
+router.delete(
+  "/delete-for-me/:messageId",
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
+  MessageControllers.deleteMessageForMe
+);
+
+router.delete(
+  "/delete-for-everyone/:messageId",
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
+  MessageControllers.deleteMessageForEveryone
+);
 
 // Fetch chat history for a specific conversation
 router.get(

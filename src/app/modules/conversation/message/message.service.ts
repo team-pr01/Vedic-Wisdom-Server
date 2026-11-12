@@ -23,7 +23,7 @@ const getMessages = async (
 
   const userIdString = userId.toString();
 
-  // ✅ FIX 1: Safe check for leftMembers
+  // FIX 1: Safe check for leftMembers
   // const hasLeftGroup = conversation.isGroup && conversation.leftMembers?.some(
   //   (id: any) => id && id.toString() === userIdString // <-- Added 'id &&' check
   // );
@@ -32,7 +32,7 @@ const getMessages = async (
   //   throw new AppError(httpStatus.FORBIDDEN, "You have left this group and cannot view messages.");
   // }
 
-  // ✅ FIX 2: Safe check for isMember
+  // FIX 2: Safe check for isMember
   const isMember = conversation.members.some(
     (member: any) => {
       if (!member) return false; // <-- Added null check
@@ -45,12 +45,17 @@ const getMessages = async (
     throw new AppError(httpStatus.FORBIDDEN, "You are not a member of this chat");
   }
 
-  // ✅ FIX 3: Safe check for deletedBy
+  // FIX 3: Safe check for deletedBy
   const deletionRecord = conversation?.deletedBy?.find(
     (d: any) => d && d.user && d.user.toString() === userIdString // <-- Added d && d.user check
   );
 
-  const query: any = { conversationId };
+  const query: any = {
+    conversationId,
+    deletedFor: { $ne: new Types.ObjectId(userId) }
+  };
+
+  // If the user deleted the whole chat previously, only show messages after that time
   if (deletionRecord) {
     query.createdAt = { $gt: deletionRecord.deletedAt };
   }
@@ -64,7 +69,7 @@ const getMessages = async (
 
   const total = await Message.countDocuments(query);
 
-  // ✅ FIX 4: Safe check for message sender
+  // FIX 4: Safe check for message sender
   const messageIds = messages
     .filter((msg) => {
       if (!msg.sender) return false; // <-- Added null check
@@ -128,13 +133,13 @@ const reactToMessage = async (
       message.reactions.splice(existingReactionIndex, 1);
     }
   } else {
-    // ✅ FIX: Remove ANY previous reaction from this user first
+    // FIX: Remove ANY previous reaction from this user first
     // This ensures they can only have ONE reaction per message
     message.reactions = message.reactions.filter(
       (r) => r.userId.toString() !== currentUserId
     );
 
-    // ✅ Now add the new reaction
+    // Now add the new reaction
     message.reactions.push({
       emoji,
       userId: new Types.ObjectId(userId) as any,
@@ -154,7 +159,60 @@ const reactToMessage = async (
   return message;
 };
 
+
+const deleteMessageForMe = async (messageId: string, userId: string) => {
+  const message = await Message.findById(messageId);
+  if (!message) {
+    throw new AppError(httpStatus.NOT_FOUND, "Message not found");
+  }
+
+  // 1. Add user to deletedFor array in DB
+  await Message.findByIdAndUpdate(messageId, {
+    $addToSet: { deletedFor: new Types.ObjectId(userId) }
+  });
+
+  // 2. Emit a socket event ONLY to the user who deleted it
+  const io = getIO();
+  io.to(userId.toString()).emit("messageDeletedForMe", { messageId });
+
+  return { success: true };
+};
+
+
+const deleteMessageForEveryone = async (messageId: string, userId: string, userRole: string) => {
+  const message = await Message.findById(messageId);
+  if (!message) throw new AppError(httpStatus.NOT_FOUND, "Message not found");
+
+  // Authorization: Only sender or admin can unsend
+  const isSender = message.sender.toString() === userId.toString();
+  const isAdmin = userRole === "admin" || userRole === "moderator";
+  if (!isSender && !isAdmin) {
+    throw new AppError(httpStatus.FORBIDDEN, "You can only unsend your own messages");
+  }
+
+  // Update DB to mark it unsent (We don't physically delete it so the frontend can render "Message deleted")
+  const updatedMessage = await Message.findByIdAndUpdate(
+    messageId,
+    {
+      $set: {
+        text: "This message was deleted",
+        isDeletedForEveryone: true,
+        // Optional: clear reactions, attachments, etc.
+      },
+    },
+    { new: true }
+  );
+
+  // Emit Socket Event to everyone in the room
+  const io = getIO();
+  io.to(message.conversationId.toString()).emit("messageDeletedForEveryone", updatedMessage);
+
+  return updatedMessage;
+};
+
 export const MessageServices = {
   getMessages,
   reactToMessage,
+  deleteMessageForMe,
+  deleteMessageForEveryone
 };

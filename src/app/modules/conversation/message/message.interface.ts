@@ -16,6 +16,8 @@ export type TMessage = {
   isSystemMessage?: boolean;
   reactions?: TReaction[];
   mentions?: ObjectId[];
+  deletedFor: ObjectId[];
+  isDeletedForEveryone: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 };

@@ -43,7 +43,43 @@ const reactToMessage = catchAsync(async (req, res) => {
   });
 });
 
+const deleteMessageForMe = catchAsync(async (req, res) => {
+  const { messageId } = req.params;
+  const userId = req.user.userId;
+
+  const result = await MessageServices.deleteMessageForMe(messageId, userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Message deleted for you",
+    data: result,
+  });
+});
+
+// Unsend (Delete for Everyone)
+const deleteMessageForEveryone = catchAsync(async (req, res) => {
+  const { messageId } = req.params;
+  const userId = req.user.userId;
+  const userRole = req.user.role;
+
+  const result = await MessageServices.deleteMessageForEveryone(
+    messageId,
+    userId,
+    userRole
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Message unsent for everyone",
+    data: result,
+  });
+});
+
 export const MessageControllers = {
   getMessages,
   reactToMessage,
+  deleteMessageForMe,
+  deleteMessageForEveryone
 };

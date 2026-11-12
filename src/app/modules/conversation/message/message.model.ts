@@ -15,7 +15,9 @@ const messageSchema = new Schema<TMessage>({
       userName: { type: String, required: true },
     }
   ],
-  mentions: [{ type: Schema.Types.ObjectId, ref: "User" }], 
+  mentions: [{ type: Schema.Types.ObjectId, ref: "User" }],
+  deletedFor: [{ type: Schema.Types.ObjectId, ref: "User" }], // Track who deleted it
+  isDeletedForEveryone: { type: Boolean, default: false },
 }, { timestamps: true });
 
 // TTL Index: MongoDB will automatically delete the document when the current time reaches 'deleteAt' [citation:15][citation:21]
