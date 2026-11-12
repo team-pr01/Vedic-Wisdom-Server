@@ -19,6 +19,7 @@ const conversation_service_1 = require("./conversation.service");
 const catchAsync_1 = __importDefault(require("../../utils/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../utils/sendResponse"));
 const socket_1 = require("../../socket");
+const AppError_1 = __importDefault(require("../../errors/AppError"));
 const accessChat = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const { targetUserId } = req.params;
@@ -86,10 +87,48 @@ const createGroupChat = (0, catchAsync_1.default)((req, res) => __awaiter(void 0
         data: result,
     });
 }));
+const updateGroupInfo = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { conversationId } = req.params;
+    const userId = req.user.userId;
+    const file = req.file;
+    const result = yield conversation_service_1.ConversationServices.updateGroupInfo(conversationId, userId, req.body, file);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Group info updated successfully",
+        data: result,
+    });
+}));
+const getGroupMembers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { conversationId } = req.params;
+    const userId = req.user.userId;
+    const result = yield conversation_service_1.ConversationServices.getGroupMembers(conversationId, userId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Group members fetched successfully",
+        data: result,
+    });
+}));
+const addGroupMembers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { conversationId } = req.params;
+    const { members } = req.body;
+    const userId = req.user.userId;
+    if (!members || !Array.isArray(members) || members.length === 0) {
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Please select at least one member");
+    }
+    const result = yield conversation_service_1.ConversationServices.addMembersToGroup(conversationId, userId, members);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Members added successfully",
+        data: result.data,
+    });
+}));
 // Delete Chat (1-on-1 or Group)
 const deleteChatForUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { conversationId } = req.params;
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const result = yield conversation_service_1.ConversationServices.deleteChatForUser(conversationId, userId);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
@@ -98,10 +137,10 @@ const deleteChatForUser = (0, catchAsync_1.default)((req, res) => __awaiter(void
         data: result,
     });
 }));
-// ✅ 2. Leave Group
+// Leave Group
 const leaveGroup = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { conversationId } = req.params;
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const result = yield conversation_service_1.ConversationServices.leaveGroup(conversationId, userId);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
@@ -110,11 +149,77 @@ const leaveGroup = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, voi
         data: result,
     });
 }));
+const makeGroupAdmin = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { conversationId } = req.params;
+    const { targetUserId } = req.body;
+    const requesterId = req.user.userId;
+    const result = yield conversation_service_1.ConversationServices.makeGroupAdmin(conversationId, requesterId, targetUserId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Member promoted to admin",
+        data: result,
+    });
+}));
+const removeFromAdmin = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { conversationId } = req.params;
+    const { targetUserId } = req.body;
+    const requesterId = req.user.userId;
+    const result = yield conversation_service_1.ConversationServices.removeFromAdmin(conversationId, requesterId, targetUserId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Admin dismissed successfully",
+        data: result,
+    });
+}));
+const removeFromGroup = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { conversationId } = req.params;
+    const { targetUserId } = req.body;
+    const requesterId = req.user.userId;
+    const result = yield conversation_service_1.ConversationServices.removeFromGroup(conversationId, requesterId, targetUserId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Member removed from group",
+        data: result,
+    });
+}));
+const toggleBlockUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { conversationId } = req.params;
+    const { action } = req.body; // "block" or "unblock"
+    const requesterId = req.user.userId;
+    const result = yield conversation_service_1.ConversationServices.toggleBlockUser(conversationId, requesterId, action);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: `User ${action}ed successfully`,
+        data: result,
+    });
+}));
+const getMyBlockedUsers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = req.user.userId;
+    const result = yield conversation_service_1.ConversationServices.getMyBlockedUsers(userId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Blocked users fetched successfully",
+        data: result,
+    });
+}));
 exports.ConversationControllers = {
     accessChat,
     handleMessageRequest,
     getMyInbox,
     createGroupChat,
+    updateGroupInfo,
+    getGroupMembers,
+    addGroupMembers,
     deleteChatForUser,
-    leaveGroup
+    leaveGroup,
+    makeGroupAdmin,
+    removeFromAdmin,
+    removeFromGroup,
+    toggleBlockUser,
+    getMyBlockedUsers
 };

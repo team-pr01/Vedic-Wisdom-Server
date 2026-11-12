@@ -48,7 +48,7 @@ export const initSocket = (server: http.Server) => {
 
         // 3. Send Message
         socket.on("sendMessage", async (data) => {
-            const { conversationId, senderId, text, mentions = [] } = data;
+            const { conversationId, senderId, text, mentions = [], tempId } = data;
 
             const conversation = await Conversation.findById(conversationId);
             if (!conversation) return;
@@ -80,9 +80,17 @@ export const initSocket = (server: http.Server) => {
                 mentions,
             });
 
-            const updatedDeletedBy = conversation?.deletedBy?.filter(
-                (record: any) => record.user.toString() === senderId.toString()
-            );
+            const messageCreatedAt = newMessage?.createdAt instanceof Date
+                ? newMessage.createdAt
+                : new Date();
+
+            const updatedDeletedBy = conversation?.deletedBy?.map((record: any) => {
+                return {
+                    user: record.user,
+                    // Set their new cutoff time to exactly the time of this new message
+                    deletedAt: new Date(messageCreatedAt.getTime() - 1),
+                };
+            }) || [];
 
             // 4. Update conversation lastMessage
             await Conversation.findByIdAndUpdate(conversationId, {
@@ -93,19 +101,24 @@ export const initSocket = (server: http.Server) => {
             const populatedMessage = await Message.findById(newMessage._id)
                 .populate("sender", "name profilePicture");
 
+            const messageWithTempId = {
+                ...populatedMessage?.toObject(), // Convert Mongoose doc to plain object
+                tempId: tempId
+            };
+
             // 5. Emit Logic based on block status
             if (isSenderBlockedByOther) {
                 // If I am blocked, only send the message back to ME (the sender)
                 // so my screen updates, but the other person never receives it.
-                io.to(senderId).emit("receiveMessage", populatedMessage);
+                io.to(senderId).emit("receiveMessage", messageWithTempId);
             } else {
                 // Normal flow: Emit to everyone in the room
-                io.to(conversationId).emit("receiveMessage", populatedMessage);
+                io.to(conversationId).emit("receiveMessage", messageWithTempId);
             }
 
             mentions.forEach((taggedUserId: string) => {
                 if (taggedUserId !== senderId) {
-                    io.to(taggedUserId).emit("youWereMentioned", populatedMessage);
+                    io.to(taggedUserId).emit("youWereMentioned", messageWithTempId);
                 }
             });
         });

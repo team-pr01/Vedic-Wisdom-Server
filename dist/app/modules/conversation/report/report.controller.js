@@ -18,7 +18,7 @@ const catchAsync_1 = __importDefault(require("../../../utils/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../utils/sendResponse"));
 const report_service_1 = require("./report.service");
 const submitReport = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const reporterId = req.user._id;
+    const reporterId = req.user.userId;
     const { targetId, reportType, reason } = req.body;
     const result = yield report_service_1.ReportServices.submitReport(reporterId, {
         targetId,

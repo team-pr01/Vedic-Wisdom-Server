@@ -68,11 +68,10 @@ const handleMessageRequest = async (
 const getMyInbox = async (userId: string) => {
     const userObjectId = new Types.ObjectId(userId);
 
+    //  1. Removed the deletedBy filter from the query
     const conversations = await Conversation.find({
         members: { $in: [userObjectId] },
-        "deletedBy.user": { $ne: userObjectId }
     })
-        // ✅ Added lastActiveAt to the populated fields
         .populate("members", "name profilePicture lastActiveAt") 
         .populate("lastMessage")
         .sort({ updatedAt: -1 })
@@ -85,7 +84,6 @@ const getMyInbox = async (userId: string) => {
             let otherUser = null;
             let isOnline = false;
 
-            // ✅ Combined the logic into one block
             if (!convo.isGroup) {
                 otherUser = convo.members.find(
                     (member: any) => member._id.toString() !== userId
@@ -93,10 +91,31 @@ const getMyInbox = async (userId: string) => {
                 chatName = otherUser?.name || "Unknown User";
                 chatAvatar = otherUser?.profilePicture || "";
                 
-                // ✅ Safely check if online
                 if (otherUser?._id) {
                     isOnline = isUserOnline(otherUser._id.toString());
                 }
+            }
+
+            //  2. Check if the user previously deleted this chat
+            const deletionRecord = convo.deletedBy?.find(
+                (d: any) => d.user && d.user.toString() === userId.toString()
+            );
+
+            let isHiddenByDelete = false;
+
+            if (deletionRecord) {
+                const lastMsgDate = convo.lastMessage?.createdAt ? new Date(convo.lastMessage.createdAt) : new Date(0);
+                const deleteDate = new Date(deletionRecord.deletedAt);
+                
+                // If the last message is OLDER than the delete time, keep it hidden
+                if (lastMsgDate < deleteDate) {
+                    isHiddenByDelete = true;
+                }
+            }
+
+            //  3. Skip this conversation entirely if it's still "deleted"
+            if (isHiddenByDelete) {
+                return null;
             }
 
             // Calculate unread count
@@ -112,14 +131,23 @@ const getMyInbox = async (userId: string) => {
                 const readByStrings = convo.lastMessage.readBy?.map((id: any) => id.toString()) || [];
                 const senderString = convo.lastMessage.sender.toString();
 
+                // If I am the sender, check if everyone else has read it
                 if (senderString === userId.toString()) {
                     if (convo.isGroup) {
-                        isRead = readByStrings.length > 1;
+                        // ✅ GROUP LOGIC: Check if ALL other members are in readBy
+                        const otherMembers = convo.members.filter(
+                            (m: any) => m._id.toString() !== userId
+                        );
+                        isRead = otherMembers.every((member: any) => 
+                            readByStrings.includes(member._id.toString())
+                        );
                     } else {
+                        // 1-ON-1 LOGIC
                         const otherMemberId = convo.members.find((m: any) => m._id.toString() !== userId);
                         isRead = otherMemberId ? readByStrings.includes(otherMemberId._id.toString()) : false;
                     }
                 } else {
+                    // If I am the receiver, I only care if I read it
                     isRead = readByStrings.includes(userId.toString());
                 }
             }
@@ -151,13 +179,14 @@ const getMyInbox = async (userId: string) => {
                 unreadCount: unreadCount,
                 updatedAt: convo.updatedAt,
                 blockedBy: convo.blockedBy,
-                isOnline: isOnline, // ✅ Works now
-                lastActiveAt: otherUser?.lastActiveAt || null, // ✅ Pass the lastActiveAt
+                isOnline: isOnline,
+                lastActiveAt: otherUser?.lastActiveAt || null,
             };
         })
     );
 
-    return formattedInbox;
+    //  4. Filter out the null entries (the hidden deleted chats)
+    return formattedInbox.filter((chat) => chat !== null);
 };
 
 const createGroupChat = async (
@@ -329,7 +358,7 @@ const getGroupMembers = async (conversationId: string, userId: string) => {
 
     // Split members into Admins and Others, and add isMe flag
     conversation.members.forEach((member: any) => {
-        // ✅ Check if this member is the one requesting the data
+        //  Check if this member is the one requesting the data
         const isMe = member._id.toString() === userId.toString();
 
         // Create a new object with the isMe flag
@@ -438,27 +467,44 @@ const leaveGroup = async (conversationId: string, userId: string) => {
         throw new AppError(httpStatus.BAD_REQUEST, "Not a valid group");
     }
 
-    // Update DB (Only needs to be done once)
+    // ✅ 1. Remove user from members and admins, but add to leftMembers for history
     await Conversation.findByIdAndUpdate(conversationId, {
-        $push: { leftMembers: userId },
-        $pull: { admins: userId }
+        $pull: { 
+            members: new Types.ObjectId(userId), 
+            admins: new Types.ObjectId(userId) 
+        },
+        $push: { leftMembers: new Types.ObjectId(userId) }
     });
 
-    // Create system message (Only needs to be done once)
-    const systemMessage = await Message.create({
+    // 2. Create system message
+    const newSystemMessage = await Message.create({
         conversationId,
         sender: userId,
         text: "User left the group",
         isSystemMessage: true
     });
 
+    // 3. Populate and update lastMessage
+    const populatedMessage = await Message.findById(newSystemMessage._id)
+        .populate("sender", "name profilePicture");
+
+    await Conversation.findByIdAndUpdate(conversationId, {
+        lastMessage: newSystemMessage._id,
+    });
+
     const io = getIO();
 
-    // Emit system message to the room
-    io.to(conversationId).emit("receiveMessage", systemMessage);
+    // 4. Emit the message to the room
+    if (populatedMessage) {
+        io.to(conversationId).emit("receiveMessage", populatedMessage);
+    }
 
-    // Tell the leaving user's frontend to leave the socket room
+    // 5. Tell the leaving user's frontend to leave the socket room
     io.to(userId.toString()).emit("leaveSocketRoom", conversationId);
+
+    // 6. ✅ Emit an event to update the member list for everyone else
+    const updatedConversation = await Conversation.findById(conversationId);
+    io.to(conversationId).emit("groupMembersUpdated", updatedConversation);
 
     return { success: true, message: "You left the group" };
 };
@@ -649,19 +695,26 @@ const removeFromGroup = async (
 
 const deleteChatForUser = async (conversationId: string, userId: string) => {
     const conversation = await Conversation.findById(conversationId);
-    if (!conversation) throw new AppError(httpStatus.NOT_FOUND, "Chat not found");
+    if (!conversation) {
+        throw new AppError(httpStatus.NOT_FOUND, "Chat not found");
+    }
 
-    // Add the user to the deletedBy array
+    // 1. Remove the user from deletedBy first (prevents duplicate bugs)
     await Conversation.findByIdAndUpdate(conversationId, {
-        $push: { deletedBy: { user: userId, deletedAt: new Date() } }
+        $pull: { deletedBy: { user: new Types.ObjectId(userId) } }
     });
 
+    // 2. Add them back with the CURRENT timestamp
+    await Conversation.findByIdAndUpdate(conversationId, {
+        $push: { deletedBy: { user: new Types.ObjectId(userId), deletedAt: new Date() } }
+    });
+
+    // 3. Emit socket so the UI updates instantly
     const io = getIO();
     io.to(userId.toString()).emit("chatDeleted", { conversationId });
 
     return { success: true, message: "Chat deleted successfully" };
 };
-
 
 const toggleBlockUser = async (
     conversationId: string,
@@ -673,13 +726,13 @@ const toggleBlockUser = async (
         throw new AppError(httpStatus.BAD_REQUEST, "Invalid conversation");
     }
 
-    // ✅ Cast requesterId to ObjectId for Mongoose operators
+    //  Cast requesterId to ObjectId for Mongoose operators
     const requesterObjectId = new Types.ObjectId(requesterId);
 
     if (action === "block") {
         // Add to blockedBy if not already there
         await Conversation.findByIdAndUpdate(conversationId, {
-            $addToSet: { blockedBy: requesterObjectId }, // ✅ Use ObjectId
+            $addToSet: { blockedBy: requesterObjectId }, //  Use ObjectId
         });
 
         const io = getIO();
@@ -692,7 +745,7 @@ const toggleBlockUser = async (
     } else {
         // Remove from blockedBy
         await Conversation.findByIdAndUpdate(conversationId, {
-            $pull: { blockedBy: requesterObjectId }, // ✅ Use ObjectId
+            $pull: { blockedBy: requesterObjectId }, //  Use ObjectId
         });
 
         const io = getIO();

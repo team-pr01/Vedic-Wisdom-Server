@@ -21,6 +21,7 @@ const conversationSchema = new mongoose_1.Schema({
             user: { type: mongoose_1.Schema.Types.ObjectId, ref: "User" },
             deletedAt: { type: Date, default: Date.now }
         }],
+    lastActiveAt: { type: Date, default: Date.now },
     //To Track who left the group
     leftMembers: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
 }, { timestamps: true });

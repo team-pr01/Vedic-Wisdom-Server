@@ -28,9 +28,11 @@ const sendNotificationToMultipleUsers = (userIds, title, message, data) => __awa
         message,
         data,
     });
+    // ✅ Get the initialized IO instance
+    const io = (0, socket_1.getIO)();
     // 3️⃣ Emit socket event ONLY to intended users
     users.forEach((user) => {
-        socket_1.io.to(user._id.toString()).emit("new-notification", {
+        io.to(user._id.toString()).emit("new-notification", {
             _id: createdNotification._id,
             title,
             message,

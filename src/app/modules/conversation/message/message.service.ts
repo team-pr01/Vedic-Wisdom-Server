@@ -56,8 +56,12 @@ const getMessages = async (
   };
 
   // If the user deleted the whole chat previously, only show messages after that time
-  if (deletionRecord) {
-    query.createdAt = { $gt: deletionRecord.deletedAt };
+if (deletionRecord) {
+    const deletedAt = deletionRecord.deletedAt;
+    if (deletedAt) {
+      const cutoffTime = new Date(deletedAt.getTime() - 1000);
+      query.createdAt = { $gt: cutoffTime };
+    }
   }
 
   const messages = await Message.find(query)

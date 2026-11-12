@@ -106,16 +106,16 @@ const getAllUsersForChat = (userId_1, conversationId_1, keyword_1, ...args_1) =>
                             },
                         },
                     },
-                    // Project only the status we need
+                    // ✅ Project the status so we can use it
                     { $project: { messageRequestStatus: 1 } }
                 ],
                 as: "existingChat",
             },
         },
-        // ✅ Calculate the new isConnected logic
+        // ✅ Calculate connection status and expose the request status
         {
             $addFields: {
-                // isConnected is TRUE only if a chat exists AND the status is "accepted"
+                // 1. Is there an accepted connection?
                 isConnected: {
                     $cond: {
                         if: { $gt: [{ $size: "$existingChat" }, 0] },
@@ -128,19 +128,14 @@ const getAllUsersForChat = (userId_1, conversationId_1, keyword_1, ...args_1) =>
                         else: false
                     }
                 },
-                // isMessageReqAccepted is the exact same logic here
-                isMessageReqAccepted: {
+                // 2. Expose the raw status (pending, rejected, accepted, or none if no chat exists)
+                connectionStatus: {
                     $cond: {
                         if: { $gt: [{ $size: "$existingChat" }, 0] },
-                        then: {
-                            $eq: [
-                                { $arrayElemAt: ["$existingChat.messageRequestStatus", 0] },
-                                "accepted"
-                            ]
-                        },
-                        else: false
+                        then: { $arrayElemAt: ["$existingChat.messageRequestStatus", 0] },
+                        else: "none" // No chat exists yet
                     }
-                },
+                }
             },
         },
         // 5. Format output
@@ -151,7 +146,7 @@ const getAllUsersForChat = (userId_1, conversationId_1, keyword_1, ...args_1) =>
                 email: 1,
                 profilePicture: 1,
                 isConnected: 1,
-                isMessageReqAccepted: 1,
+                connectionStatus: 1,
             },
         },
         // 6. Pagination

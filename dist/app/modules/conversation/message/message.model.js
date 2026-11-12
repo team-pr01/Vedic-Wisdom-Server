@@ -8,7 +8,17 @@ const messageSchema = new mongoose_1.Schema({
     text: { type: String, required: true },
     readBy: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }], // Who has seen it
     deleteAt: { type: Date, default: null }, // When to auto-delete
-    isSystemMessage: { type: Boolean, default: false }
+    isSystemMessage: { type: Boolean, default: false },
+    reactions: [
+        {
+            emoji: { type: String, required: true },
+            userId: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
+            userName: { type: String, required: true },
+        }
+    ],
+    mentions: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
+    deletedFor: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }], // Track who deleted it
+    isDeletedForEveryone: { type: Boolean, default: false },
 }, { timestamps: true });
 // TTL Index: MongoDB will automatically delete the document when the current time reaches 'deleteAt' [citation:15][citation:21]
 messageSchema.index({ deleteAt: 1 }, { expireAfterSeconds: 0 });

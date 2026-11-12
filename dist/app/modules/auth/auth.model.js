@@ -174,6 +174,10 @@ const userSchema = new mongoose_1.Schema({
         default: false
     },
     blockedUsers: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
+    lastActiveAt: {
+        type: Date,
+        default: Date.now,
+    },
 }, {
     timestamps: true,
 });
