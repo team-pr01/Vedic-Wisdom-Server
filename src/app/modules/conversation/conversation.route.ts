@@ -12,6 +12,13 @@ router.get(
   ConversationControllers.getGroupMembers
 );
 
+// Get Inbox Chat List
+router.get(
+  "/inbox",
+  auth(UserRole.user, UserRole.admin, UserRole.moderator),
+  ConversationControllers.getMyInbox
+);
+
 
 router.post(
   "/access/:targetUserId",
@@ -39,12 +46,6 @@ router.patch(
   ConversationControllers.addGroupMembers
 );
 
-// Get Inbox Chat List
-router.get(
-  "/inbox",
-  auth(UserRole.user, UserRole.admin, UserRole.moderator),
-  ConversationControllers.getMyInbox
-);
 
 router.delete(
   "/delete-chat/:conversationId",

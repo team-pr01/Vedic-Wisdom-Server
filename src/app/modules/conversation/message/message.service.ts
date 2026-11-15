@@ -7,6 +7,40 @@ import { Conversation } from "../conversation.model";
 import { getIO } from "../../../socket";
 import { User } from "../../auth/auth.model";
 
+const syncDeliveredMessages = async (userId: string) => {
+  const userObjectId = new Types.ObjectId(userId);
+
+  // 1. Find all messages sent to this user that they haven't delivered yet
+  // (We can use the conversations they are in to filter)
+  const undeliveredMessages = await Message.find({
+    sender: { $ne: userObjectId }, // Not sent by me
+    "deliveredTo.userId": { $ne: userObjectId }, // I am not in the deliveredTo array
+  });
+
+  if (undeliveredMessages.length === 0) return;
+
+  const messageIds = undeliveredMessages.map((msg) => msg._id);
+
+  // 2. Bulk update them to add the user to deliveredTo
+  await Message.updateMany(
+    { _id: { $in: messageIds } },
+    {
+      $push: { deliveredTo: { userId: userObjectId, deliveredAt: new Date() } },
+    }
+  );
+
+  // 3. ✅ Emit socket events to the senders so their UI updates instantly
+  const io = getIO();
+  
+  undeliveredMessages.forEach((msg) => {
+    io.to(msg.conversationId.toString()).emit("messageDeliveredToUser", {
+      messageId: msg._id,
+      userId: userId,
+    });
+  });
+};
+
+
 const getMessages = async (
   conversationId: string,
   userId: string,
@@ -98,6 +132,7 @@ if (deletionRecord) {
       members: conversation.members,
       admins: conversation.admins,
       blockedBy: conversation.blockedBy,
+      messageRequestStatus: conversation.messageRequestStatus,
     },
     meta: {
       total,
@@ -214,9 +249,47 @@ const deleteMessageForEveryone = async (messageId: string, userId: string, userR
   return updatedMessage;
 };
 
+const editMessage = async (messageId: string, userId: string, newText: string, newMentions: any[] = []) => {
+  const message = await Message.findById(messageId);
+  if (!message) {
+    throw new AppError(httpStatus.NOT_FOUND, "Message not found");
+  }
+
+  // Only the sender can edit their message
+  if (message.sender.toString() !== userId.toString()) {
+    throw new AppError(httpStatus.FORBIDDEN, "You can only edit your own messages");
+  }
+
+  // Cannot edit a message that was unsent for everyone
+  if (message.isDeletedForEveryone) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Cannot edit a deleted message");
+  }
+
+  message.text = newText;
+  message.isEdited = true;
+  message.mentions = newMentions;
+  await message.save();
+
+  // ✅ Emit the updated message to the room
+  const populatedMessage = await Message.findById(messageId)
+    .populate("sender", "name profilePicture")
+    .populate({
+      path: "replyTo",
+      select: "text sender isDeletedForEveryone",
+      populate: { path: "sender", select: "name" },
+    });
+
+  const io = getIO();
+  io.to(message.conversationId.toString()).emit("messageEdited", populatedMessage);
+
+  return populatedMessage;
+};
+
 export const MessageServices = {
+  syncDeliveredMessages,
   getMessages,
   reactToMessage,
   deleteMessageForMe,
-  deleteMessageForEveryone
+  deleteMessageForEveryone,
+  editMessage
 };

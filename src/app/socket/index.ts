@@ -15,9 +15,6 @@ export const initSocket = (server: http.Server) => {
     });
     ioInstance = io;
 
-    // Store online users: userId -> socketId
-    const onlineUsers = new Map();
-
     io.on("connection", (socket) => {
         // 1. User connects and registers their ID
         socket.on("addUser", async (userId) => {
@@ -48,7 +45,7 @@ export const initSocket = (server: http.Server) => {
 
         // 3. Send Message
         socket.on("sendMessage", async (data) => {
-            const { conversationId, senderId, text, mentions = [], tempId } = data;
+            const { conversationId, senderId, text, mentions = [], tempId, replyTo, } = data;
 
             const conversation = await Conversation.findById(conversationId);
             if (!conversation) return;
@@ -78,6 +75,7 @@ export const initSocket = (server: http.Server) => {
                 sender: senderId,
                 text,
                 mentions,
+                replyTo,
             });
 
             const messageCreatedAt = newMessage?.createdAt instanceof Date
@@ -99,7 +97,12 @@ export const initSocket = (server: http.Server) => {
             });
 
             const populatedMessage = await Message.findById(newMessage._id)
-                .populate("sender", "name profilePicture");
+                .populate("sender", "name profilePicture")
+                .populate({
+                    path: "replyTo",
+                    select: "text sender isDeletedForEveryone",
+                    populate: { path: "sender", select: "name" }
+                });
 
             const messageWithTempId = {
                 ...populatedMessage?.toObject(), // Convert Mongoose doc to plain object

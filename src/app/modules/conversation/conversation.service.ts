@@ -68,7 +68,6 @@ const handleMessageRequest = async (
 const getMyInbox = async (userId: string) => {
     const userObjectId = new Types.ObjectId(userId);
 
-    //  1. Removed the deletedBy filter from the query
     const conversations = await Conversation.find({
         members: { $in: [userObjectId] },
     })
@@ -96,7 +95,7 @@ const getMyInbox = async (userId: string) => {
                 }
             }
 
-            //  2. Check if the user previously deleted this chat
+            // Check if the user previously deleted this chat
             const deletionRecord = convo.deletedBy?.find(
                 (d: any) => d.user && d.user.toString() === userId.toString()
             );
@@ -107,34 +106,28 @@ const getMyInbox = async (userId: string) => {
                 const lastMsgDate = convo.lastMessage?.createdAt ? new Date(convo.lastMessage.createdAt) : new Date(0);
                 const deleteDate = new Date(deletionRecord.deletedAt);
                 
-                // If the last message is OLDER than the delete time, keep it hidden
                 if (lastMsgDate < deleteDate) {
                     isHiddenByDelete = true;
                 }
             }
 
-            //  3. Skip this conversation entirely if it's still "deleted"
             if (isHiddenByDelete) {
                 return null;
             }
 
-            // Calculate unread count
             const unreadCount = await Message.countDocuments({
                 conversationId: convo._id,
                 sender: { $ne: userObjectId },
                 readBy: { $ne: userObjectId },
             });
 
-            // isRead logic
             let isRead = true;
             if (convo.lastMessage) {
                 const readByStrings = convo.lastMessage.readBy?.map((id: any) => id.toString()) || [];
                 const senderString = convo.lastMessage.sender.toString();
 
-                // If I am the sender, check if everyone else has read it
                 if (senderString === userId.toString()) {
                     if (convo.isGroup) {
-                        // ✅ GROUP LOGIC: Check if ALL other members are in readBy
                         const otherMembers = convo.members.filter(
                             (m: any) => m._id.toString() !== userId
                         );
@@ -142,12 +135,10 @@ const getMyInbox = async (userId: string) => {
                             readByStrings.includes(member._id.toString())
                         );
                     } else {
-                        // 1-ON-1 LOGIC
                         const otherMemberId = convo.members.find((m: any) => m._id.toString() !== userId);
                         isRead = otherMemberId ? readByStrings.includes(otherMemberId._id.toString()) : false;
                     }
                 } else {
-                    // If I am the receiver, I only care if I read it
                     isRead = readByStrings.includes(userId.toString());
                 }
             }
@@ -157,6 +148,17 @@ const getMyInbox = async (userId: string) => {
             );
 
             const groupMemberCount = convo.isGroup ? convo.members.length : 0;
+
+            // ✅ 1. Fix the Text Logic
+            let lastMessageText = convo.lastMessage?.text || "";
+            
+            // Convert the deletedFor array to strings so we can compare accurately
+            const deletedForStrings = convo.lastMessage?.deletedFor?.map((id: any) => id.toString()) || [];
+            const isDeletedForMe = deletedForStrings.includes(userId.toString());
+
+            if (convo.lastMessage?.isDeletedForEveryone || isDeletedForMe) {
+                lastMessageText = "🚫 This message was deleted";
+            }
 
             return {
                 conversationId: convo._id,
@@ -170,10 +172,12 @@ const getMyInbox = async (userId: string) => {
                 groupMemberCount,
                 lastMessage: convo.lastMessage
                     ? {
-                        text: convo.lastMessage.text,
+                        text: lastMessageText,
                         sender: convo.lastMessage.sender,
                         createdAt: convo.lastMessage.createdAt,
                         isRead: isRead,
+                        deletedFor: convo.lastMessage.deletedFor || [],
+                        isDeletedForEveryone: convo.lastMessage.isDeletedForEveryone || false,
                     }
                     : null,
                 unreadCount: unreadCount,
@@ -185,7 +189,6 @@ const getMyInbox = async (userId: string) => {
         })
     );
 
-    //  4. Filter out the null entries (the hidden deleted chats)
     return formattedInbox.filter((chat) => chat !== null);
 };
 

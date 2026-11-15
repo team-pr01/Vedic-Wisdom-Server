@@ -23,15 +23,13 @@ const initSocket = (server) => {
         cors: { origin: "*" }, // Configure to your frontend URL in production
     });
     ioInstance = io;
-    // Store online users: userId -> socketId
-    const onlineUsers = new Map();
     io.on("connection", (socket) => {
         // 1. User connects and registers their ID
         socket.on("addUser", (userId) => __awaiter(void 0, void 0, void 0, function* () {
-            onlineUsers.set(userId, socket.id);
+            exports.onlineUsers.set(userId, socket.id);
             socket.join(userId);
             // 1. Broadcast initial online list
-            io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
+            io.emit("getOnlineUsers", Array.from(exports.onlineUsers.keys()));
             // 2. Broadcast to everyone that this user just came online
             io.emit("userStatusChanged", { userId, isOnline: true });
             // Join all their conversation rooms
@@ -50,7 +48,7 @@ const initSocket = (server) => {
         // 3. Send Message
         socket.on("sendMessage", (data) => __awaiter(void 0, void 0, void 0, function* () {
             var _a, _b, _c, _d;
-            const { conversationId, senderId, text, mentions = [], tempId } = data;
+            const { conversationId, senderId, text, mentions = [], tempId, replyTo, } = data;
             const conversation = yield conversation_model_1.Conversation.findById(conversationId);
             if (!conversation)
                 return;
@@ -72,6 +70,7 @@ const initSocket = (server) => {
                 sender: senderId,
                 text,
                 mentions,
+                replyTo,
             });
             const messageCreatedAt = (newMessage === null || newMessage === void 0 ? void 0 : newMessage.createdAt) instanceof Date
                 ? newMessage.createdAt
@@ -89,7 +88,12 @@ const initSocket = (server) => {
                 deletedBy: updatedDeletedBy
             });
             const populatedMessage = yield message_model_1.Message.findById(newMessage._id)
-                .populate("sender", "name profilePicture");
+                .populate("sender", "name profilePicture")
+                .populate({
+                path: "replyTo",
+                select: "text sender isDeletedForEveryone",
+                populate: { path: "sender", select: "name" }
+            });
             const messageWithTempId = Object.assign(Object.assign({}, populatedMessage === null || populatedMessage === void 0 ? void 0 : populatedMessage.toObject()), { tempId: tempId });
             // 5. Emit Logic based on block status
             if (isSenderBlockedByOther) {
@@ -133,10 +137,10 @@ const initSocket = (server) => {
         socket.on("disconnect", () => __awaiter(void 0, void 0, void 0, function* () {
             var _a;
             // Remove from online users
-            const userId = (_a = [...onlineUsers.entries()].find(([_, id]) => id === socket.id)) === null || _a === void 0 ? void 0 : _a[0];
+            const userId = (_a = [...exports.onlineUsers.entries()].find(([_, id]) => id === socket.id)) === null || _a === void 0 ? void 0 : _a[0];
             if (userId) {
-                onlineUsers.delete(userId);
-                io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
+                exports.onlineUsers.delete(userId);
+                io.emit("getOnlineUsers", Array.from(exports.onlineUsers.keys()));
                 // 1. Generate the timestamp
                 const lastActiveAt = new Date();
                 // 2. Save it to the Database
