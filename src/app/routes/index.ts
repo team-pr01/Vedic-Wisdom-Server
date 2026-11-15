@@ -40,7 +40,7 @@ import { AIChatRoutes } from "../modules/rag/chat/chat.routes";
 import { ProjectTransactionRoutes } from "../modules/project/projectTransaction/projectTransaction.route";
 import { ShopBannerRoutes } from "../modules/shop/shopBanner/shopBanner.routes";
 import { QuizProgressRoutes } from "../modules/quiz/quizProgress/quizProgress.routes";
-import { MessageRoutes } from "../modules/conversation/message/message.routee";
+import { MessageRoutes } from "../modules/conversation/message/message.route";
 import { ReportRoutes } from "../modules/conversation/report/report.route";
 
 const router = Router();

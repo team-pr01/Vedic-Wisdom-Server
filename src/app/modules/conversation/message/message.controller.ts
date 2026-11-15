@@ -3,6 +3,20 @@ import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import { MessageServices } from "./message.service";
 
+
+const syncDeliveredMessages = catchAsync(async (req, res) => {
+  const userId = req.user.userId;
+
+  const result = await MessageServices.syncDeliveredMessages(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Delivered messages synced successfully",
+    data: result,
+  });
+});
+
 const getMessages = catchAsync(async (req, res) => {
   const { conversationId } = req.params;
   const { skip = "0", limit = "20" } = req.query;
@@ -77,9 +91,26 @@ const deleteMessageForEveryone = catchAsync(async (req, res) => {
   });
 });
 
+const editMessage = catchAsync(async (req, res) => {
+  const { messageId } = req.params;
+  const { text, mentions } = req.body;
+  const userId = req.user.userId;
+
+  const result = await MessageServices.editMessage(messageId, userId, text, mentions);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Message edited successfully",
+    data: result,
+  });
+});
+
 export const MessageControllers = {
+  syncDeliveredMessages,
   getMessages,
   reactToMessage,
   deleteMessageForMe,
-  deleteMessageForEveryone
+  deleteMessageForEveryone,
+  editMessage
 };

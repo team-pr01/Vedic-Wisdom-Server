@@ -5,6 +5,10 @@ import auth from "../../../middlewares/auth";
 
 const router = express.Router();
 
+
+router.post("/sync-delivered", auth(UserRole.user, UserRole.admin, UserRole.moderator), MessageControllers.syncDeliveredMessages);
+
+
 router.patch(
   "/react/:messageId",
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
@@ -22,6 +26,8 @@ router.delete(
   auth(UserRole.user, UserRole.admin, UserRole.moderator),
   MessageControllers.deleteMessageForEveryone
 );
+
+router.patch("/edit/:messageId", auth(UserRole.user, UserRole.admin, UserRole.moderator), MessageControllers.editMessage);
 
 // Fetch chat history for a specific conversation
 router.get(

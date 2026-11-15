@@ -21,6 +21,30 @@ const mongoose_1 = require("mongoose");
 const conversation_model_1 = require("../conversation.model");
 const socket_1 = require("../../../socket");
 const auth_model_1 = require("../../auth/auth.model");
+const syncDeliveredMessages = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const userObjectId = new mongoose_1.Types.ObjectId(userId);
+    // 1. Find all messages sent to this user that they haven't delivered yet
+    // (We can use the conversations they are in to filter)
+    const undeliveredMessages = yield message_model_1.Message.find({
+        sender: { $ne: userObjectId }, // Not sent by me
+        "deliveredTo.userId": { $ne: userObjectId }, // I am not in the deliveredTo array
+    });
+    if (undeliveredMessages.length === 0)
+        return;
+    const messageIds = undeliveredMessages.map((msg) => msg._id);
+    // 2. Bulk update them to add the user to deliveredTo
+    yield message_model_1.Message.updateMany({ _id: { $in: messageIds } }, {
+        $push: { deliveredTo: { userId: userObjectId, deliveredAt: new Date() } },
+    });
+    // 3. ✅ Emit socket events to the senders so their UI updates instantly
+    const io = (0, socket_1.getIO)();
+    undeliveredMessages.forEach((msg) => {
+        io.to(msg.conversationId.toString()).emit("messageDeliveredToUser", {
+            messageId: msg._id,
+            userId: userId,
+        });
+    });
+});
 const getMessages = (conversationId_1, userId_1, ...args_1) => __awaiter(void 0, [conversationId_1, userId_1, ...args_1], void 0, function* (conversationId, userId, skip = 0, limit = 20) {
     var _a;
     const conversation = yield conversation_model_1.Conversation.findById(conversationId)
@@ -91,6 +115,7 @@ const getMessages = (conversationId_1, userId_1, ...args_1) => __awaiter(void 0,
             members: conversation.members,
             admins: conversation.admins,
             blockedBy: conversation.blockedBy,
+            messageRequestStatus: conversation.messageRequestStatus,
         },
         meta: {
             total,
@@ -176,9 +201,40 @@ const deleteMessageForEveryone = (messageId, userId, userRole) => __awaiter(void
     io.to(message.conversationId.toString()).emit("messageDeletedForEveryone", updatedMessage);
     return updatedMessage;
 });
+const editMessage = (messageId_1, userId_1, newText_1, ...args_1) => __awaiter(void 0, [messageId_1, userId_1, newText_1, ...args_1], void 0, function* (messageId, userId, newText, newMentions = []) {
+    const message = yield message_model_1.Message.findById(messageId);
+    if (!message) {
+        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Message not found");
+    }
+    // Only the sender can edit their message
+    if (message.sender.toString() !== userId.toString()) {
+        throw new AppError_1.default(http_status_1.default.FORBIDDEN, "You can only edit your own messages");
+    }
+    // Cannot edit a message that was unsent for everyone
+    if (message.isDeletedForEveryone) {
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Cannot edit a deleted message");
+    }
+    message.text = newText;
+    message.isEdited = true;
+    message.mentions = newMentions;
+    yield message.save();
+    // ✅ Emit the updated message to the room
+    const populatedMessage = yield message_model_1.Message.findById(messageId)
+        .populate("sender", "name profilePicture")
+        .populate({
+        path: "replyTo",
+        select: "text sender isDeletedForEveryone",
+        populate: { path: "sender", select: "name" },
+    });
+    const io = (0, socket_1.getIO)();
+    io.to(message.conversationId.toString()).emit("messageEdited", populatedMessage);
+    return populatedMessage;
+});
 exports.MessageServices = {
+    syncDeliveredMessages,
     getMessages,
     reactToMessage,
     deleteMessageForMe,
-    deleteMessageForEveryone
+    deleteMessageForEveryone,
+    editMessage
 };

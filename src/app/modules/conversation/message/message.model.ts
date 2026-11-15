@@ -6,6 +6,12 @@ const messageSchema = new Schema<TMessage>({
   sender: { type: Schema.Types.ObjectId, ref: "User", required: true },
   text: { type: String, required: true },
   readBy: [{ type: Schema.Types.ObjectId, ref: "User" }], // Who has seen it
+   deliveredTo: [
+    {
+      userId: { type: Schema.Types.ObjectId, ref: "User" },
+      deliveredAt: { type: Date, default: Date.now }
+    }
+  ],
   deleteAt: { type: Date, default: null }, // When to auto-delete
   isSystemMessage: { type: Boolean, default: false },
   reactions: [
@@ -15,9 +21,11 @@ const messageSchema = new Schema<TMessage>({
       userName: { type: String, required: true },
     }
   ],
+  replyTo: { type: Schema.Types.ObjectId, ref: "Message" },
   mentions: [{ type: Schema.Types.ObjectId, ref: "User" }],
   deletedFor: [{ type: Schema.Types.ObjectId, ref: "User" }], // Track who deleted it
   isDeletedForEveryone: { type: Boolean, default: false },
+  isEdited: { type: Boolean, default: false },
 }, { timestamps: true });
 
 // TTL Index: MongoDB will automatically delete the document when the current time reaches 'deleteAt' [citation:15][citation:21]

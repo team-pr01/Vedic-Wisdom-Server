@@ -42,7 +42,7 @@ const chat_routes_1 = require("../modules/rag/chat/chat.routes");
 const projectTransaction_route_1 = require("../modules/project/projectTransaction/projectTransaction.route");
 const shopBanner_routes_1 = require("../modules/shop/shopBanner/shopBanner.routes");
 const quizProgress_routes_1 = require("../modules/quiz/quizProgress/quizProgress.routes");
-const message_routee_1 = require("../modules/conversation/message/message.routee");
+const message_route_1 = require("../modules/conversation/message/message.route");
 const report_route_1 = require("../modules/conversation/report/report.route");
 const router = (0, express_1.Router)();
 const moduleRoutes = [
@@ -192,7 +192,7 @@ const moduleRoutes = [
     },
     {
         path: "/message",
-        route: message_routee_1.MessageRoutes,
+        route: message_route_1.MessageRoutes,
     },
     {
         path: "/report",

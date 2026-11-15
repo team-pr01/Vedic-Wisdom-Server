@@ -17,6 +17,16 @@ const http_status_1 = __importDefault(require("http-status"));
 const catchAsync_1 = __importDefault(require("../../../utils/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../utils/sendResponse"));
 const message_service_1 = require("./message.service");
+const syncDeliveredMessages = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = req.user.userId;
+    const result = yield message_service_1.MessageServices.syncDeliveredMessages(userId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Delivered messages synced successfully",
+        data: result,
+    });
+}));
 const getMessages = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { conversationId } = req.params;
     const { skip = "0", limit = "20" } = req.query;
@@ -65,9 +75,23 @@ const deleteMessageForEveryone = (0, catchAsync_1.default)((req, res) => __await
         data: result,
     });
 }));
+const editMessage = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { messageId } = req.params;
+    const { text, mentions } = req.body;
+    const userId = req.user.userId;
+    const result = yield message_service_1.MessageServices.editMessage(messageId, userId, text, mentions);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Message edited successfully",
+        data: result,
+    });
+}));
 exports.MessageControllers = {
+    syncDeliveredMessages,
     getMessages,
     reactToMessage,
     deleteMessageForMe,
-    deleteMessageForEveryone
+    deleteMessageForEveryone,
+    editMessage
 };

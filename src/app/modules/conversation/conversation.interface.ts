@@ -25,7 +25,6 @@ export type TConversation = {
   deletedBy?: TDeletedBy[];
   leftMembers?: Types.ObjectId[];
 
-
   createdAt?: Date;
   updatedAt?: Date;
 };

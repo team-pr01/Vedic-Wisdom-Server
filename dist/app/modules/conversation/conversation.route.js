@@ -11,12 +11,12 @@ const auth_constants_1 = require("../auth/auth.constants");
 const multer_config_1 = require("../../config/multer.config");
 const router = express_1.default.Router();
 router.get("/group-members/:conversationId", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), conversation_controller_1.ConversationControllers.getGroupMembers);
+// Get Inbox Chat List
+router.get("/inbox", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), conversation_controller_1.ConversationControllers.getMyInbox);
 router.post("/access/:targetUserId", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), conversation_controller_1.ConversationControllers.accessChat);
 router.post("/group/create", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), multer_config_1.multerUpload.single("file"), conversation_controller_1.ConversationControllers.createGroupChat);
 router.patch("/group/update-info/:conversationId", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), multer_config_1.multerUpload.single("file"), conversation_controller_1.ConversationControllers.updateGroupInfo);
 router.patch("/add-members/:conversationId", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), conversation_controller_1.ConversationControllers.addGroupMembers);
-// Get Inbox Chat List
-router.get("/inbox", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), conversation_controller_1.ConversationControllers.getMyInbox);
 router.delete("/delete-chat/:conversationId", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), conversation_controller_1.ConversationControllers.deleteChatForUser);
 // Leave Group Route
 router.patch("/leave-group/:conversationId", (0, auth_1.default)(auth_constants_1.UserRole.user, auth_constants_1.UserRole.admin, auth_constants_1.UserRole.moderator), conversation_controller_1.ConversationControllers.leaveGroup);
