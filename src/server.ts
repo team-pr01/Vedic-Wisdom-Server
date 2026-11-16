@@ -4,6 +4,7 @@ import config from "./app/config";
 import mongoose from "mongoose";
 import { Server } from "http";
 import { initSocket } from "./app/socket";
+import { startMessageCleanupCron } from "./app/cron/messageCleanup.cron";
 
 let server: Server;
 
@@ -14,6 +15,8 @@ async function main() {
     server = http.createServer(app);
 
     initSocket(server);
+
+    startMessageCleanupCron();
 
     // registerCrons();
     // registerOldNotificationCleanupCron();

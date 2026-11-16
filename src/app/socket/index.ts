@@ -27,6 +27,28 @@ export const initSocket = (server: http.Server) => {
             // 2. Broadcast to everyone that this user just came online
             io.emit("userStatusChanged", { userId, isOnline: true });
 
+            const undeliveredMessages = await Message.find({
+                "deliveredTo.userId": { $ne: userId },
+                sender: { $ne: userId } // Don't mark own messages
+            });
+
+            if (undeliveredMessages.length > 0) {
+                const messageIds = undeliveredMessages.map(m => m._id);
+
+                await Message.updateMany(
+                    { _id: { $in: messageIds } },
+                    { $push: { deliveredTo: { userId, deliveredAt: new Date() } } }
+                );
+
+                // Notify the senders so their UI updates to double ticks
+                undeliveredMessages.forEach((msg) => {
+                    io.to(msg.conversationId.toString()).emit("messageDeliveredToUser", {
+                        messageId: msg._id,
+                        userId,
+                    });
+                });
+            }
+
             // Join all their conversation rooms
             const userConversations = await Conversation.find({
                 members: userId,
@@ -126,19 +148,85 @@ export const initSocket = (server: http.Server) => {
             });
         });
 
-        socket.on("messageRead", async ({ conversationId, userId }) => {
-            // 1. Update all messages in this conversation sent by the OTHER user
-            await Message.updateMany(
-                {
-                    conversationId,
-                    sender: { $ne: userId } // Don't mark our own messages as read by us
-                },
-                {
-                    $addToSet: { readBy: userId } // Add user to readBy array
+        socket.on("messageDelivered", async ({ messageId, userId }) => {
+            const message = await Message.findById(messageId);
+            if (message) {
+                // Check if already delivered to avoid duplicates
+                const alreadyDelivered = message.deliveredTo?.some(
+                    (d) => d.userId.toString() === userId.toString()
+                );
+
+                if (!alreadyDelivered) {
+                    message.deliveredTo = message.deliveredTo || [];
+                    message.deliveredTo.push({ userId, deliveredAt: new Date() });
+                    await message.save();
+
+                    // Tell the sender instantly
+                    io.to(message.conversationId.toString()).emit("messageDeliveredToUser", {
+                        messageId,
+                        userId,
+                    });
                 }
+            }
+        });
+
+        // backend/socket.ts
+
+        socket.on("messageRead", async ({ conversationId, userId }) => {
+            const conversation = await Conversation.findById(conversationId);
+            if (!conversation) return;
+
+            const now = new Date();
+
+            // 1. Find all unread messages sent by OTHERS in this conversation
+            const unreadMessages = await Message.find({
+                conversationId,
+                sender: { $ne: userId },
+                readBy: { $ne: userId }
+            });
+
+            if (unreadMessages.length === 0) return;
+
+            // 2. Mark them as read by this user
+            const messageIds = unreadMessages.map(m => m._id);
+            await Message.updateMany(
+                { _id: { $in: messageIds } },
+                { $addToSet: { readBy: userId } }
             );
 
-            // 2. Broadcast to the room
+            // 3. Check for Auto-Delete condition
+            for (const msg of unreadMessages) {
+                // Note: We add userId to the local array for accurate counting
+                const updatedReadBy = [...(msg.readBy || []), userId];
+
+                let shouldDelete = false;
+
+                if (conversation.isGroup) {
+                    // Group: Check if EVERYONE has read it
+                    // Total expected readers = total members - 1 (sender)
+                    // (Assuming sender is still in the group, adjust if needed)
+                    const expectedReaders = conversation.members.length - 1;
+
+                    // Remove duplicates just in case
+                    const uniqueReaders = new Set(updatedReadBy.map(id => id.toString()));
+
+                    if (uniqueReaders.size >= expectedReaders) {
+                        shouldDelete = true;
+                    }
+                } else {
+                    // 1-on-1: Check if the other person has read it
+                    // Since we queried `sender: { $ne: userId }`, if it's here, we are the receiver reading it.
+                    shouldDelete = true;
+                }
+
+                // 4. Set the deleteAt time (Now + 5 minutes)
+                if (shouldDelete) {
+                    const deleteAt = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes
+                    await Message.findByIdAndUpdate(msg._id, { deleteAt });
+                }
+            }
+
+            // 5. Broadcast to the room so UIs update the ticks
             socket.to(conversationId).emit("messagesMarkedAsRead", { conversationId, userId });
         });
 

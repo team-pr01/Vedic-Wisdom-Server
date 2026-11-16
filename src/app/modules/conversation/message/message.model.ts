@@ -6,7 +6,7 @@ const messageSchema = new Schema<TMessage>({
   sender: { type: Schema.Types.ObjectId, ref: "User", required: true },
   text: { type: String, required: true },
   readBy: [{ type: Schema.Types.ObjectId, ref: "User" }], // Who has seen it
-   deliveredTo: [
+  deliveredTo: [
     {
       userId: { type: Schema.Types.ObjectId, ref: "User" },
       deliveredAt: { type: Date, default: Date.now }

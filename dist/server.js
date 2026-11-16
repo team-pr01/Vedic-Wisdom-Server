@@ -17,6 +17,7 @@ const app_1 = __importDefault(require("./app"));
 const config_1 = __importDefault(require("./app/config"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const socket_1 = require("./app/socket");
+const messageCleanup_cron_1 = require("./app/cron/messageCleanup.cron");
 let server;
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -24,6 +25,7 @@ function main() {
             yield mongoose_1.default.connect(config_1.default.db_url);
             server = http_1.default.createServer(app_1.default);
             (0, socket_1.initSocket)(server);
+            (0, messageCleanup_cron_1.startMessageCleanupCron)();
             // registerCrons();
             // registerOldNotificationCleanupCron();
             server.listen(config_1.default.port, () => {
